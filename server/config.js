@@ -1,0 +1,90 @@
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const rootDir = path.resolve(__dirname, '..');
+
+// Must load before reading process.env — ESM import order is not guaranteed for dotenv/config in index.js
+dotenv.config({ path: path.join(rootDir, '.env') });
+
+const DEV_JWT_SECRET = 'stratelegy-dev-secret-change-in-production';
+
+export const config = {
+  port: Number(process.env.PORT) || 3000,
+  host: process.env.HOST || '0.0.0.0',
+  jwtSecret: process.env.JWT_SECRET || DEV_JWT_SECRET,
+  appId: process.env.APP_ID || 'stratelegy-insight',
+  uploadsDir: process.env.UPLOADS_DIR || path.join(rootDir, 'data', 'uploads'),
+  emailWebhookSecret: process.env.EMAIL_WEBHOOK_SECRET || '',
+  appName: process.env.APP_NAME || 'Stratelegy Insight',
+  appBaseUrl: process.env.APP_BASE_URL || 'http://localhost:3000',
+  supportEmail: process.env.SUPPORT_EMAIL || '',
+  mail: {
+    enabled: process.env.MAIL_ENABLED === 'true',
+    host: process.env.SMTP_HOST || '',
+    port: Number(process.env.SMTP_PORT) || 587,
+    secure: process.env.SMTP_SECURE === 'true',
+    user: process.env.SMTP_USER || '',
+    pass: process.env.SMTP_PASS || '',
+    from: process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost',
+    replyTo: process.env.SMTP_REPLY_TO || process.env.SUPPORT_EMAIL || '',
+  },
+  rootDir,
+  isProduction: process.env.NODE_ENV === 'production',
+  /** Dev-only demo accounts — blocked in production regardless of env value. */
+  seedDemoUsers: process.env.SEED_DEMO_USERS === 'true' && process.env.NODE_ENV !== 'production',
+  demoUserPassword: process.env.DEMO_USER_PASSWORD || 'Demo123!',
+  mysql: {
+    host: process.env.MYSQL_HOST || 'localhost',
+    port: Number(process.env.MYSQL_PORT) || 3306,
+    user: process.env.MYSQL_USER || 'root',
+    password: process.env.MYSQL_PASSWORD || '',
+    database: process.env.MYSQL_DATABASE || 'stratelegy',
+  },
+  skyswitch: {
+    enabled: process.env.SKYSWITCH_ENABLED !== 'false',
+    apiBaseUrl: process.env.SKYSWITCH_API_URL || 'https://api.skyswitch.com',
+    accountId: process.env.SKYSWITCH_ACCOUNT_ID || '',
+    clientId: process.env.SKYSWITCH_CLIENT_ID || '',
+    clientSecret: process.env.SKYSWITCH_CLIENT_SECRET || '',
+    username: process.env.SKYSWITCH_USERNAME || '',
+    password: process.env.SKYSWITCH_PASSWORD || '',
+    defaultDomain: process.env.SKYSWITCH_DEFAULT_DOMAIN || '',
+    scope: process.env.SKYSWITCH_SCOPE || '*',
+  },
+};
+
+/** Fail fast when production is misconfigured. */
+export function assertProductionConfig() {
+  if (!config.isProduction) return;
+
+  if (!process.env.JWT_SECRET || config.jwtSecret === DEV_JWT_SECRET) {
+    throw new Error('[config] JWT_SECRET must be set to a strong value in production');
+  }
+  if (!config.emailWebhookSecret) {
+    console.warn('[config] EMAIL_WEBHOOK_SECRET is not set — inbound email webhooks are disabled');
+  }
+  if (!process.env.ADMIN_PASSWORD) {
+    console.warn('[config] ADMIN_PASSWORD is not set — first admin will not be created until you set it');
+  }
+}
+
+function parseCorsOrigins() {
+  const raw = process.env.CORS_ORIGINS;
+  if (raw) {
+    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  }
+  if (config.isProduction) {
+    return [config.appBaseUrl].filter(Boolean);
+  }
+  return [
+    'http://localhost:3000',
+    'http://localhost:5173',
+    'http://127.0.0.1:3000',
+    'http://127.0.0.1:5173',
+    config.appBaseUrl,
+  ].filter(Boolean);
+}
+
+config.corsOrigins = parseCorsOrigins();

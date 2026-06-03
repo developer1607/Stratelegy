@@ -1,0 +1,97 @@
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { pbxApi } from '@/api/pbx';
+import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
+import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
+import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
+import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
+
+export default function PBXPhoneNumbers() {
+  return (
+    <PbxShell title="Phone Numbers" description="PBX and inventory phone numbers for the selected domain">
+      {({ domain }) => <PhoneNumbersContent domain={domain} />}
+    </PbxShell>
+  );
+}
+
+function PhoneNumbersContent({ domain }) {
+  const [search, setSearch] = useState('');
+  const [scope, setScope] = useState('domain');
+  const [statusFilter, setStatusFilter] = useState('all');
+
+  const { data = [], isLoading, error } = useQuery({
+    queryKey: ['pbx-phone-numbers', domain, scope],
+    queryFn: () =>
+      scope === 'inventory'
+        ? pbxApi.phoneNumbers(undefined, 'inventory')
+        : pbxApi.phoneNumbers(domain),
+    enabled: scope === 'inventory' || !!domain,
+  });
+
+  const rows = useMemo(() => {
+    const list = (Array.isArray(data) ? data : []).map((item) => {
+      if (typeof item === 'string') return { phone_number: item };
+      return {
+        phone_number: item.phone_number || item.number || item.did || JSON.stringify(item),
+        description: item.description || item.notes || item.type,
+        status: item.status || item.routing_status,
+      };
+    });
+
+    const statusOptions = uniqueFieldValues(list, 'status');
+
+    const filtered = list.filter((row) => {
+      if (!matchSearch(row, search, ['phone_number', 'description', 'status'])) return false;
+      return matchSelect(row.status, statusFilter);
+    });
+
+    return { rows: filtered, statusOptions };
+  }, [data, search, statusFilter]);
+
+  const { rows: filteredRows, statusOptions } = rows;
+
+  if (scope !== 'inventory' && !domain) return <PbxLoading />;
+  if (isLoading) return <PbxLoading />;
+  if (error) return <PbxError error={error} />;
+
+  return (
+    <div className="space-y-4">
+      <PbxListToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search phone numbers…">
+        {statusOptions.length > 0 && (
+          <PbxFilterSelect
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            options={statusOptions}
+            allLabel="All statuses"
+          />
+        )}
+        <div className="flex rounded-lg border overflow-hidden text-sm">
+          <button
+            type="button"
+            className={`px-3 py-1.5 ${scope === 'domain' ? 'bg-[#F07020] text-white' : 'bg-white text-gray-700'}`}
+            onClick={() => setScope('domain')}
+          >
+            Domain
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-1.5 ${scope === 'inventory' ? 'bg-[#F07020] text-white' : 'bg-white text-gray-700'}`}
+            onClick={() => setScope('inventory')}
+          >
+            Account inventory
+          </button>
+        </div>
+      </PbxListToolbar>
+
+      <PbxDataTable
+        columns={[
+          { key: 'phone_number', label: 'Phone number' },
+          { key: 'description', label: 'Description' },
+          { key: 'status', label: 'Status' },
+        ]}
+        rows={filteredRows}
+        emptyMessage={scope === 'inventory' ? 'No inventory phone numbers found.' : 'No phone numbers for this domain.'}
+      />
+    </div>
+  );
+}

@@ -1,0 +1,26 @@
+import * as React from 'react';
+
+export const Sidebar: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarContent: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarFooter: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarGroup: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarGroupAction: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarGroupContent: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarGroupLabel: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarHeader: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarInput: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarInset: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenu: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuAction: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuBadge: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuButton: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuItem: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuSkeleton: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuSub: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuSubButton: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarMenuSubItem: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarProvider: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarRail: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarSeparator: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export const SidebarTrigger: React.ForwardRefExoticComponent<React.PropsWithChildren<Record<string, unknown>> & React.RefAttributes<HTMLElement>>;
+export function useSidebar(): Record<string, unknown>;
