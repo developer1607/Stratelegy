@@ -3,9 +3,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-export default function EditContactDialog({ open, onOpenChange, contact, onSubmit, isLoading, readOnly = false }) {
+export default function EditContactDialog({
+  open,
+  onOpenChange,
+  contact,
+  onSubmit,
+  isLoading,
+  readOnly = false,
+}) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -18,7 +31,7 @@ export default function EditContactDialog({ open, onOpenChange, contact, onSubmi
     source: 'email',
     engagement_level: 'Medium',
     company_size: '',
-    last_activity_date: ''
+    last_activity_date: '',
   });
 
   useEffect(() => {
@@ -35,7 +48,7 @@ export default function EditContactDialog({ open, onOpenChange, contact, onSubmi
         source: contact.source || 'email',
         engagement_level: contact.engagement_level || 'Medium',
         company_size: contact.company_size || '',
-        last_activity_date: contact.last_activity_date || ''
+        last_activity_date: contact.last_activity_date || '',
       });
     }
   }, [contact]);
@@ -107,7 +120,11 @@ export default function EditContactDialog({ open, onOpenChange, contact, onSubmi
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Status</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })} disabled={readOnly}>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                disabled={readOnly}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -119,7 +136,11 @@ export default function EditContactDialog({ open, onOpenChange, contact, onSubmi
             </div>
             <div>
               <Label>Source</Label>
-              <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })} disabled={readOnly}>
+              <Select
+                value={formData.source}
+                onValueChange={(value) => setFormData({ ...formData, source: value })}
+                disabled={readOnly}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

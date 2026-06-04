@@ -59,7 +59,10 @@ export function describeReportFields(fields) {
   return entries
     .map(([name, rule]) => {
       const required = String(rule).includes('required');
-      const type = String(rule).split('|').find((p) => !['required', 'sometimes'].includes(p)) || 'string';
+      const type =
+        String(rule)
+          .split('|')
+          .find((p) => !['required', 'sometimes'].includes(p)) || 'string';
       return `${name}${required ? ' *' : ''} (${type})`;
     })
     .join(', ');

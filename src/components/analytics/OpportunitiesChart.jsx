@@ -1,35 +1,59 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 
 export default function OpportunitiesChart({ opportunities = [] }) {
   const data = React.useMemo(() => {
     const monthlyData = {};
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    
-    opportunities.forEach(opp => {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+
+    opportunities.forEach((opp) => {
       const date = new Date(opp.created_date || opp.close_date || new Date());
       const monthKey = months[date.getMonth()];
-      
+
       if (!monthlyData[monthKey]) {
         monthlyData[monthKey] = { month: monthKey, amount: 0, weighted: 0, count: 0 };
       }
-      
+
       monthlyData[monthKey].amount += opp.amount || 0;
-      monthlyData[monthKey].weighted += (opp.amount || 0) * (opp.probability || 50) / 100;
+      monthlyData[monthKey].weighted += ((opp.amount || 0) * (opp.probability || 50)) / 100;
       monthlyData[monthKey].count += 1;
     });
-    
-    return months.map(month => monthlyData[month] || { month, amount: 0, weighted: 0, count: 0 });
+
+    return months.map((month) => monthlyData[month] || { month, amount: 0, weighted: 0, count: 0 });
   }, [opportunities]);
 
   const totals = React.useMemo(() => {
     const totalAmount = opportunities.reduce((sum, o) => sum + (o.amount || 0), 0);
-    const totalWeighted = opportunities.reduce((sum, o) => sum + ((o.amount || 0) * (o.probability || 50) / 100), 0);
-    const weightedPercent = totalAmount > 0 ? (totalWeighted / totalAmount * 100) : 0;
-    
+    const totalWeighted = opportunities.reduce(
+      (sum, o) => sum + ((o.amount || 0) * (o.probability || 50)) / 100,
+      0
+    );
+    const weightedPercent = totalAmount > 0 ? (totalWeighted / totalAmount) * 100 : 0;
+
     return {
       amount: totalAmount,
       weighted: weightedPercent,
@@ -65,8 +89,20 @@ export default function OpportunitiesChart({ opportunities = [] }) {
             <XAxis dataKey="month" stroke="#888" />
             <YAxis stroke="#888" />
             <Tooltip />
-            <Line type="monotone" dataKey="amount" stroke="#3b82f6" strokeWidth={2} dot={{ r: 4 }} />
-            <Line type="monotone" dataKey="weighted" stroke="#f97316" strokeWidth={2} dot={{ r: 4 }} />
+            <Line
+              type="monotone"
+              dataKey="amount"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="weighted"
+              stroke="#f97316"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+            />
             <Line type="monotone" dataKey="count" stroke="#06b6d4" strokeWidth={2} dot={{ r: 4 }} />
           </LineChart>
         </ResponsiveContainer>

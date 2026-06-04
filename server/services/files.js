@@ -48,7 +48,8 @@ function parseCsv(text) {
     headers.forEach((h, i) => {
       row[h] = values[i] || '';
     });
-    const name = row.name || row.full_name || `${row.first_name || ''} ${row.last_name || ''}`.trim();
+    const name =
+      row.name || row.full_name || `${row.first_name || ''} ${row.last_name || ''}`.trim();
     return {
       name,
       email: row.email || row.email_address || '',

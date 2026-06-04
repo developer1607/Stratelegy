@@ -2,7 +2,13 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Globe, Loader2 } from 'lucide-react';
 
@@ -16,7 +22,9 @@ export default function PbxDomainBar({ currentPageName }) {
         <Globe className="h-3.5 w-3.5" />
         Selected domain
       </div>
-      <p className="text-[10px] text-white/50 sm:hidden -mt-2">Your portal choice — not from SkySwitch</p>
+      <p className="text-[10px] text-white/50 sm:hidden -mt-2">
+        Your portal choice — not from SkySwitch
+      </p>
 
       <div className="flex flex-1 flex-col sm:flex-row sm:items-center gap-2 min-w-0">
         {isLoading ? (

@@ -11,14 +11,14 @@ export default function LeadSourceChart({ leads = [], opportunities = [] }) {
       website: '#06b6d4',
       partner: '#eab308',
     };
-    
-    [...leads, ...opportunities].forEach(item => {
+
+    [...leads, ...opportunities].forEach((item) => {
       const source = item.source || 'email';
       sources[source] = (sources[source] || 0) + 1;
     });
-    
+
     const total = Object.values(sources).reduce((sum, val) => sum + val, 0) || 1;
-    
+
     return Object.entries(sources).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
       value: Math.round((value / total) * 100),

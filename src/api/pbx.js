@@ -33,20 +33,24 @@ export const pbxApi = {
   e911States: () => pbxGet('/e911/states'),
   e911Detail: (phoneNumber) => pbxGet(`/e911/${encodeURIComponent(phoneNumber)}`),
   validateE911Address: (query) => pbxGet('/e911/validate/address', query),
-  provisionE911: (phoneNumber, body) => pbxRequest('PUT', `/e911/${encodeURIComponent(phoneNumber)}`, body),
-  unprovisionE911: (phoneNumber) => pbxRequest('DELETE', `/e911/${encodeURIComponent(phoneNumber)}`),
+  provisionE911: (phoneNumber, body) =>
+    pbxRequest('PUT', `/e911/${encodeURIComponent(phoneNumber)}`, body),
+  unprovisionE911: (phoneNumber) =>
+    pbxRequest('DELETE', `/e911/${encodeURIComponent(phoneNumber)}`),
   trunkGroups: () => pbxGet('/trunk-groups'),
   sipAlg: (domain) => pbxGet('/sip-alg', { domain }),
   callRouting: (domain) => pbxGet('/call-routing', { domain }),
   getRoute: (phoneNumber) => pbxGet(`/routes/${encodeURIComponent(phoneNumber)}`),
-  setRoute: (phoneNumber, body) => pbxRequest('PUT', `/routes/${encodeURIComponent(phoneNumber)}`, body),
+  setRoute: (phoneNumber, body) =>
+    pbxRequest('PUT', `/routes/${encodeURIComponent(phoneNumber)}`, body),
   deleteRoute: (phoneNumber) => pbxRequest('DELETE', `/routes/${encodeURIComponent(phoneNumber)}`),
   routeByAni: (domain, ani, dnis) => pbxGet('/route-by-ani', { domain, ani, dnis }),
   provisionRouteByAni: (query) => pbxRequest('PUT', '/route-by-ani', undefined, query),
   deleteRouteByAni: (query) => pbxRequest('DELETE', '/route-by-ani', undefined, query),
   makeCall: (body) => pbxRequest('POST', '/make-call', body),
   provisionHubUser: (body) => pbxRequest('PUT', '/messaging/hubusers', body),
-  unprovisionHubUser: (userId) => pbxRequest('DELETE', `/messaging/hubusers/${encodeURIComponent(userId)}`),
+  unprovisionHubUser: (userId) =>
+    pbxRequest('DELETE', `/messaging/hubusers/${encodeURIComponent(userId)}`),
   voicemail: (domain) => pbxGet('/voicemail', { domain }),
   autoAttendants: (domain) => pbxGet('/auto-attendants', { domain }),
   callQueues: (domain) => pbxGet('/call-queues', { domain }),

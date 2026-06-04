@@ -35,9 +35,9 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
             email: { type: 'string' },
             phone: { type: 'string' },
             company: { type: 'string' },
-            position: { type: 'string' }
-          }
-        }
+            position: { type: 'string' },
+          },
+        },
       });
 
       if (result.status === 'success' && result.output) {
@@ -45,7 +45,10 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
         onOpenChange(false);
         setFile(null);
       } else {
-        showError(null, 'Failed to extract contact information from the business card. Please try again or enter manually.');
+        showError(
+          null,
+          'Failed to extract contact information from the business card. Please try again or enter manually.'
+        );
       }
     } catch (error) {
       console.error('Error scanning business card:', error);
@@ -73,11 +76,7 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
               onChange={handleFileChange}
               className="max-w-xs mx-auto"
             />
-            {file && (
-              <p className="text-sm text-green-600 mt-2">
-                Selected: {file.name}
-              </p>
-            )}
+            {file && <p className="text-sm text-green-600 mt-2">Selected: {file.name}</p>}
           </div>
 
           <div className="flex justify-end gap-3">

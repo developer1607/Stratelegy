@@ -20,10 +20,7 @@ export default function CommandPalette({ canAccessPage, isAdmin }) {
     [canAccessPage, isAdmin]
   );
 
-  const filteredGroups = useMemo(
-    () => filterCommandPaletteGroups(groups, query),
-    [groups, query]
-  );
+  const filteredGroups = useMemo(() => filterCommandPaletteGroups(groups, query), [groups, query]);
 
   const hasResults = filteredGroups.some((group) => group.items.length > 0);
 

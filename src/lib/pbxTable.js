@@ -89,9 +89,7 @@ const COLUMN_LABELS = {
 function humanizeLabel(key) {
   if (COLUMN_LABELS[key]) return COLUMN_LABELS[key];
   const leaf = key.includes('.') ? key.split('.').pop() : key;
-  return leaf
-    .replace(/_/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
+  return leaf.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 export function formatPbxCell(value) {

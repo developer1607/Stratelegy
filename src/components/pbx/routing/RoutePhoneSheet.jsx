@@ -25,7 +25,11 @@ export default function RoutePhoneSheet({
 }) {
   const [form, setForm] = useState(() => mapRouteToForm(initialData, domain));
 
-  const { data: routeData, isLoading, isFetching } = useQuery({
+  const {
+    data: routeData,
+    isLoading,
+    isFetching,
+  } = useQuery({
     queryKey: ['pbx-route', phoneNumber],
     queryFn: () => pbxApi.getRoute(phoneNumber),
     enabled: open && !!phoneNumber,
@@ -52,7 +56,8 @@ export default function RoutePhoneSheet({
     onError: (err) => toast.error(err.message || 'Failed to update route'),
   });
 
-  const loadingExisting = open && !!phoneNumber && (isLoading || isFetching) && !routeData && !initialData;
+  const loadingExisting =
+    open && !!phoneNumber && (isLoading || isFetching) && !routeData && !initialData;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -65,7 +70,9 @@ export default function RoutePhoneSheet({
         >
           <SheetHeader>
             <SheetTitle>Edit route</SheetTitle>
-            <SheetDescription>Current routing for {phoneNumber}. Update fields and save.</SheetDescription>
+            <SheetDescription>
+              Current routing for {phoneNumber}. Update fields and save.
+            </SheetDescription>
           </SheetHeader>
 
           {loadingExisting ? (
@@ -76,12 +83,38 @@ export default function RoutePhoneSheet({
           ) : (
             <div className="grid gap-3 py-6">
               <PbxFormField label="Phone number" value={phoneNumber} readOnly />
-              <PbxFormField label="Type" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} />
-              <PbxFormField label="Domain" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} />
-              <PbxFormField label="Subscriber" value={form.subscriber} onChange={(e) => setForm({ ...form, subscriber: e.target.value })} placeholder="100@domain.service" />
-              <PbxFormField label="Treatment" value={form.treatment} onChange={(e) => setForm({ ...form, treatment: e.target.value })} />
-              <PbxFormField label="Enabled" value={form.enable} onChange={(e) => setForm({ ...form, enable: e.target.value })} placeholder="yes / no" />
-              <PbxFormField label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+              <PbxFormField
+                label="Type"
+                value={form.type}
+                onChange={(e) => setForm({ ...form, type: e.target.value })}
+              />
+              <PbxFormField
+                label="Domain"
+                value={form.domain}
+                onChange={(e) => setForm({ ...form, domain: e.target.value })}
+              />
+              <PbxFormField
+                label="Subscriber"
+                value={form.subscriber}
+                onChange={(e) => setForm({ ...form, subscriber: e.target.value })}
+                placeholder="100@domain.service"
+              />
+              <PbxFormField
+                label="Treatment"
+                value={form.treatment}
+                onChange={(e) => setForm({ ...form, treatment: e.target.value })}
+              />
+              <PbxFormField
+                label="Enabled"
+                value={form.enable}
+                onChange={(e) => setForm({ ...form, enable: e.target.value })}
+                placeholder="yes / no"
+              />
+              <PbxFormField
+                label="Notes"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+              />
             </div>
           )}
 

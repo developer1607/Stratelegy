@@ -22,13 +22,20 @@ export default class ErrorBoundary extends React.Component {
           <div className="max-w-md text-center space-y-4">
             <h1 className="text-xl font-semibold text-gray-900">Something went wrong</h1>
             <p className="text-sm text-gray-600">
-              This page encountered an unexpected error. Refresh the page or return to the dashboard.
+              This page encountered an unexpected error. Refresh the page or return to the
+              dashboard.
             </p>
             <div className="flex flex-wrap justify-center gap-2">
               <Button type="button" onClick={() => window.location.reload()}>
                 Refresh page
               </Button>
-              <Button type="button" variant="outline" onClick={() => { window.location.href = '/'; }}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+              >
                 Go to dashboard
               </Button>
             </div>

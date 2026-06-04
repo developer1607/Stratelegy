@@ -32,7 +32,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
     try {
       setUploading(true);
       const { file_url } = await api.integrations.Core.UploadFile({ file });
-      
+
       setUploading(false);
       setExtracting(true);
 
@@ -46,26 +46,28 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
             phone: { type: 'string' },
             company: { type: 'string' },
             position: { type: 'string' },
-            source: { type: 'string' }
-          }
-        }
+            source: { type: 'string' },
+          },
+        },
       };
 
       const extractResult = await api.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
-        json_schema: jsonSchema
+        json_schema: jsonSchema,
       });
 
       setExtracting(false);
 
       if (extractResult.status === 'success' && extractResult.output) {
-        const contacts = Array.isArray(extractResult.output) ? extractResult.output : [extractResult.output];
-        
-        const validContacts = contacts.filter(c => c.name && c.email);
-        
+        const contacts = Array.isArray(extractResult.output)
+          ? extractResult.output
+          : [extractResult.output];
+
+        const validContacts = contacts.filter((c) => c.name && c.email);
+
         if (validContacts.length > 0) {
           await api.entities.Contact.bulkCreate(
-            validContacts.map(c => ({
+            validContacts.map((c) => ({
               name: c.name,
               email: c.email,
               phone: c.phone || '',
@@ -73,14 +75,14 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
               position: c.position || '',
               source: c.source || 'email',
               priority: 'Standard',
-              status: 'active'
+              status: 'active',
             }))
           );
 
           setResult({
             success: true,
             count: validContacts.length,
-            message: `Successfully imported ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}`
+            message: `Successfully imported ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}`,
           });
 
           setTimeout(() => {
@@ -92,20 +94,20 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
         } else {
           setResult({
             success: false,
-            message: 'No valid contacts found. Make sure your file has name and email columns.'
+            message: 'No valid contacts found. Make sure your file has name and email columns.',
           });
         }
       } else {
         setResult({
           success: false,
-          message: extractResult.details || 'Failed to extract contacts from file'
+          message: extractResult.details || 'Failed to extract contacts from file',
         });
       }
     } catch {
       setExtracting(false);
       setResult({
         success: false,
-        message: 'Failed to import contacts. Please try again.'
+        message: 'Failed to import contacts. Please try again.',
       });
     }
   };
@@ -123,9 +125,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Import Contacts</DialogTitle>
-          <DialogDescription>
-            Upload a CSV or Excel file with contact information
-          </DialogDescription>
+          <DialogDescription>Upload a CSV or Excel file with contact information</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -171,13 +171,17 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
               </div>
             </>
           ) : (
-            <div className={`flex items-center gap-3 p-4 rounded-lg ${result.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+            <div
+              className={`flex items-center gap-3 p-4 rounded-lg ${result.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}
+            >
               {result.success ? (
                 <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
               ) : (
                 <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0" />
               )}
-              <p className={`text-sm font-medium ${result.success ? 'text-green-900' : 'text-red-900'}`}>
+              <p
+                className={`text-sm font-medium ${result.success ? 'text-green-900' : 'text-red-900'}`}
+              >
                 {result.message}
               </p>
             </div>
@@ -189,10 +193,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
             {result?.success ? 'Close' : 'Cancel'}
           </Button>
           {!result && (
-            <Button 
-              onClick={handleImport} 
-              disabled={!file || uploading || extracting}
-            >
+            <Button onClick={handleImport} disabled={!file || uploading || extracting}>
               {uploading ? 'Uploading...' : extracting ? 'Processing...' : 'Import'}
             </Button>
           )}

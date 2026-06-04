@@ -1,18 +1,26 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Filter, X, Save } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-export default function LeadFilters({ filters, onFilterChange, onClearFilters, savedViews, onSaveView }) {
+export default function LeadFilters({
+  filters,
+  onFilterChange,
+  onClearFilters,
+  savedViews,
+  onSaveView,
+}) {
   const [showFilters, setShowFilters] = React.useState(false);
 
-  const hasActiveFilters = Object.values(filters).some(v => v && v !== 'all');
+  const hasActiveFilters = Object.values(filters).some((v) => v && v !== 'all');
 
   return (
     <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
@@ -27,7 +35,10 @@ export default function LeadFilters({ filters, onFilterChange, onClearFilters, s
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium mb-2 block">Status</label>
-              <Select value={filters.status} onValueChange={(value) => onFilterChange('status', value)}>
+              <Select
+                value={filters.status}
+                onValueChange={(value) => onFilterChange('status', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
@@ -44,7 +55,10 @@ export default function LeadFilters({ filters, onFilterChange, onClearFilters, s
 
             <div>
               <label className="text-sm font-medium mb-2 block">Source</label>
-              <Select value={filters.source} onValueChange={(value) => onFilterChange('source', value)}>
+              <Select
+                value={filters.source}
+                onValueChange={(value) => onFilterChange('source', value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="All Sources" />
                 </SelectTrigger>
@@ -83,10 +97,14 @@ export default function LeadFilters({ filters, onFilterChange, onClearFilters, s
                 <X className="w-4 h-4 mr-2" />
                 Clear
               </Button>
-              <Button variant="outline" className="flex-1" onClick={() => {
-                const name = prompt('Enter view name:');
-                if (name) onSaveView(name);
-              }}>
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  const name = prompt('Enter view name:');
+                  if (name) onSaveView(name);
+                }}
+              >
                 <Save className="w-4 h-4 mr-2" />
                 Save View
               </Button>
@@ -96,20 +114,24 @@ export default function LeadFilters({ filters, onFilterChange, onClearFilters, s
       </Popover>
 
       {savedViews && savedViews.length > 0 && (
-        <Select onValueChange={(value) => {
-          const view = savedViews.find(v => v.name === value);
-          if (view) {
-            Object.keys(view.filters).forEach(key => {
-              onFilterChange(key, view.filters[key]);
-            });
-          }
-        }}>
+        <Select
+          onValueChange={(value) => {
+            const view = savedViews.find((v) => v.name === value);
+            if (view) {
+              Object.keys(view.filters).forEach((key) => {
+                onFilterChange(key, view.filters[key]);
+              });
+            }
+          }}
+        >
           <SelectTrigger className="w-full sm:w-48">
             <SelectValue placeholder="Saved Views" />
           </SelectTrigger>
           <SelectContent>
             {savedViews.map((view) => (
-              <SelectItem key={view.name} value={view.name}>{view.name}</SelectItem>
+              <SelectItem key={view.name} value={view.name}>
+                {view.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>

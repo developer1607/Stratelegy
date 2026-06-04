@@ -1,23 +1,39 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, FunnelChart, Funnel, LabelList } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  FunnelChart,
+  Funnel,
+  LabelList,
+} from 'recharts';
 
 export default function LeadsAnalytics({ leads }) {
   // Pipeline value by stage
   const pipelineData = React.useMemo(() => {
     const stages = ['new', 'contacted', 'qualified', 'won', 'lost'];
-    return stages.map(stage => ({
+    return stages.map((stage) => ({
       stage: stage.charAt(0).toUpperCase() + stage.slice(1),
-      value: leads.filter(l => l.status === stage).reduce((sum, l) => sum + (l.value || 0), 0)
+      value: leads.filter((l) => l.status === stage).reduce((sum, l) => sum + (l.value || 0), 0),
     }));
   }, [leads]);
 
   // Won vs Lost over time (simplified by creation date)
   const wonLostData = React.useMemo(() => {
     const grouped = {};
-    leads.forEach(lead => {
+    leads.forEach((lead) => {
       if (lead.status === 'won' || lead.status === 'lost') {
-        const month = new Date(lead.created_date).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+        const month = new Date(lead.created_date).toLocaleDateString('en-US', {
+          month: 'short',
+          year: 'numeric',
+        });
         if (!grouped[month]) grouped[month] = { month, won: 0, lost: 0 };
         grouped[month][lead.status]++;
       }
@@ -27,10 +43,12 @@ export default function LeadsAnalytics({ leads }) {
 
   // Conversion funnel
   const funnelData = React.useMemo(() => {
-    const newCount = leads.filter(l => l.status === 'new').length;
-    const contactedCount = leads.filter(l => ['contacted', 'qualified', 'won'].includes(l.status)).length;
-    const qualifiedCount = leads.filter(l => ['qualified', 'won'].includes(l.status)).length;
-    const wonCount = leads.filter(l => l.status === 'won').length;
+    const newCount = leads.filter((l) => l.status === 'new').length;
+    const contactedCount = leads.filter((l) =>
+      ['contacted', 'qualified', 'won'].includes(l.status)
+    ).length;
+    const qualifiedCount = leads.filter((l) => ['qualified', 'won'].includes(l.status)).length;
+    const wonCount = leads.filter((l) => l.status === 'won').length;
 
     return [
       { name: 'New Leads', value: newCount, fill: '#3b82f6' },
@@ -39,7 +57,6 @@ export default function LeadsAnalytics({ leads }) {
       { name: 'Won', value: wonCount, fill: '#22c55e' },
     ];
   }, [leads]);
-
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 mt-6">

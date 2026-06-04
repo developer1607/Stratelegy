@@ -4,7 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading, defaultType }) {
   const [formData, setFormData] = useState({
@@ -13,7 +19,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
     date: new Date().toISOString().slice(0, 16),
     related_to_type: '',
     related_to_id: '',
-    related_to_name: ''
+    related_to_name: '',
   });
 
   const handleSubmit = (e) => {
@@ -25,7 +31,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
       date: new Date().toISOString().slice(0, 16),
       related_to_type: '',
       related_to_id: '',
-      related_to_name: ''
+      related_to_name: '',
     });
   };
 
@@ -39,7 +45,10 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Activity Type *</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => setFormData({ ...formData, type: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -77,7 +86,10 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Related To (Type)</Label>
-              <Select value={formData.related_to_type} onValueChange={(value) => setFormData({ ...formData, related_to_type: value })}>
+              <Select
+                value={formData.related_to_type}
+                onValueChange={(value) => setFormData({ ...formData, related_to_type: value })}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>

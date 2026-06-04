@@ -99,7 +99,10 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
             </div>
             <div className="space-y-2">
               <Label htmlFor="stage">Stage</Label>
-              <Select value={formData.stage} onValueChange={(value) => setFormData({ ...formData, stage: value })}>
+              <Select
+                value={formData.stage}
+                onValueChange={(value) => setFormData({ ...formData, stage: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -125,7 +128,10 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
               </div>
               <div className="space-y-2">
                 <Label htmlFor="source">Source</Label>
-                <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+                <Select
+                  value={formData.source}
+                  onValueChange={(value) => setFormData({ ...formData, source: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

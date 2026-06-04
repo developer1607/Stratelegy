@@ -3,9 +3,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
-export default function EditAccountDialog({ open, onOpenChange, account, onSubmit, isLoading, readOnly = false }) {
+export default function EditAccountDialog({
+  open,
+  onOpenChange,
+  account,
+  onSubmit,
+  isLoading,
+  readOnly = false,
+}) {
   const [formData, setFormData] = useState({
     name: '',
     industry: '',
@@ -14,7 +27,7 @@ export default function EditAccountDialog({ open, onOpenChange, account, onSubmi
     email: '',
     annual_revenue: '',
     employees: '',
-    status: 'active'
+    status: 'active',
   });
 
   useEffect(() => {
@@ -27,7 +40,7 @@ export default function EditAccountDialog({ open, onOpenChange, account, onSubmi
         email: account.email || '',
         annual_revenue: account.annual_revenue || '',
         employees: account.employees || '',
-        status: account.status || 'active'
+        status: account.status || 'active',
       });
     }
   }, [account]);
@@ -35,11 +48,11 @@ export default function EditAccountDialog({ open, onOpenChange, account, onSubmi
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
-    
+
     const dataToSubmit = {
       ...formData,
       annual_revenue: formData.annual_revenue ? Number(formData.annual_revenue) : undefined,
-      employees: formData.employees ? Number(formData.employees) : undefined
+      employees: formData.employees ? Number(formData.employees) : undefined,
     };
     onSubmit(dataToSubmit);
   };
@@ -128,7 +141,11 @@ export default function EditAccountDialog({ open, onOpenChange, account, onSubmi
 
           <div>
             <Label>Status</Label>
-            <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })} disabled={readOnly}>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData({ ...formData, status: value })}
+              disabled={readOnly}
+            >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

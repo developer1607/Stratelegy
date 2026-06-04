@@ -13,13 +13,7 @@ import {
   hasModuleMaster,
 } from '@shared/permissionRegistry.js';
 
-export {
-  PERMISSION_KEYS,
-  CRM_MODULE_KEYS,
-  SUPPORT_MODULE_KEYS,
-  PBX_MODULE_KEYS,
-  PBX_ACTION_KEYS,
-};
+export { PERMISSION_KEYS, CRM_MODULE_KEYS, SUPPORT_MODULE_KEYS, PBX_MODULE_KEYS, PBX_ACTION_KEYS };
 
 export function emptyPermissionFlags() {
   return Object.fromEntries(PERMISSION_KEYS.map((k) => [k, false]));

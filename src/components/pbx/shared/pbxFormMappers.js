@@ -36,11 +36,11 @@ export function buildE911ValidateQuery(form) {
 export function e911AddressFieldsComplete(form) {
   return Boolean(
     form.street_number?.trim() &&
-      form.street_name?.trim() &&
-      form.city?.trim() &&
-      form.state?.trim() &&
-      form.zip_code?.trim() &&
-      form.country?.trim()
+    form.street_name?.trim() &&
+    form.city?.trim() &&
+    form.state?.trim() &&
+    form.zip_code?.trim() &&
+    form.country?.trim()
   );
 }
 

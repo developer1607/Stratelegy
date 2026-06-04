@@ -1,9 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne, execute } from './query.js';
-import {
-  expandPermissionKeys,
-  PBX_READ_KEYS,
-} from '../constants/permissionRegistry.js';
+import { expandPermissionKeys, PBX_READ_KEYS } from '../constants/permissionRegistry.js';
 
 /** Portal roles aligned with sidebar modules (CRM, Support, PBX). */
 export const SEEDED_ROLES = [
@@ -90,7 +87,9 @@ async function retireObsoleteSystemRoles(activeSlugs) {
 
     await execute('DELETE FROM role_permissions WHERE role_id = ?', [row.id]);
     await execute('DELETE FROM roles WHERE id = ?', [row.id]);
-    console.log(`[db] Retired portal role: ${row.slug}${replacementSlug ? ` → ${replacementSlug}` : ''}`);
+    console.log(
+      `[db] Retired portal role: ${row.slug}${replacementSlug ? ` → ${replacementSlug}` : ''}`
+    );
   }
 }
 
@@ -116,10 +115,10 @@ export async function seedPortalRoles() {
 
     await execute('DELETE FROM role_permissions WHERE role_id = ?', [id]);
     for (const key of def.permissions) {
-      await execute(
-        `INSERT INTO role_permissions (role_id, permission_key) VALUES (?, ?)`,
-        [id, key]
-      );
+      await execute(`INSERT INTO role_permissions (role_id, permission_key) VALUES (?, ?)`, [
+        id,
+        key,
+      ]);
     }
   }
 

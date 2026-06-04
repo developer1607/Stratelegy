@@ -5,8 +5,20 @@ import { api } from '@/api/client';
 import { showError } from '@/lib/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, MessageSquare } from 'lucide-react';
@@ -42,7 +54,10 @@ export default function SupportTickets() {
   const [currentUser, setCurrentUser] = useState(null);
 
   useEffect(() => {
-    api.auth.me().then(setCurrentUser).catch(() => {});
+    api.auth
+      .me()
+      .then(setCurrentUser)
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -126,11 +141,17 @@ export default function SupportTickets() {
     const matchPriority = filterPriority === 'all' || t.priority === filterPriority;
     const matchCategory = filterCategory === 'all' || t.category === filterCategory;
     const matchDepartment = filterDepartment === 'all' || t.department === filterDepartment;
-    const matchAssignee =
-      filterAssignee === 'all' ||
-      assignee === filterAssignee;
+    const matchAssignee = filterAssignee === 'all' || assignee === filterAssignee;
     const matchUnassigned = !unassignedOnly || !t.assigned_to;
-    return matchSearch && matchStatus && matchPriority && matchCategory && matchDepartment && matchAssignee && matchUnassigned;
+    return (
+      matchSearch &&
+      matchStatus &&
+      matchPriority &&
+      matchCategory &&
+      matchDepartment &&
+      matchAssignee &&
+      matchUnassigned
+    );
   });
 
   return (
@@ -160,47 +181,67 @@ export default function SupportTickets() {
           />
         </div>
         <Select value={filterStatus} onValueChange={handleStatusFilter}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
             {TICKET_STATUSES.map((s) => (
-              <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterPriority} onValueChange={setFilterPriority}>
-          <SelectTrigger className="w-36"><SelectValue placeholder="Priority" /></SelectTrigger>
+          <SelectTrigger className="w-36">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All priorities</SelectItem>
             {TICKET_PRIORITIES.map((p) => (
-              <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+              <SelectItem key={p.value} value={p.value}>
+                {p.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Category" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Category" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
             {TICKET_CATEGORIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterDepartment} onValueChange={setFilterDepartment}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Department" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Department" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Departments</SelectItem>
             {TICKET_DEPARTMENTS.map((d) => (
-              <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+              <SelectItem key={d.value} value={d.value}>
+                {d.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
         <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-          <SelectTrigger className="w-44"><SelectValue placeholder="Assignee" /></SelectTrigger>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Assignee" />
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Assignees</SelectItem>
             {assigneeFilterOptions.map((name) => (
-              <SelectItem key={name} value={name}>{name}</SelectItem>
+              <SelectItem key={name} value={name}>
+                {name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -237,8 +278,12 @@ export default function SupportTickets() {
                 key={ticket.id}
                 className={`border-b border-border last:border-0 hover:bg-muted/20 transition-colors ${i % 2 === 0 ? '' : 'bg-muted/10'}`}
               >
-                <td className="px-4 py-3 font-medium text-foreground">#{ticket.ticket_number || '—'}</td>
-                <td className="px-4 py-3 font-medium text-foreground max-w-[200px] truncate">{ticket.title}</td>
+                <td className="px-4 py-3 font-medium text-foreground">
+                  #{ticket.ticket_number || '—'}
+                </td>
+                <td className="px-4 py-3 font-medium text-foreground max-w-[200px] truncate">
+                  {ticket.title}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground">
                   <div className="truncate max-w-[140px]">{ticket.requester || '—'}</div>
                   {ticket.requester_email && (
@@ -246,18 +291,28 @@ export default function SupportTickets() {
                   )}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[ticket.status] || 'bg-gray-100 text-gray-600'}`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap ${STATUS_COLORS[ticket.status] || 'bg-gray-100 text-gray-600'}`}
+                  >
                     {formatTicketLabel(ticket.status)}
                   </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[ticket.priority] || 'bg-gray-100 text-gray-600'}`}>
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[ticket.priority] || 'bg-gray-100 text-gray-600'}`}
+                  >
                     {ticket.priority}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatTicketLabel(ticket.category)}</td>
-                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">{formatTicketLabel(ticket.department)}</td>
-                <td className="px-4 py-3 text-muted-foreground capitalize">{ticket.source || '—'}</td>
+                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                  {formatTicketLabel(ticket.category)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
+                  {formatTicketLabel(ticket.department)}
+                </td>
+                <td className="px-4 py-3 text-muted-foreground capitalize">
+                  {ticket.source || '—'}
+                </td>
                 <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
                   {getTicketAssignee(ticket) || 'Unassigned'}
                 </td>
@@ -286,7 +341,9 @@ export default function SupportTickets() {
 
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>New Ticket</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>New Ticket</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label>Title *</Label>
@@ -321,22 +378,33 @@ export default function SupportTickets() {
                     }));
                   }}
                 >
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
                   <SelectContent>
                     {TICKET_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label>Department</Label>
-                <Select value={form.department || '_none'} onValueChange={(v) => setForm({ ...form, department: v === '_none' ? '' : v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select department" /></SelectTrigger>
+                <Select
+                  value={form.department || '_none'}
+                  onValueChange={(v) => setForm({ ...form, department: v === '_none' ? '' : v })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">—</SelectItem>
                     {TICKET_DEPARTMENTS.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -345,11 +413,18 @@ export default function SupportTickets() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <Label>Priority</Label>
-                <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <Select
+                  value={form.priority}
+                  onValueChange={(v) => setForm({ ...form, priority: v })}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {TICKET_PRIORITIES.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -357,10 +432,14 @@ export default function SupportTickets() {
               <div>
                 <Label>Source</Label>
                 <Select value={form.source} onValueChange={(v) => setForm({ ...form, source: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select source" /></SelectTrigger>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
                   <SelectContent>
                     {TICKET_SOURCES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -370,13 +449,19 @@ export default function SupportTickets() {
               <Label>Assignee</Label>
               <Select
                 value={form.assigned_to || '_unassigned'}
-                onValueChange={(v) => setForm({ ...form, assigned_to: v === '_unassigned' ? '' : v })}
+                onValueChange={(v) =>
+                  setForm({ ...form, assigned_to: v === '_unassigned' ? '' : v })
+                }
               >
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Unassigned" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="_unassigned">Unassigned</SelectItem>
                   {assigneeOptions.map((a) => (
-                    <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                    <SelectItem key={a.value} value={a.value}>
+                      {a.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -404,7 +489,9 @@ export default function SupportTickets() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setShowDialog(false)}>
+              Cancel
+            </Button>
             <Button
               onClick={() => createMutation.mutate(form)}
               disabled={!form.title || !form.category || createMutation.isPending}

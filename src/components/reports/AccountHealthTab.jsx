@@ -1,37 +1,64 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+} from 'recharts';
 import { differenceInDays, parseISO } from 'date-fns';
 
-export default function AccountHealthTab({ filteredAccounts, filteredActivities, filteredOpportunities }) {
+export default function AccountHealthTab({
+  filteredAccounts,
+  filteredActivities,
+  filteredOpportunities,
+}) {
   // Account Health Score
   const accountHealth = React.useMemo(() => {
-    return filteredAccounts.map(account => {
-      const accountActivities = filteredActivities.filter(a => a.related_to_id === account.id);
-      const accountOpps = filteredOpportunities.filter(o => o.account_name === account.name);
-      
+    return filteredAccounts.map((account) => {
+      const accountActivities = filteredActivities.filter((a) => a.related_to_id === account.id);
+      const accountOpps = filteredOpportunities.filter((o) => o.account_name === account.name);
+
       const lastActivity = accountActivities.sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       )[0];
-      const daysSinceActivity = lastActivity ? differenceInDays(new Date(), parseISO(lastActivity.date)) : 999;
-      
+      const daysSinceActivity = lastActivity
+        ? differenceInDays(new Date(), parseISO(lastActivity.date))
+        : 999;
+
       let health = 'Healthy';
-      if (daysSinceActivity > 60 || accountOpps.filter(o => o.stage === 'closed_lost').length > 0) {
+      if (
+        daysSinceActivity > 60 ||
+        accountOpps.filter((o) => o.stage === 'closed_lost').length > 0
+      ) {
         health = 'At Risk';
       } else if (daysSinceActivity > 30) {
         health = 'Needs Attention';
       }
-      
+
       return { ...account, health, daysSinceActivity };
     });
   }, [filteredAccounts, filteredActivities, filteredOpportunities]);
 
   // Health Distribution
   const healthDistribution = React.useMemo(() => {
-    const dist = { 'Healthy': 0, 'Needs Attention': 0, 'At Risk': 0 };
-    accountHealth.forEach(acc => {
+    const dist = { Healthy: 0, 'Needs Attention': 0, 'At Risk': 0 };
+    accountHealth.forEach((acc) => {
       dist[acc.health]++;
     });
     return Object.entries(dist).map(([name, value]) => ({ name, value }));
@@ -40,14 +67,14 @@ export default function AccountHealthTab({ filteredAccounts, filteredActivities,
   // Revenue by Account
   const revenueByAccount = React.useMemo(() => {
     return [...filteredAccounts]
-      .filter(acc => acc.annual_revenue)
+      .filter((acc) => acc.annual_revenue)
       .sort((a, b) => (b.annual_revenue || 0) - (a.annual_revenue || 0))
       .slice(0, 10)
-      .map(acc => ({ name: acc.name, revenue: acc.annual_revenue }));
+      .map((acc) => ({ name: acc.name, revenue: acc.annual_revenue }));
   }, [filteredAccounts]);
 
   // At Risk Accounts
-  const atRiskAccounts = accountHealth.filter(acc => acc.health === 'At Risk').slice(0, 20);
+  const atRiskAccounts = accountHealth.filter((acc) => acc.health === 'At Risk').slice(0, 20);
 
   const COLORS = ['#10b981', '#f59e0b', '#ef4444'];
 
@@ -117,13 +144,19 @@ export default function AccountHealthTab({ filteredAccounts, filteredActivities,
               <TableBody>
                 {atRiskAccounts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No at-risk accounts</TableCell>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No at-risk accounts
+                    </TableCell>
                   </TableRow>
                 ) : (
                   atRiskAccounts.map((account) => (
                     <TableRow key={account.id} className="bg-red-50">
                       <TableCell className="font-medium">{account.name}</TableCell>
-                      <TableCell>{account.daysSinceActivity === 999 ? 'Never' : `${account.daysSinceActivity}d ago`}</TableCell>
+                      <TableCell>
+                        {account.daysSinceActivity === 999
+                          ? 'Never'
+                          : `${account.daysSinceActivity}d ago`}
+                      </TableCell>
                       <TableCell>
                         <Badge className="bg-red-100 text-red-800">At Risk</Badge>
                       </TableCell>
@@ -160,7 +193,9 @@ export default function AccountHealthTab({ filteredAccounts, filteredActivities,
                 ))}
                 {filteredAccounts.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No accounts</TableCell>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No accounts
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>

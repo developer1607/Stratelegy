@@ -7,7 +7,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { AlertCircle, Download, Trash2 } from 'lucide-react';
 import ConfigListManager from '../components/settings/ConfigListManager';
 import PortalUsersPanel from '../components/settings/PortalUsersPanel';
@@ -66,7 +72,7 @@ export default function Settings() {
     if (defaultSettings?.id) {
       await updateSettingsMutation.mutateAsync({
         id: defaultSettings.id,
-        data: { [field]: value }
+        data: { [field]: value },
       });
     } else {
       await createSettingsMutation.mutateAsync({ [field]: value });
@@ -81,12 +87,24 @@ export default function Settings() {
 
     try {
       await Promise.all([
-        api.entities.Contact.list().then(items => Promise.all(items.map(i => api.entities.Contact.delete(i.id)))),
-        api.entities.Account.list().then(items => Promise.all(items.map(i => api.entities.Account.delete(i.id)))),
-        api.entities.Lead.list().then(items => Promise.all(items.map(i => api.entities.Lead.delete(i.id)))),
-        api.entities.Opportunity.list().then(items => Promise.all(items.map(i => api.entities.Opportunity.delete(i.id)))),
-        api.entities.Activity.list().then(items => Promise.all(items.map(i => api.entities.Activity.delete(i.id)))),
-        api.entities.CalendarEvent.list().then(items => Promise.all(items.map(i => api.entities.CalendarEvent.delete(i.id)))),
+        api.entities.Contact.list().then((items) =>
+          Promise.all(items.map((i) => api.entities.Contact.delete(i.id)))
+        ),
+        api.entities.Account.list().then((items) =>
+          Promise.all(items.map((i) => api.entities.Account.delete(i.id)))
+        ),
+        api.entities.Lead.list().then((items) =>
+          Promise.all(items.map((i) => api.entities.Lead.delete(i.id)))
+        ),
+        api.entities.Opportunity.list().then((items) =>
+          Promise.all(items.map((i) => api.entities.Opportunity.delete(i.id)))
+        ),
+        api.entities.Activity.list().then((items) =>
+          Promise.all(items.map((i) => api.entities.Activity.delete(i.id)))
+        ),
+        api.entities.CalendarEvent.list().then((items) =>
+          Promise.all(items.map((i) => api.entities.CalendarEvent.delete(i.id)))
+        ),
       ]);
 
       queryClient.invalidateQueries();
@@ -101,9 +119,13 @@ export default function Settings() {
     const data = await api.entities[entityName].list();
     const csv = [
       Object.keys(data[0] || {}).join(','),
-      ...data.map(row => Object.values(row).map(v => `"${v}"`).join(','))
+      ...data.map((row) =>
+        Object.values(row)
+          .map((v) => `"${v}"`)
+          .join(',')
+      ),
     ].join('\n');
-    
+
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -115,9 +137,12 @@ export default function Settings() {
 
   const downloadTemplate = (type) => {
     const templates = {
-      contacts: 'name,email,phone,company,position,source\nJohn Doe,john@example.com,+1234567890,Acme Inc,Sales Manager,email',
-      accounts: 'name,industry,website,phone,email,annual_revenue,employees,status\nAcme Inc,Technology,acme.com,+1234567890,info@acme.com,1000000,50,active',
-      leads: 'name,email,phone,company,status,source,value\nJane Smith,jane@example.com,+1234567890,Beta Corp,new,website,50000'
+      contacts:
+        'name,email,phone,company,position,source\nJohn Doe,john@example.com,+1234567890,Acme Inc,Sales Manager,email',
+      accounts:
+        'name,industry,website,phone,email,annual_revenue,employees,status\nAcme Inc,Technology,acme.com,+1234567890,info@acme.com,1000000,50,active',
+      leads:
+        'name,email,phone,company,status,source,value\nJane Smith,jane@example.com,+1234567890,Beta Corp,new,website,50000',
     };
 
     const csv = templates[type];
@@ -162,37 +187,97 @@ export default function Settings() {
               <ConfigListManager
                 title="Contact Sources"
                 items={contactSources}
-                onAdd={(data) => api.entities.ContactSource.create(data).then(() => queryClient.invalidateQueries({ queryKey: ['contactSources'] }))}
-                onUpdate={(id, data) => api.entities.ContactSource.update(id, data).then(() => queryClient.invalidateQueries({ queryKey: ['contactSources'] }))}
-                onDelete={(id) => api.entities.ContactSource.delete(id).then(() => queryClient.invalidateQueries({ queryKey: ['contactSources'] }))}
+                onAdd={(data) =>
+                  api.entities.ContactSource.create(data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['contactSources'] })
+                  )
+                }
+                onUpdate={(id, data) =>
+                  api.entities.ContactSource.update(id, data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['contactSources'] })
+                  )
+                }
+                onDelete={(id) =>
+                  api.entities.ContactSource.delete(id).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['contactSources'] })
+                  )
+                }
               />
               <ConfigListManager
                 title="Lead Stages"
                 items={leadStages}
-                onAdd={(data) => api.entities.LeadStage.create(data).then(() => queryClient.invalidateQueries({ queryKey: ['leadStages'] }))}
-                onUpdate={(id, data) => api.entities.LeadStage.update(id, data).then(() => queryClient.invalidateQueries({ queryKey: ['leadStages'] }))}
-                onDelete={(id) => api.entities.LeadStage.delete(id).then(() => queryClient.invalidateQueries({ queryKey: ['leadStages'] }))}
+                onAdd={(data) =>
+                  api.entities.LeadStage.create(data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['leadStages'] })
+                  )
+                }
+                onUpdate={(id, data) =>
+                  api.entities.LeadStage.update(id, data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['leadStages'] })
+                  )
+                }
+                onDelete={(id) =>
+                  api.entities.LeadStage.delete(id).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['leadStages'] })
+                  )
+                }
               />
               <ConfigListManager
                 title="Activity Types"
                 items={activityTypes}
-                onAdd={(data) => api.entities.ActivityType.create(data).then(() => queryClient.invalidateQueries({ queryKey: ['activityTypes'] }))}
-                onUpdate={(id, data) => api.entities.ActivityType.update(id, data).then(() => queryClient.invalidateQueries({ queryKey: ['activityTypes'] }))}
-                onDelete={(id) => api.entities.ActivityType.delete(id).then(() => queryClient.invalidateQueries({ queryKey: ['activityTypes'] }))}
+                onAdd={(data) =>
+                  api.entities.ActivityType.create(data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['activityTypes'] })
+                  )
+                }
+                onUpdate={(id, data) =>
+                  api.entities.ActivityType.update(id, data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['activityTypes'] })
+                  )
+                }
+                onDelete={(id) =>
+                  api.entities.ActivityType.delete(id).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['activityTypes'] })
+                  )
+                }
               />
               <ConfigListManager
                 title="Account Tiers"
                 items={accountTiers}
-                onAdd={(data) => api.entities.AccountTier.create(data).then(() => queryClient.invalidateQueries({ queryKey: ['accountTiers'] }))}
-                onUpdate={(id, data) => api.entities.AccountTier.update(id, data).then(() => queryClient.invalidateQueries({ queryKey: ['accountTiers'] }))}
-                onDelete={(id) => api.entities.AccountTier.delete(id).then(() => queryClient.invalidateQueries({ queryKey: ['accountTiers'] }))}
+                onAdd={(data) =>
+                  api.entities.AccountTier.create(data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['accountTiers'] })
+                  )
+                }
+                onUpdate={(id, data) =>
+                  api.entities.AccountTier.update(id, data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['accountTiers'] })
+                  )
+                }
+                onDelete={(id) =>
+                  api.entities.AccountTier.delete(id).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['accountTiers'] })
+                  )
+                }
               />
               <ConfigListManager
                 title="Industries"
                 items={industries}
-                onAdd={(data) => api.entities.Industry.create(data).then(() => queryClient.invalidateQueries({ queryKey: ['industries'] }))}
-                onUpdate={(id, data) => api.entities.Industry.update(id, data).then(() => queryClient.invalidateQueries({ queryKey: ['industries'] }))}
-                onDelete={(id) => api.entities.Industry.delete(id).then(() => queryClient.invalidateQueries({ queryKey: ['industries'] }))}
+                onAdd={(data) =>
+                  api.entities.Industry.create(data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['industries'] })
+                  )
+                }
+                onUpdate={(id, data) =>
+                  api.entities.Industry.update(id, data).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['industries'] })
+                  )
+                }
+                onDelete={(id) =>
+                  api.entities.Industry.delete(id).then(() =>
+                    queryClient.invalidateQueries({ queryKey: ['industries'] })
+                  )
+                }
               />
             </div>
           </TabsContent>
@@ -233,7 +318,9 @@ export default function Settings() {
                   <Input
                     type="number"
                     value={defaultSettings?.default_follow_up_days || 3}
-                    onChange={(e) => handleUpdateSettings('default_follow_up_days', parseInt(e.target.value))}
+                    onChange={(e) =>
+                      handleUpdateSettings('default_follow_up_days', parseInt(e.target.value))
+                    }
                   />
                 </div>
                 <div className="space-y-2">
@@ -281,15 +368,27 @@ export default function Settings() {
                 <CardDescription>Download CSV templates for bulk imports</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" onClick={() => downloadTemplate('contacts')} className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => downloadTemplate('contacts')}
+                  className="w-full sm:w-auto"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Download Contacts Template
                 </Button>
-                <Button variant="outline" onClick={() => downloadTemplate('accounts')} className="w-full sm:w-auto ml-0 sm:ml-2">
+                <Button
+                  variant="outline"
+                  onClick={() => downloadTemplate('accounts')}
+                  className="w-full sm:w-auto ml-0 sm:ml-2"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Download Accounts Template
                 </Button>
-                <Button variant="outline" onClick={() => downloadTemplate('leads')} className="w-full sm:w-auto ml-0 sm:ml-2">
+                <Button
+                  variant="outline"
+                  onClick={() => downloadTemplate('leads')}
+                  className="w-full sm:w-auto ml-0 sm:ml-2"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Download Leads Template
                 </Button>
@@ -302,19 +401,35 @@ export default function Settings() {
                 <CardDescription>Export your CRM data to CSV</CardDescription>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" onClick={() => exportData('Contact')} className="w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={() => exportData('Contact')}
+                  className="w-full sm:w-auto"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Export Contacts
                 </Button>
-                <Button variant="outline" onClick={() => exportData('Account')} className="w-full sm:w-auto ml-0 sm:ml-2">
+                <Button
+                  variant="outline"
+                  onClick={() => exportData('Account')}
+                  className="w-full sm:w-auto ml-0 sm:ml-2"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Export Accounts
                 </Button>
-                <Button variant="outline" onClick={() => exportData('Lead')} className="w-full sm:w-auto ml-0 sm:ml-2">
+                <Button
+                  variant="outline"
+                  onClick={() => exportData('Lead')}
+                  className="w-full sm:w-auto ml-0 sm:ml-2"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Export Leads
                 </Button>
-                <Button variant="outline" onClick={() => exportData('Activity')} className="w-full sm:w-auto ml-0 sm:ml-2">
+                <Button
+                  variant="outline"
+                  onClick={() => exportData('Activity')}
+                  className="w-full sm:w-auto ml-0 sm:ml-2"
+                >
                   <Download className="w-4 h-4 mr-2" />
                   Export Activities
                 </Button>

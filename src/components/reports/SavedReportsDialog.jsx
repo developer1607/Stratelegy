@@ -1,12 +1,24 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Save, Bookmark } from 'lucide-react';
 
-export default function SavedReportsDialog({ open, onOpenChange, currentFilters, onSaveReport, savedReports = [] }) {
+export default function SavedReportsDialog({
+  open,
+  onOpenChange,
+  currentFilters,
+  onSaveReport,
+  savedReports = [],
+}) {
   const [reportName, setReportName] = useState('');
   const [selectedColumns, setSelectedColumns] = useState({
     name: true,
@@ -19,7 +31,7 @@ export default function SavedReportsDialog({ open, onOpenChange, currentFilters,
 
   const handleSave = () => {
     if (!reportName.trim()) return;
-    
+
     onSaveReport({
       id: Date.now().toString(),
       name: reportName,
@@ -27,7 +39,7 @@ export default function SavedReportsDialog({ open, onOpenChange, currentFilters,
       columns: selectedColumns,
       createdAt: new Date().toISOString(),
     });
-    
+
     setReportName('');
     onOpenChange(false);
   };
@@ -74,7 +86,7 @@ export default function SavedReportsDialog({ open, onOpenChange, currentFilters,
                       id={key}
                       checked={selectedColumns[key]}
                       onCheckedChange={(checked) =>
-                        setSelectedColumns(prev => ({ ...prev, [key]: checked }))
+                        setSelectedColumns((prev) => ({ ...prev, [key]: checked }))
                       }
                     />
                     <label htmlFor={key} className="text-sm cursor-pointer">
@@ -87,8 +99,8 @@ export default function SavedReportsDialog({ open, onOpenChange, currentFilters,
 
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
               <p className="text-sm text-blue-800">
-                <strong>Current Filters:</strong> Date Range: {currentFilters.dateRange}, 
-                Stage: {currentFilters.stage}, Owner: {currentFilters.owner || 'All'}
+                <strong>Current Filters:</strong> Date Range: {currentFilters.dateRange}, Stage:{' '}
+                {currentFilters.stage}, Owner: {currentFilters.owner || 'All'}
               </p>
             </div>
           </div>
@@ -112,11 +124,7 @@ export default function SavedReportsDialog({ open, onOpenChange, currentFilters,
                         </p>
                       </div>
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleLoadReport(report)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => handleLoadReport(report)}>
                       Load
                     </Button>
                   </div>

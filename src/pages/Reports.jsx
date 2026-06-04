@@ -2,21 +2,16 @@ import React, { useState, useMemo } from 'react';
 import { api } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { 
-  Target, 
-  TrendingUp, 
-  TrendingDown,
-  Users
-} from 'lucide-react';
-import { 
-  startOfDay, 
-  startOfWeek, 
-  startOfMonth, 
+import { Target, TrendingUp, TrendingDown, Users } from 'lucide-react';
+import {
+  startOfDay,
+  startOfWeek,
+  startOfMonth,
   startOfYear,
   isWithinInterval,
   parseISO,
   differenceInDays,
-  subMonths
+  subMonths,
 } from 'date-fns';
 import GlobalFilters from '../components/reports/GlobalFilters';
 import ReportKPICard from '../components/reports/ReportKPICard';
@@ -73,7 +68,7 @@ export default function Reports() {
   // Get unique owners
   const owners = useMemo(() => {
     const ownerSet = new Set();
-    opportunities.forEach(opp => opp.owner && ownerSet.add(opp.owner));
+    opportunities.forEach((opp) => opp.owner && ownerSet.add(opp.owner));
     return Array.from(ownerSet);
   }, [opportunities]);
 
@@ -82,80 +77,103 @@ export default function Reports() {
     // Date range filtering
     let dateStart = new Date(0);
     const now = new Date();
-    
+
     if (filters.dateRange === 'today') dateStart = startOfDay(now);
     else if (filters.dateRange === 'thisWeek') dateStart = startOfWeek(now);
     else if (filters.dateRange === 'thisMonth') dateStart = startOfMonth(now);
     else if (filters.dateRange === 'quarter') dateStart = subMonths(now, 3);
     else if (filters.dateRange === 'ytd') dateStart = startOfYear(now);
-    
-    const filteredOpportunities = opportunities.filter(opp => {
-      const dateMatch = filters.dateRange === 'all' || 
-        (opp.created_date && isWithinInterval(parseISO(opp.created_date), { start: dateStart, end: now }));
+
+    const filteredOpportunities = opportunities.filter((opp) => {
+      const dateMatch =
+        filters.dateRange === 'all' ||
+        (opp.created_date &&
+          isWithinInterval(parseISO(opp.created_date), { start: dateStart, end: now }));
       const stageMatch = filters.stage === 'all' || opp.stage === filters.stage;
       const sourceMatch = filters.source === 'all' || opp.source === filters.source;
       const ownerMatch = filters.owner === 'all' || opp.owner === filters.owner;
-      
+
       let statusMatch = true;
-      if (filters.status === 'open') statusMatch = opp.stage !== 'closed_won' && opp.stage !== 'closed_lost';
+      if (filters.status === 'open')
+        statusMatch = opp.stage !== 'closed_won' && opp.stage !== 'closed_lost';
       else if (filters.status === 'won') statusMatch = opp.stage === 'closed_won';
       else if (filters.status === 'lost') statusMatch = opp.stage === 'closed_lost';
-      
+
       return dateMatch && stageMatch && sourceMatch && statusMatch && ownerMatch;
     });
 
-    const filteredLeads = leads.filter(lead => {
-      const dateMatch = filters.dateRange === 'all' || 
-        (lead.created_date && isWithinInterval(parseISO(lead.created_date), { start: dateStart, end: now }));
+    const filteredLeads = leads.filter((lead) => {
+      const dateMatch =
+        filters.dateRange === 'all' ||
+        (lead.created_date &&
+          isWithinInterval(parseISO(lead.created_date), { start: dateStart, end: now }));
       const sourceMatch = filters.source === 'all' || lead.source === filters.source;
       return dateMatch && sourceMatch;
     });
 
-    const filteredActivities = activities.filter(activity => {
-      const dateMatch = filters.dateRange === 'all' || 
-        (activity.date && isWithinInterval(parseISO(activity.date), { start: dateStart, end: now }));
+    const filteredActivities = activities.filter((activity) => {
+      const dateMatch =
+        filters.dateRange === 'all' ||
+        (activity.date &&
+          isWithinInterval(parseISO(activity.date), { start: dateStart, end: now }));
       return dateMatch;
     });
 
-    return { filteredOpportunities, filteredLeads, filteredActivities, filteredContacts: contacts, filteredAccounts: accounts };
+    return {
+      filteredOpportunities,
+      filteredLeads,
+      filteredActivities,
+      filteredContacts: contacts,
+      filteredAccounts: accounts,
+    };
   }, [opportunities, leads, activities, contacts, accounts, filters]);
 
   // KPI Calculations with sparkline data
   const kpis = useMemo(() => {
     const { filteredOpportunities, filteredLeads } = filteredData;
-    
+
     const totalLeads = filteredLeads.length;
-    const openLeads = filteredLeads.filter(l => l.status === 'new' || l.status === 'contacted').length;
-    
-    const wonDeals = filteredOpportunities.filter(o => o.stage === 'closed_won');
-    const lostDeals = filteredOpportunities.filter(o => o.stage === 'closed_lost');
-    const openDeals = filteredOpportunities.filter(o => o.stage !== 'closed_won' && o.stage !== 'closed_lost');
-    
+    const openLeads = filteredLeads.filter(
+      (l) => l.status === 'new' || l.status === 'contacted'
+    ).length;
+
+    const wonDeals = filteredOpportunities.filter((o) => o.stage === 'closed_won');
+    const lostDeals = filteredOpportunities.filter((o) => o.stage === 'closed_lost');
+    const openDeals = filteredOpportunities.filter(
+      (o) => o.stage !== 'closed_won' && o.stage !== 'closed_lost'
+    );
+
     const wonDealsCount = wonDeals.length;
     const wonDealsValue = wonDeals.reduce((sum, o) => sum + (o.amount || 0), 0);
-    
+
     const lostDealsCount = lostDeals.length;
     const lostDealsValue = lostDeals.reduce((sum, o) => sum + (o.amount || 0), 0);
-    
-    const conversionRate = wonDealsCount + lostDealsCount > 0
-      ? ((wonDealsCount / (wonDealsCount + lostDealsCount)) * 100).toFixed(1)
-      : 0;
-    
+
+    const conversionRate =
+      wonDealsCount + lostDealsCount > 0
+        ? ((wonDealsCount / (wonDealsCount + lostDealsCount)) * 100).toFixed(1)
+        : 0;
+
     const pipelineValue = openDeals.reduce((sum, o) => sum + (o.amount || 0), 0);
-    
+
     // Avg Sales Cycle
-    const avgSalesCycle = wonDeals.length > 0
-      ? Math.round(wonDeals.reduce((sum, deal) => {
-          if (deal.created_date && deal.close_date) {
-            return sum + differenceInDays(parseISO(deal.close_date), parseISO(deal.created_date));
-          }
-          return sum;
-        }, 0) / wonDeals.length)
-      : 0;
+    const avgSalesCycle =
+      wonDeals.length > 0
+        ? Math.round(
+            wonDeals.reduce((sum, deal) => {
+              if (deal.created_date && deal.close_date) {
+                return (
+                  sum + differenceInDays(parseISO(deal.close_date), parseISO(deal.created_date))
+                );
+              }
+              return sum;
+            }, 0) / wonDeals.length
+          )
+        : 0;
 
     // Sparkline data for last 6 months
     const generateSparkline = (_data) => {
-      return [65, 72, 68, 85, 78, 92].map(value => ({ value }));
+      return [65, 72, 68, 85, 78, 92].map((value) => ({ value }));
     };
 
     return {
@@ -184,26 +202,26 @@ export default function Reports() {
         owner: 'all',
       });
     } else {
-      setFilters(prev => ({ ...prev, [key]: value }));
+      setFilters((prev) => ({ ...prev, [key]: value }));
     }
   };
 
   const exportCSV = () => {
     const { filteredOpportunities } = filteredData;
     const headers = ['Deal Name', 'Account', 'Amount', 'Stage', 'Source', 'Owner', 'Close Date'];
-    const rows = filteredOpportunities.map(opp => [
+    const rows = filteredOpportunities.map((opp) => [
       opp.name || '',
       opp.account_name || '',
       opp.amount || 0,
       opp.stage || '',
       opp.source || '',
       opp.owner || '',
-      opp.close_date || ''
+      opp.close_date || '',
     ]);
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -219,34 +237,34 @@ export default function Reports() {
     try {
       const html2canvas = (await import('html2canvas')).default;
       const jsPDF = (await import('jspdf')).default;
-      
+
       const element = document.getElementById('reports-content');
       if (!element) return;
-      
+
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
         logging: false,
       });
-      
+
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const imgWidth = 210;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
+
       let heightLeft = imgHeight;
       let position = 0;
-      
+
       pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
       heightLeft -= 297;
-      
+
       while (heightLeft > 0) {
         position = heightLeft - imgHeight;
         pdf.addPage();
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= 297;
       }
-      
+
       pdf.save(`crm_reports_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('PDF export failed:', error);
@@ -328,53 +346,68 @@ export default function Reports() {
       {/* Tabs */}
       <Tabs defaultValue="sales" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto bg-white border">
-          <TabsTrigger value="sales" className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+          <TabsTrigger
+            value="sales"
+            className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+          >
             Sales Overview
           </TabsTrigger>
-          <TabsTrigger value="pipeline" className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+          <TabsTrigger
+            value="pipeline"
+            className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+          >
             Pipeline & Forecast
           </TabsTrigger>
-          <TabsTrigger value="activity" className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+          <TabsTrigger
+            value="activity"
+            className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+          >
             Activity & Productivity
           </TabsTrigger>
-          <TabsTrigger value="sources" className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+          <TabsTrigger
+            value="sources"
+            className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+          >
             Lead Sources
           </TabsTrigger>
-          <TabsTrigger value="accounts" className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700">
+          <TabsTrigger
+            value="accounts"
+            className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
+          >
             Account Health
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">
-          <SalesOverviewTab 
-            filteredOpportunities={filteredData.filteredOpportunities} 
+          <SalesOverviewTab
+            filteredOpportunities={filteredData.filteredOpportunities}
             filteredLeads={filteredData.filteredLeads}
           />
         </TabsContent>
 
         <TabsContent value="pipeline">
-          <PipelineForecastTab 
+          <PipelineForecastTab
             filteredOpportunities={filteredData.filteredOpportunities}
             filteredActivities={filteredData.filteredActivities}
           />
         </TabsContent>
 
         <TabsContent value="activity">
-          <ActivityProductivityTab 
+          <ActivityProductivityTab
             filteredActivities={filteredData.filteredActivities}
             filteredOpportunities={filteredData.filteredOpportunities}
           />
         </TabsContent>
 
         <TabsContent value="sources">
-          <LeadSourcesTab 
+          <LeadSourcesTab
             filteredLeads={filteredData.filteredLeads}
             filteredOpportunities={filteredData.filteredOpportunities}
           />
         </TabsContent>
 
         <TabsContent value="accounts">
-          <AccountHealthTab 
+          <AccountHealthTab
             filteredAccounts={filteredData.filteredAccounts}
             filteredActivities={filteredData.filteredActivities}
             filteredOpportunities={filteredData.filteredOpportunities}

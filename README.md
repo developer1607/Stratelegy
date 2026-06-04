@@ -12,12 +12,12 @@ Self-hosted **CRM + Support desk + PBX portal** with a unified single-server arc
 
 ### Portal modules
 
-| Module | Sidebar | Purpose |
-|--------|---------|---------|
-| **CRM** | Dashboard, Accounts, Contacts, Leads, Calendar, Activities, Reports | Sales pipeline and customer records |
-| **Support** | Dashboard, Tickets, Knowledge Base | Help desk tickets, comments, KB |
-| **PBX** | Dashboard, extensions, E911, troubleshooting, etc. | SkySwitch telephony screens (UI; API proxy planned) |
-| **Admin** | Portal Users, Settings | User/role management (admin only) |
+| Module      | Sidebar                                                             | Purpose                                             |
+| ----------- | ------------------------------------------------------------------- | --------------------------------------------------- |
+| **CRM**     | Dashboard, Accounts, Contacts, Leads, Calendar, Activities, Reports | Sales pipeline and customer records                 |
+| **Support** | Dashboard, Tickets, Knowledge Base                                  | Help desk tickets, comments, KB                     |
+| **PBX**     | Dashboard, extensions, E911, troubleshooting, etc.                  | SkySwitch telephony screens (UI; API proxy planned) |
+| **Admin**   | Portal Users, Settings                                              | User/role management (admin only)                   |
 
 Admins (`users.role = admin`) bypass all permission checks.
 
@@ -58,13 +58,13 @@ DEMO_USER_PASSWORD=Demo123!
 
 This **never runs in production** (`NODE_ENV=production`). Demo accounts are skipped if the email already exists.
 
-| Email | Portal role |
-|-------|-------------|
-| `crmuser@test.com` | CRM |
-| `supportuser@test.com` | Support |
+| Email                    | Portal role    |
+| ------------------------ | -------------- |
+| `crmuser@test.com`       | CRM            |
+| `supportuser@test.com`   | Support        |
 | `supportviewer@test.com` | Support Viewer |
-| `pbxuser@test.com` | PBX |
-| `fullportal@test.com` | Full Portal |
+| `pbxuser@test.com`       | PBX            |
+| `fullportal@test.com`    | Full Portal    |
 
 Use the password from `DEMO_USER_PASSWORD` (must meet the [password policy](#password-policy)).
 
@@ -82,13 +82,13 @@ Enforced on the server for: Profile password change, admin reset, create user, a
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Development server (API + Vite HMR) |
-| `npm run build` | Build frontend to `dist/` |
-| `npm start` | Production server (serves `dist/` + API) |
-| `npm run lint` | ESLint (project-wide) |
-| `npm run typecheck` | TypeScript check via `jsconfig.json` |
+| Command             | Description                              |
+| ------------------- | ---------------------------------------- |
+| `npm run dev`       | Development server (API + Vite HMR)      |
+| `npm run build`     | Build frontend to `dist/`                |
+| `npm start`         | Production server (serves `dist/` + API) |
+| `npm run lint`      | ESLint (project-wide)                    |
+| `npm run typecheck` | TypeScript check via `jsconfig.json`     |
 
 ## Production deployment
 
@@ -137,12 +137,12 @@ Set `PORT`, `JWT_SECRET`, `MYSQL_*`, `ADMIN_EMAIL`, and `ADMIN_PASSWORD` via env
 
 ## Database (MySQL)
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `MYSQL_HOST` | `localhost` | MySQL host |
-| `MYSQL_PORT` | `3306` | MySQL port |
-| `MYSQL_USER` | `root` | MySQL user |
-| `MYSQL_PASSWORD` | *(empty)* | MySQL password |
+| Variable         | Default      | Description                  |
+| ---------------- | ------------ | ---------------------------- |
+| `MYSQL_HOST`     | `localhost`  | MySQL host                   |
+| `MYSQL_PORT`     | `3306`       | MySQL port                   |
+| `MYSQL_USER`     | `root`       | MySQL user                   |
+| `MYSQL_PASSWORD` | _(empty)_    | MySQL password               |
 | `MYSQL_DATABASE` | `stratelegy` | Database name (auto-created) |
 
 On first startup the server:
@@ -162,12 +162,12 @@ Uploads are stored in `data/uploads/` (not in MySQL).
 
 All application data is stored in **typed MySQL tables** with server-side validation — not loose JSON blobs in `entity_records`.
 
-| Area | Tables |
-|------|--------|
-| Portal auth | `users`, `user_permissions`, `invites`, `roles`, `role_permissions` |
-| CRM | `accounts`, `contacts`, `leads`, `opportunities`, `activities`, `calendar_events` |
-| CRM config | `contact_sources`, `lead_stages`, `activity_types`, `account_tiers`, `industries`, `default_settings` |
-| Support | `tickets`, `ticket_comments`, `kb_articles` |
+| Area        | Tables                                                                                                |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| Portal auth | `users`, `user_permissions`, `invites`, `roles`, `role_permissions`                                   |
+| CRM         | `accounts`, `contacts`, `leads`, `opportunities`, `activities`, `calendar_events`                     |
+| CRM config  | `contact_sources`, `lead_stages`, `activity_types`, `account_tiers`, `industries`, `default_settings` |
+| Support     | `tickets`, `ticket_comments`, `kb_articles`                                                           |
 
 The entity registry lives in `server/db/entityDefinitions.js`. CRUD goes through `server/services/saasStore.js` (whitelist columns, type coercion, required-field checks). Tickets use `server/services/ticketStore.js` with dedicated validators in `server/validators/ticket.js`.
 
@@ -195,13 +195,13 @@ Granular permissions include per-screen navigation (e.g. `can_view_tickets_page`
 
 ### Seeded portal roles
 
-| Role | Typical use |
-|------|-------------|
-| **CRM** | Sales module — accounts, contacts, leads, calendar, activities, reports |
-| **Support** | Full ticket workflow: create, edit, assign, close, comment, manage KB |
-| **Support Viewer** | View tickets and KB; **comment only** |
-| **PBX** | All PBX navigation screens |
-| **Full Portal** | CRM + Support + PBX + export + ticket delete |
+| Role               | Typical use                                                             |
+| ------------------ | ----------------------------------------------------------------------- |
+| **CRM**            | Sales module — accounts, contacts, leads, calendar, activities, reports |
+| **Support**        | Full ticket workflow: create, edit, assign, close, comment, manage KB   |
+| **Support Viewer** | View tickets and KB; **comment only**                                   |
+| **PBX**            | All PBX navigation screens                                              |
+| **Full Portal**    | CRM + Support + PBX + export + ticket delete                            |
 
 Roles are defined in `server/db/seedRoles.js` and re-synced to `role_permissions` on every server start. Ticket routing (`departments`, `categories`) is configured on each portal user in **Portal Users**.
 
@@ -211,15 +211,15 @@ Roles are defined in `server/db/seedRoles.js` and re-synced to `role_permissions
 
 ### Ticket fields
 
-| Field | Notes |
-|-------|--------|
-| Status | open, in_progress, waiting_on_end_user, waiting_on_vendor, resolved, closed |
-| Priority | low, medium, high, urgent |
-| Category | new_order_request, port_request, report_a_problem, report_an_outage, sales_inquiry |
-| Department | billing, sales, support, number_porting_team |
-| Source | phone, email, web, chat, other |
-| Assignee | Agent email; filtered by department/category |
-| Requester | Name and email |
+| Field      | Notes                                                                              |
+| ---------- | ---------------------------------------------------------------------------------- |
+| Status     | open, in_progress, waiting_on_end_user, waiting_on_vendor, resolved, closed        |
+| Priority   | low, medium, high, urgent                                                          |
+| Category   | new_order_request, port_request, report_a_problem, report_an_outage, sales_inquiry |
+| Department | billing, sales, support, number_porting_team                                       |
+| Source     | phone, email, web, chat, other                                                     |
+| Assignee   | Agent email; filtered by department/category                                       |
+| Requester  | Name and email                                                                     |
 
 Changing **category** in the UI suggests a **department** (e.g. Port Request → Number Porting Team). Ticket detail edits require **Save changes** / **Save all changes**.
 
@@ -234,33 +234,33 @@ Changing **category** in the UI suggests a **department** (e.g. Port Request →
 
 ### Ticket permissions (examples)
 
-| Action | Permission key |
-|--------|----------------|
-| View ticket detail | `can_view_tickets` |
-| Create ticket | `can_create_tickets` |
-| Edit fields | `can_edit_tickets` |
-| Assign / reassign | `can_assign_tickets` |
-| Resolve / close | `can_close_tickets` |
-| Delete | `can_delete_tickets` |
+| Action                | Permission key        |
+| --------------------- | --------------------- |
+| View ticket detail    | `can_view_tickets`    |
+| Create ticket         | `can_create_tickets`  |
+| Edit fields           | `can_edit_tickets`    |
+| Assign / reassign     | `can_assign_tickets`  |
+| Resolve / close       | `can_close_tickets`   |
+| Delete                | `can_delete_tickets`  |
 | Reply / internal note | `can_comment_tickets` |
 
 ## API endpoints
 
-| Path | Purpose |
-|------|---------|
-| `/api/auth/*` | Login, session, profile, invite registration |
-| `/api/entities/*` | CRM & support entity CRUD (permission-checked) |
-| `/api/tickets/assignees` | Assignee roster for ticket UI (department/category filter) |
-| `/api/functions/*` | `getMyPermissions`, ticket number assignment, auto-assign |
-| `/api/roles` | List seeded portal roles with permissions (admin) |
-| `/api/permissions/definitions` | Permission groups for Portal Users UI (admin) |
-| `/api/integrations/*` | File upload & CSV extraction |
-| `/api/webhooks/email` | Inbound email → ticket creation |
-| `/api/users` | Create portal users (admin) |
-| `/api/users/:id/portal-role` | Assign portal role (admin) |
-| `/api/users/:id/permissions` | Custom permission overrides (admin) |
-| `/api/users/invite` | Portal user invitations (admin) |
-| `/api/realtime/*` | SSE subscriptions (e.g. permission updates) |
+| Path                           | Purpose                                                    |
+| ------------------------------ | ---------------------------------------------------------- |
+| `/api/auth/*`                  | Login, session, profile, invite registration               |
+| `/api/entities/*`              | CRM & support entity CRUD (permission-checked)             |
+| `/api/tickets/assignees`       | Assignee roster for ticket UI (department/category filter) |
+| `/api/functions/*`             | `getMyPermissions`, ticket number assignment, auto-assign  |
+| `/api/roles`                   | List seeded portal roles with permissions (admin)          |
+| `/api/permissions/definitions` | Permission groups for Portal Users UI (admin)              |
+| `/api/integrations/*`          | File upload & CSV extraction                               |
+| `/api/webhooks/email`          | Inbound email → ticket creation                            |
+| `/api/users`                   | Create portal users (admin)                                |
+| `/api/users/:id/portal-role`   | Assign portal role (admin)                                 |
+| `/api/users/:id/permissions`   | Custom permission overrides (admin)                        |
+| `/api/users/invite`            | Portal user invitations (admin)                            |
+| `/api/realtime/*`              | SSE subscriptions (e.g. permission updates)                |
 
 ### Entity storage
 
@@ -273,36 +273,38 @@ Changing **category** in the UI suggests a **department** (e.g. Port Request →
 
 ## Portal users vs SkySwitch
 
-| | Portal users | SkySwitch (PBX) |
-|---|--------------|-----------------|
-| **What** | People who log in to Stratelegy | Telephony extensions/endpoints in SkySwitch |
-| **Stored in** | MySQL `users` + `user_permissions` | SkySwitch cloud (via API) |
-| **Managed in** | Sidebar **Portal Users** (admin) | PBX screens (future: `/api/pbx/*` proxy) |
-| **Permissions** | CRM, Support, PBX *portal* module and action keys | N/A — API credentials on server only |
-| **Support assignees** | Support-role portal users (with routing fields on `users`) | N/A |
+|                       | Portal users                                               | SkySwitch (PBX)                             |
+| --------------------- | ---------------------------------------------------------- | ------------------------------------------- |
+| **What**              | People who log in to Stratelegy                            | Telephony extensions/endpoints in SkySwitch |
+| **Stored in**         | MySQL `users` + `user_permissions`                         | SkySwitch cloud (via API)                   |
+| **Managed in**        | Sidebar **Portal Users** (admin)                           | PBX screens (future: `/api/pbx/*` proxy)    |
+| **Permissions**       | CRM, Support, PBX _portal_ module and action keys          | N/A — API credentials on server only        |
+| **Support assignees** | Support-role portal users (with routing fields on `users`) | N/A                                         |
 
 ## Developer reference
 
-| Topic | Location |
-|-------|----------|
-| Permission definitions | `server/constants/permissionRegistry.js` |
-| Seeded roles | `server/db/seedRoles.js` |
-| Ticket validators | `server/validators/ticket.js` |
-| Ticket routing (category → department) | `server/constants/ticketRouting.js` |
-| Assignee service | `server/services/ticketAssignees.js` |
-| Demo user seeder (dev) | `server/db/seedDemoUsers.js` |
-| UI permission hooks | `src/hooks/usePermissions.jsx`, `src/components/PermissionGate.jsx` |
-| Ticket UI | `src/pages/SupportTickets.jsx`, `src/pages/SupportTicketDetail.jsx` |
+| Topic                                  | Location                                                            |
+| -------------------------------------- | ------------------------------------------------------------------- |
+| Permission definitions                 | `server/constants/permissionRegistry.js`                            |
+| Seeded roles                           | `server/db/seedRoles.js`                                            |
+| Ticket validators                      | `server/validators/ticket.js`                                       |
+| Ticket routing (category → department) | `server/constants/ticketRouting.js`                                 |
+| Assignee service                       | `server/services/ticketAssignees.js`                                |
+| Demo user seeder (dev)                 | `server/db/seedDemoUsers.js`                                        |
+| UI permission hooks                    | `src/hooks/usePermissions.jsx`, `src/components/PermissionGate.jsx` |
+| Ticket UI                              | `src/pages/SupportTickets.jsx`, `src/pages/SupportTicketDetail.jsx` |
 
 ## Features
 
 ### CRM
+
 - Accounts, contacts, leads, calendar, activities, reports
 - Configurable lead stages, activity types, account tiers, industries (Settings)
 - Dashboard metrics from MySQL leads/opportunities (manual entry / import; no external ERP sync)
 - CSV/PDF export (requires `can_export_data`)
 
 ### Support
+
 - Ticket list, detail, conversation thread, internal notes
 - Knowledge base articles
 - Email webhook → auto-create tickets
@@ -310,27 +312,29 @@ Changing **category** in the UI suggests a **department** (e.g. Port Request →
 - Role-gated ticket actions (create / edit / assign / close / delete / comment)
 
 ### Admin
+
 - Portal Users: invite, create, assign **portal role**, ticket routing, custom permission overrides
 - Settings: CRM defaults and data export
 
 ### PBX
+
 - Live SkySwitch Telco API integration via server-side `/api/pbx/*` proxy (OAuth credentials never sent to the browser)
 - Dashboard, extensions, endpoint control, E911, trunks, routing, voicemail, troubleshooting, and related screens
 - Requires `SKYSWITCH_*` env vars; portal PBX permissions still gate UI access
 
 #### SkySwitch env (`.env`)
 
-| Variable | Description |
-|----------|-------------|
-| `SKYSWITCH_ENABLED` | Set to `false` to disable PBX API calls |
-| `SKYSWITCH_API_URL` | Default `https://api.skyswitch.com` |
-| `SKYSWITCH_ACCOUNT_ID` | SkySwitch account UUID |
-| `SKYSWITCH_CLIENT_ID` | OAuth client ID |
-| `SKYSWITCH_CLIENT_SECRET` | OAuth client secret (server only) |
-| `SKYSWITCH_USERNAME` | API resource owner username |
-| `SKYSWITCH_PASSWORD` | API resource owner password |
+| Variable                   | Description                                    |
+| -------------------------- | ---------------------------------------------- |
+| `SKYSWITCH_ENABLED`        | Set to `false` to disable PBX API calls        |
+| `SKYSWITCH_API_URL`        | Default `https://api.skyswitch.com`            |
+| `SKYSWITCH_ACCOUNT_ID`     | SkySwitch account UUID                         |
+| `SKYSWITCH_CLIENT_ID`      | OAuth client ID                                |
+| `SKYSWITCH_CLIENT_SECRET`  | OAuth client secret (server only)              |
+| `SKYSWITCH_USERNAME`       | API resource owner username                    |
+| `SKYSWITCH_PASSWORD`       | API resource owner password                    |
 | `SKYSWITCH_DEFAULT_DOMAIN` | Optional default PBX domain when none selected |
-| `SKYSWITCH_SCOPE` | OAuth scope (default `*`) |
+| `SKYSWITCH_SCOPE`          | OAuth scope (default `*`)                      |
 
 Portal users still log in with Stratelegy credentials. SkySwitch credentials are used only by the Express server to proxy PBX data.
 
@@ -340,19 +344,19 @@ Portal users still log in with Stratelegy credentials. SkySwitch credentials are
 
 All outbound emails use **SMTP via nodemailer**. Templates live in `server/services/email/templates/`.
 
-| Variable | Description |
-|----------|-------------|
-| `MAIL_ENABLED` | Set to `true` to send real emails (default `false` — logs preview to console) |
-| `SMTP_HOST` | SMTP server hostname (e.g. `smtp.gmail.com`, `smtp.sendgrid.net`, Amazon SES endpoint) |
-| `SMTP_PORT` | Usually `587` (STARTTLS) or `465` (SSL — set `SMTP_SECURE=true`) |
-| `SMTP_SECURE` | `true` for port 465, `false` for 587 |
-| `SMTP_USER` | SMTP username / API key user |
-| `SMTP_PASS` | SMTP password or API key |
-| `SMTP_FROM` | From address, e.g. `"Stratelegy Insight <noreply@yourdomain.com>"` |
-| `SMTP_REPLY_TO` | Reply-to address (optional) |
-| `APP_NAME` | Brand name shown in email headers |
-| `APP_BASE_URL` | Public app URL for links in emails (required in production) |
-| `SUPPORT_EMAIL` | Shown in email footers |
+| Variable        | Description                                                                            |
+| --------------- | -------------------------------------------------------------------------------------- |
+| `MAIL_ENABLED`  | Set to `true` to send real emails (default `false` — logs preview to console)          |
+| `SMTP_HOST`     | SMTP server hostname (e.g. `smtp.gmail.com`, `smtp.sendgrid.net`, Amazon SES endpoint) |
+| `SMTP_PORT`     | Usually `587` (STARTTLS) or `465` (SSL — set `SMTP_SECURE=true`)                       |
+| `SMTP_SECURE`   | `true` for port 465, `false` for 587                                                   |
+| `SMTP_USER`     | SMTP username / API key user                                                           |
+| `SMTP_PASS`     | SMTP password or API key                                                               |
+| `SMTP_FROM`     | From address, e.g. `"Stratelegy Insight <noreply@yourdomain.com>"`                     |
+| `SMTP_REPLY_TO` | Reply-to address (optional)                                                            |
+| `APP_NAME`      | Brand name shown in email headers                                                      |
+| `APP_BASE_URL`  | Public app URL for links in emails (required in production)                            |
+| `SUPPORT_EMAIL` | Shown in email footers                                                                 |
 
 **Production example (`.env`):**
 
@@ -373,14 +377,14 @@ When `MAIL_ENABLED=false`, emails are **not sent** — the server logs the subje
 
 ### Email templates & when they send
 
-| Template | Trigger |
-|----------|---------|
-| `portal_invite` | Admin sends **Send invite link** (Portal Users) |
-| `portal_welcome` | Admin creates a portal user with password |
-| `ticket_created_requester` | Ticket created (portal, dashboard, or inbound webhook) — sent to `requester_email` |
-| `ticket_assigned` | Ticket auto-assigned or manually assigned — sent to assignee |
-| `ticket_updated` | Ticket status, priority, or assignee changes — sent to requester |
-| `ticket_comment` | New comment — sent to requester (public replies) and assignee (includes internal notes for assignee) |
+| Template                   | Trigger                                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `portal_invite`            | Admin sends **Send invite link** (Portal Users)                                                      |
+| `portal_welcome`           | Admin creates a portal user with password                                                            |
+| `ticket_created_requester` | Ticket created (portal, dashboard, or inbound webhook) — sent to `requester_email`                   |
+| `ticket_assigned`          | Ticket auto-assigned or manually assigned — sent to assignee                                         |
+| `ticket_updated`           | Ticket status, priority, or assignee changes — sent to requester                                     |
+| `ticket_comment`           | New comment — sent to requester (public replies) and assignee (includes internal notes for assignee) |
 
 Templates can be edited in `server/services/email/templates/index.js`. Shared HTML layout is in `server/services/email/templates/base.js`.
 
@@ -395,4 +399,5 @@ POST `/api/webhooks/email?secret=YOUR_SECRET` with JSON or form body containing 
 - **Sales target** on CRM dashboard is not yet configurable (hardcoded)
 - **Opportunities** entity exists; dedicated Opportunities page not wired in navigation
 - Custom portal roles cannot be created in UI yet — use seeded roles + per-user overrides
+
 # Stratelegy

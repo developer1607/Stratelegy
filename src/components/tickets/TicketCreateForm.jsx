@@ -20,7 +20,12 @@ import {
 /**
  * Shared new-ticket form — same fields and layout as SupportTickets "New Ticket" dialog.
  */
-export default function TicketCreateForm({ form, setForm, assigneeOptions = [], idPrefix = 'ticket' }) {
+export default function TicketCreateForm({
+  form,
+  setForm,
+  assigneeOptions = [],
+  idPrefix = 'ticket',
+}) {
   const field = (name) => `${idPrefix}-${name}`;
 
   return (

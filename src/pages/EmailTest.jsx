@@ -13,7 +13,10 @@ import { AlertCircle, CheckCircle2, Loader2, Mail, Send } from 'lucide-react';
 
 function StatusBadge({ ok, label }) {
   return (
-    <Badge variant={ok ? 'default' : 'secondary'} className={ok ? 'bg-green-600 hover:bg-green-600' : ''}>
+    <Badge
+      variant={ok ? 'default' : 'secondary'}
+      className={ok ? 'bg-green-600 hover:bg-green-600' : ''}
+    >
       {label}
     </Badge>
   );
@@ -30,9 +33,7 @@ function ErrorHints({ hints, detail }) {
           ))}
         </ul>
       )}
-      {detail && (
-        <p className="text-xs opacity-70 break-all">Server: {detail}</p>
-      )}
+      {detail && <p className="text-xs opacity-70 break-all">Server: {detail}</p>}
     </div>
   );
 }
@@ -48,7 +49,13 @@ function EmailTestContent() {
     if (user?.email) setRecipient((prev) => prev || user.email);
   }, [user?.email]);
 
-  const { data: status, isLoading, isError, error, refetch } = useQuery({
+  const {
+    data: status,
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['email-status'],
     queryFn: () => api.email.status(),
     enabled: isAdmin,
@@ -99,7 +106,9 @@ function EmailTestContent() {
           <CardTitle className="text-lg flex items-center gap-2">
             <Mail className="w-5 h-5" /> SMTP configuration
           </CardTitle>
-          <CardDescription>Values from server environment (password is never shown)</CardDescription>
+          <CardDescription>
+            Values from server environment (password is never shown)
+          </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {isLoading ? (
@@ -109,13 +118,22 @@ function EmailTestContent() {
           ) : isError ? (
             <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-900">
               <AlertCircle className="w-5 h-5 shrink-0" />
-              <span>{error?.message || 'Could not load email status. Restart the server after updating .env.'}</span>
+              <span>
+                {error?.message ||
+                  'Could not load email status. Restart the server after updating .env.'}
+              </span>
             </div>
           ) : status ? (
             <>
               <div className="flex flex-wrap gap-2">
-                <StatusBadge ok={status.enabled} label={status.enabled ? 'MAIL_ENABLED' : 'MAIL_DISABLED'} />
-                <StatusBadge ok={status.configured} label={status.configured ? 'Ready to send' : 'Not configured'} />
+                <StatusBadge
+                  ok={status.enabled}
+                  label={status.enabled ? 'MAIL_ENABLED' : 'MAIL_DISABLED'}
+                />
+                <StatusBadge
+                  ok={status.configured}
+                  label={status.configured ? 'Ready to send' : 'Not configured'}
+                />
               </div>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 <div>
@@ -158,20 +176,33 @@ function EmailTestContent() {
           <CardHeader>
             <CardTitle className="text-lg text-amber-950">Gmail / Google Workspace</CardTitle>
             <CardDescription className="text-amber-900/80">
-              Error 535 means Google rejected the password — normal account passwords do not work for SMTP.
+              Error 535 means Google rejected the password — normal account passwords do not work
+              for SMTP.
             </CardDescription>
           </CardHeader>
           <CardContent className="text-sm text-amber-950 space-y-2">
             <ol className="list-decimal pl-5 space-y-1">
-              <li>Sign in to the Google account for <strong>{status?.user || 'your SMTP user'}</strong>.</li>
-              <li>Enable <strong>2-Step Verification</strong> on that account.</li>
-              <li>Open <strong>App passwords</strong> (Google Account → Security → App passwords).</li>
+              <li>
+                Sign in to the Google account for{' '}
+                <strong>{status?.user || 'your SMTP user'}</strong>.
+              </li>
+              <li>
+                Enable <strong>2-Step Verification</strong> on that account.
+              </li>
+              <li>
+                Open <strong>App passwords</strong> (Google Account → Security → App passwords).
+              </li>
               <li>Create a password for “Mail” / “Other (Stratelegy)”.</li>
-              <li>Copy the 16-character password into <code className="bg-white/70 px-1 rounded">SMTP_PASS</code> in <code className="bg-white/70 px-1 rounded">.env</code>.</li>
+              <li>
+                Copy the 16-character password into{' '}
+                <code className="bg-white/70 px-1 rounded">SMTP_PASS</code> in{' '}
+                <code className="bg-white/70 px-1 rounded">.env</code>.
+              </li>
               <li>Restart the server, then click Verify SMTP again.</li>
             </ol>
             <p className="text-xs text-amber-900/70 pt-1">
-              Workspace admins: Apps → Google Workspace → Gmail → Routing may also need SMTP relay enabled for this mailbox.
+              Workspace admins: Apps → Google Workspace → Gmail → Routing may also need SMTP relay
+              enabled for this mailbox.
             </p>
           </CardContent>
         </Card>
@@ -183,10 +214,7 @@ function EmailTestContent() {
           <CardDescription>Checks login to the SMTP server without sending mail</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            onClick={() => verifyMutation.mutate()}
-            disabled={verifyMutation.isPending}
-          >
+          <Button onClick={() => verifyMutation.mutate()} disabled={verifyMutation.isPending}>
             {verifyMutation.isPending ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
             ) : (
@@ -255,14 +283,20 @@ function EmailTestContent() {
                     : 'border-red-200 bg-red-50 text-red-900'
               }`}
             >
-              <p className="font-medium">{sendResult.message || (sendResult.sent ? 'Sent' : 'Failed')}</p>
+              <p className="font-medium">
+                {sendResult.message || (sendResult.sent ? 'Sent' : 'Failed')}
+              </p>
               {sendResult.subject && <p>Subject: {sendResult.subject}</p>}
-              {sendResult.messageId && <p className="text-xs opacity-80">Message ID: {sendResult.messageId}</p>}
+              {sendResult.messageId && (
+                <p className="text-xs opacity-80">Message ID: {sendResult.messageId}</p>
+              )}
               {!sendResult.sent && !sendResult.skipped && (
                 <ErrorHints hints={sendResult.hints} detail={sendResult.detail} />
               )}
               {sendResult.preview && (
-                <pre className="text-xs whitespace-pre-wrap bg-white/60 p-2 rounded border">{sendResult.preview}</pre>
+                <pre className="text-xs whitespace-pre-wrap bg-white/60 p-2 rounded border">
+                  {sendResult.preview}
+                </pre>
               )}
             </div>
           )}

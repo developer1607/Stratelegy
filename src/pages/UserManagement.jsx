@@ -6,9 +6,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { showError, showInfo, showSuccess } from '@/lib/toast';
 import {
   DropdownMenu,
@@ -33,11 +45,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { computeEffectivePermissions } from '@/lib/portalPermissions';
-import {
-  hasCrmModuleAccess,
-  hasSupportModuleAccess,
-  hasPbxModuleAccess,
-} from '@/lib/permissions';
+import { hasCrmModuleAccess, hasSupportModuleAccess, hasPbxModuleAccess } from '@/lib/permissions';
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import PasswordRequirements from '@/components/PasswordRequirements';
@@ -68,19 +76,31 @@ export default function UserManagement({ embedded = false }) {
   const [resetPasswordByUser, setResetPasswordByUser] = useState({});
   const queryClient = useQueryClient();
 
-  const { data: users = [], isLoading: usersLoading, error: usersError } = useQuery({
+  const {
+    data: users = [],
+    isLoading: usersLoading,
+    error: usersError,
+  } = useQuery({
     queryKey: ['users'],
     queryFn: () => api.entities.User.list(),
     enabled: isAdmin && !isLoadingAuth,
   });
 
-  const { data: portalRoles = [], isLoading: rolesLoading, error: rolesError } = useQuery({
+  const {
+    data: portalRoles = [],
+    isLoading: rolesLoading,
+    error: rolesError,
+  } = useQuery({
     queryKey: ['portalRoles'],
     queryFn: () => api.roles.list(),
     enabled: isAdmin && !isLoadingAuth,
   });
 
-  const { data: allPermissions = [], isLoading: permsLoading, error: permsError } = useQuery({
+  const {
+    data: allPermissions = [],
+    isLoading: permsLoading,
+    error: permsError,
+  } = useQuery({
     queryKey: ['userPermissions'],
     queryFn: () => api.entities.UserPermissions.filter({}),
     staleTime: 0,
@@ -333,7 +353,9 @@ export default function UserManagement({ embedded = false }) {
       <div className="flex flex-col items-center justify-center h-full py-32 gap-4 px-4 text-center">
         <ShieldAlert className="w-12 h-12 text-destructive" />
         <h2 className="text-xl font-semibold">Could not load user management</h2>
-        <p className="text-muted-foreground max-w-md">{loadError.message || 'An API request failed.'}</p>
+        <p className="text-muted-foreground max-w-md">
+          {loadError.message || 'An API request failed.'}
+        </p>
       </div>
     );
   }
@@ -373,7 +395,12 @@ export default function UserManagement({ embedded = false }) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => { resetAddForm(); setAddOpen(true); }}>
+              <DropdownMenuItem
+                onClick={() => {
+                  resetAddForm();
+                  setAddOpen(true);
+                }}
+              >
                 <UserPlus className="w-4 h-4 mr-2" />
                 Create portal account
               </DropdownMenuItem>
@@ -419,10 +446,14 @@ export default function UserManagement({ embedded = false }) {
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
-                      {user.full_name?.charAt(0)?.toUpperCase() || user.email?.charAt(0)?.toUpperCase() || '?'}
+                      {user.full_name?.charAt(0)?.toUpperCase() ||
+                        user.email?.charAt(0)?.toUpperCase() ||
+                        '?'}
                     </div>
                     <div className="min-w-0">
-                      <div className="font-medium text-gray-900 truncate">{user.full_name || '—'}</div>
+                      <div className="font-medium text-gray-900 truncate">
+                        {user.full_name || '—'}
+                      </div>
                       <div className="text-sm text-gray-500 flex items-center gap-1 truncate">
                         <Mail className="w-3 h-3 shrink-0" />
                         {user.email}
@@ -432,13 +463,19 @@ export default function UserManagement({ embedded = false }) {
                   <div className="flex items-center gap-2 shrink-0">
                     {!isUserAdmin && (
                       <div className="hidden md:flex items-center gap-1.5">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${hasCrmModuleAccess(perms) ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${hasCrmModuleAccess(perms) ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}
+                        >
                           CRM
                         </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${hasSupportModuleAccess(perms) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${hasSupportModuleAccess(perms) ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-400'}`}
+                        >
                           Support
                         </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${hasPbxModuleAccess(perms) ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full font-medium ${hasPbxModuleAccess(perms) ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-400'}`}
+                        >
                           PBX
                         </span>
                       </div>
@@ -460,7 +497,11 @@ export default function UserManagement({ embedded = false }) {
                         )}
                       </>
                     )}
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+                    {isExpanded ? (
+                      <ChevronUp className="w-4 h-4 text-gray-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-gray-400" />
+                    )}
                   </div>
                 </div>
 
@@ -513,7 +554,9 @@ export default function UserManagement({ embedded = false }) {
                         </div>
                         <PasswordRequirements password={getResetPasswordForm(user.id).password} />
                         {getResetPasswordForm(user.id).error && (
-                          <p className="text-sm text-red-600">{getResetPasswordForm(user.id).error}</p>
+                          <p className="text-sm text-red-600">
+                            {getResetPasswordForm(user.id).error}
+                          </p>
                         )}
                         <Button
                           type="button"
@@ -535,230 +578,264 @@ export default function UserManagement({ embedded = false }) {
 
                     {isUserAdmin ? (
                       <p className="text-sm text-gray-600 p-4 rounded-lg border bg-white">
-                        Administrator accounts have full access to all modules. Portal roles and permission
-                        toggles do not apply.
+                        Administrator accounts have full access to all modules. Portal roles and
+                        permission toggles do not apply.
                       </p>
                     ) : (
-                  <>
-                    <div className="flex flex-col sm:flex-row sm:items-end gap-3 p-4 rounded-lg border bg-white">
-                      <div className="flex-1">
-                        <Label className="text-xs uppercase tracking-wide text-gray-500">Portal role</Label>
-                        <Select
-                          value={roleSelectValue}
-                          onValueChange={(roleId) => {
-                            if (roleId !== 'none') handleRoleChange(user, roleId);
-                          }}
-                        >
-                          <SelectTrigger className="mt-1">
-                            <SelectValue placeholder="Select a portal role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none" disabled>
-                              Select a portal role
-                            </SelectItem>
-                            {portalRoles.map((role) => (
-                              <SelectItem key={role.id} value={role.id}>
-                                {role.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={!raw?.role_id || assignRoleMutation.isPending}
-                        onClick={() => handleResetToRole(user)}
-                      >
-                        <RotateCcw className="w-4 h-4 mr-2" />
-                        Reset to role
-                      </Button>
-                    </div>
-
-                    {hasSupportModuleAccess(perms) && (
-                      <div className="p-4 rounded-lg border bg-white space-y-3">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900">Ticket routing</p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            Optional filters for auto-assign and assignee lists. Leave empty to handle any ticket.
-                          </p>
-                        </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label className="text-xs text-gray-500">Departments</Label>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {TICKET_DEPARTMENTS.map((dept) => {
-                                const selected = parseRoutingList(user.departments).includes(dept.value);
-                                return (
-                                  <button
-                                    key={dept.value}
-                                    type="button"
-                                    className={`px-2 py-1 rounded text-xs border ${
-                                      selected
-                                        ? 'bg-green-100 border-green-300 text-green-800'
-                                        : 'bg-gray-50 border-gray-200 text-gray-600'
-                                    }`}
-                                    onClick={() => {
-                                      const next = toggleRoutingItem(
-                                        parseRoutingList(user.departments),
-                                        dept.value
-                                      );
-                                      supportRoutingMutation.mutate({
-                                        userId: user.id,
-                                        departments: next.join(','),
-                                        categories: user.categories || '',
-                                      });
-                                    }}
-                                  >
-                                    {dept.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                      <>
+                        <div className="flex flex-col sm:flex-row sm:items-end gap-3 p-4 rounded-lg border bg-white">
+                          <div className="flex-1">
+                            <Label className="text-xs uppercase tracking-wide text-gray-500">
+                              Portal role
+                            </Label>
+                            <Select
+                              value={roleSelectValue}
+                              onValueChange={(roleId) => {
+                                if (roleId !== 'none') handleRoleChange(user, roleId);
+                              }}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select a portal role" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none" disabled>
+                                  Select a portal role
+                                </SelectItem>
+                                {portalRoles.map((role) => (
+                                  <SelectItem key={role.id} value={role.id}>
+                                    {role.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
-                          <div>
-                            <Label className="text-xs text-gray-500">Categories</Label>
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {TICKET_CATEGORIES.map((cat) => {
-                                const selected = parseRoutingList(user.categories).includes(cat.value);
-                                return (
-                                  <button
-                                    key={cat.value}
-                                    type="button"
-                                    className={`px-2 py-1 rounded text-xs border ${
-                                      selected
-                                        ? 'bg-blue-100 border-blue-300 text-blue-800'
-                                        : 'bg-gray-50 border-gray-200 text-gray-600'
-                                    }`}
-                                    onClick={() => {
-                                      const next = toggleRoutingItem(
-                                        parseRoutingList(user.categories),
-                                        cat.value
-                                      );
-                                      supportRoutingMutation.mutate({
-                                        userId: user.id,
-                                        departments: user.departments || '',
-                                        categories: next.join(','),
-                                      });
-                                    }}
-                                  >
-                                    {cat.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                      {permissionGroups.map((group) => {
-                        const masterEnabled = group.masterKey ? !!perms[group.masterKey] : true;
-                        return (
-                          <div
-                            key={group.id}
-                            className={`rounded-lg border p-4 bg-white ${!masterEnabled ? 'opacity-60' : ''}`}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={!raw?.role_id || assignRoleMutation.isPending}
+                            onClick={() => handleResetToRole(user)}
                           >
-                            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-                              <div className="flex items-center gap-2">
-                                {group.icon === 'crm' ? (
-                                  <Briefcase className="w-4 h-4 text-blue-600" />
-                                ) : group.icon === 'pbx' ? (
-                                  <Phone className="w-4 h-4 text-purple-600" />
-                                ) : (
-                                  <HeadphonesIcon className="w-4 h-4 text-green-600" />
-                                )}
-                                <span className="font-semibold text-sm text-gray-800">{group.label}</span>
+                            <RotateCcw className="w-4 h-4 mr-2" />
+                            Reset to role
+                          </Button>
+                        </div>
+
+                        {hasSupportModuleAccess(perms) && (
+                          <div className="p-4 rounded-lg border bg-white space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">Ticket routing</p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Optional filters for auto-assign and assignee lists. Leave empty to
+                                handle any ticket.
+                              </p>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-xs text-gray-500">Departments</Label>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {TICKET_DEPARTMENTS.map((dept) => {
+                                    const selected = parseRoutingList(user.departments).includes(
+                                      dept.value
+                                    );
+                                    return (
+                                      <button
+                                        key={dept.value}
+                                        type="button"
+                                        className={`px-2 py-1 rounded text-xs border ${
+                                          selected
+                                            ? 'bg-green-100 border-green-300 text-green-800'
+                                            : 'bg-gray-50 border-gray-200 text-gray-600'
+                                        }`}
+                                        onClick={() => {
+                                          const next = toggleRoutingItem(
+                                            parseRoutingList(user.departments),
+                                            dept.value
+                                          );
+                                          supportRoutingMutation.mutate({
+                                            userId: user.id,
+                                            departments: next.join(','),
+                                            categories: user.categories || '',
+                                          });
+                                        }}
+                                      >
+                                        {dept.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {group.screenKeys?.length ? (
-                                  <>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 text-xs"
-                                      disabled={!masterEnabled || updatePermissionMutation.isPending}
-                                      onClick={() => handleBatchToggle(user, group.screenKeys, true)}
-                                    >
-                                      All screens
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 text-xs"
-                                      disabled={!masterEnabled || updatePermissionMutation.isPending}
-                                      onClick={() => handleBatchToggle(user, group.screenKeys, false)}
-                                    >
-                                      No screens
-                                    </Button>
-                                  </>
-                                ) : null}
-                                {group.actionKeys?.length ? (
-                                  <>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 text-xs"
-                                      disabled={!masterEnabled || updatePermissionMutation.isPending}
-                                      onClick={() => handleBatchToggle(user, group.actionKeys, true)}
-                                    >
-                                      All actions
-                                    </Button>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      className="h-7 text-xs"
-                                      disabled={!masterEnabled || updatePermissionMutation.isPending}
-                                      onClick={() => handleBatchToggle(user, group.actionKeys, false)}
-                                    >
-                                      No actions
-                                    </Button>
-                                  </>
-                                ) : null}
-                                {group.masterKey ? (
-                                  <Switch
-                                    checked={Boolean(perms[group.masterKey])}
-                                    disabled={updatePermissionMutation.isPending}
-                                    onCheckedChange={(val) => handleMasterToggle(user, group, val)}
-                                  />
-                                ) : null}
+                              <div>
+                                <Label className="text-xs text-gray-500">Categories</Label>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {TICKET_CATEGORIES.map((cat) => {
+                                    const selected = parseRoutingList(user.categories).includes(
+                                      cat.value
+                                    );
+                                    return (
+                                      <button
+                                        key={cat.value}
+                                        type="button"
+                                        className={`px-2 py-1 rounded text-xs border ${
+                                          selected
+                                            ? 'bg-blue-100 border-blue-300 text-blue-800'
+                                            : 'bg-gray-50 border-gray-200 text-gray-600'
+                                        }`}
+                                        onClick={() => {
+                                          const next = toggleRoutingItem(
+                                            parseRoutingList(user.categories),
+                                            cat.value
+                                          );
+                                          supportRoutingMutation.mutate({
+                                            userId: user.id,
+                                            departments: user.departments || '',
+                                            categories: next.join(','),
+                                          });
+                                        }}
+                                      >
+                                        {cat.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
                             </div>
-                            <div className="space-y-4 pl-1 max-h-[420px] overflow-y-auto pr-1">
-                              {group.sections?.map((section) => (
-                                <div key={section.label}>
-                                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                                    {section.label}
-                                  </p>
-                                  <div className="space-y-2">
-                                    {section.permissions.map((perm) => (
-                                      <div key={perm.key} className="flex items-center justify-between gap-2">
-                                        <Label className="text-xs font-normal text-gray-600 cursor-pointer leading-snug">
-                                          {perm.label}
-                                        </Label>
-                                        <Switch
-                                          checked={Boolean(perms[perm.key])}
-                                          disabled={!masterEnabled || updatePermissionMutation.isPending}
-                                          onCheckedChange={(val) => handleToggle(user, perm.key, val)}
-                                        />
-                                      </div>
-                                    ))}
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                          {permissionGroups.map((group) => {
+                            const masterEnabled = group.masterKey ? !!perms[group.masterKey] : true;
+                            return (
+                              <div
+                                key={group.id}
+                                className={`rounded-lg border p-4 bg-white ${!masterEnabled ? 'opacity-60' : ''}`}
+                              >
+                                <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+                                  <div className="flex items-center gap-2">
+                                    {group.icon === 'crm' ? (
+                                      <Briefcase className="w-4 h-4 text-blue-600" />
+                                    ) : group.icon === 'pbx' ? (
+                                      <Phone className="w-4 h-4 text-purple-600" />
+                                    ) : (
+                                      <HeadphonesIcon className="w-4 h-4 text-green-600" />
+                                    )}
+                                    <span className="font-semibold text-sm text-gray-800">
+                                      {group.label}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    {group.screenKeys?.length ? (
+                                      <>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-7 text-xs"
+                                          disabled={
+                                            !masterEnabled || updatePermissionMutation.isPending
+                                          }
+                                          onClick={() =>
+                                            handleBatchToggle(user, group.screenKeys, true)
+                                          }
+                                        >
+                                          All screens
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-7 text-xs"
+                                          disabled={
+                                            !masterEnabled || updatePermissionMutation.isPending
+                                          }
+                                          onClick={() =>
+                                            handleBatchToggle(user, group.screenKeys, false)
+                                          }
+                                        >
+                                          No screens
+                                        </Button>
+                                      </>
+                                    ) : null}
+                                    {group.actionKeys?.length ? (
+                                      <>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-7 text-xs"
+                                          disabled={
+                                            !masterEnabled || updatePermissionMutation.isPending
+                                          }
+                                          onClick={() =>
+                                            handleBatchToggle(user, group.actionKeys, true)
+                                          }
+                                        >
+                                          All actions
+                                        </Button>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="h-7 text-xs"
+                                          disabled={
+                                            !masterEnabled || updatePermissionMutation.isPending
+                                          }
+                                          onClick={() =>
+                                            handleBatchToggle(user, group.actionKeys, false)
+                                          }
+                                        >
+                                          No actions
+                                        </Button>
+                                      </>
+                                    ) : null}
+                                    {group.masterKey ? (
+                                      <Switch
+                                        checked={Boolean(perms[group.masterKey])}
+                                        disabled={updatePermissionMutation.isPending}
+                                        onCheckedChange={(val) =>
+                                          handleMasterToggle(user, group, val)
+                                        }
+                                      />
+                                    ) : null}
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
+                                <div className="space-y-4 pl-1 max-h-[420px] overflow-y-auto pr-1">
+                                  {group.sections?.map((section) => (
+                                    <div key={section.label}>
+                                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                                        {section.label}
+                                      </p>
+                                      <div className="space-y-2">
+                                        {section.permissions.map((perm) => (
+                                          <div
+                                            key={perm.key}
+                                            className="flex items-center justify-between gap-2"
+                                          >
+                                            <Label className="text-xs font-normal text-gray-600 cursor-pointer leading-snug">
+                                              {perm.label}
+                                            </Label>
+                                            <Switch
+                                              checked={Boolean(perms[perm.key])}
+                                              disabled={
+                                                !masterEnabled || updatePermissionMutation.isPending
+                                              }
+                                              onCheckedChange={(val) =>
+                                                handleToggle(user, perm.key, val)
+                                              }
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </Card>
@@ -773,7 +850,13 @@ export default function UserManagement({ embedded = false }) {
         </div>
       </div>
 
-      <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) resetAddForm(); }}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) resetAddForm();
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Portal User</DialogTitle>
@@ -857,8 +940,13 @@ export default function UserManagement({ embedded = false }) {
             {addError && <p className="text-sm text-red-600">{addError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddUser} disabled={!addForm.email || !addForm.password || adding}>
+            <Button variant="outline" onClick={() => setAddOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddUser}
+              disabled={!addForm.email || !addForm.password || adding}
+            >
               {adding ? 'Creating...' : 'Create Portal User'}
             </Button>
           </DialogFooter>
@@ -913,7 +1001,9 @@ export default function UserManagement({ embedded = false }) {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setInviteOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setInviteOpen(false)}>
+              Cancel
+            </Button>
             <Button onClick={handleInvite} disabled={!inviteEmail || inviting}>
               {inviting ? 'Sending...' : 'Send Invite'}
             </Button>

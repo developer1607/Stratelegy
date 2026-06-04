@@ -7,7 +7,11 @@ import { flattenReportTypes } from '@/lib/reportTypes';
 
 export default function E911Reports() {
   return (
-    <PbxShell title="E911 Reports" description="E911 endpoint inventory and emergency location data" requiresDomain={false}>
+    <PbxShell
+      title="E911 Reports"
+      description="E911 endpoint inventory and emergency location data"
+      requiresDomain={false}
+    >
       <ReportsContent />
     </PbxShell>
   );
@@ -15,7 +19,10 @@ export default function E911Reports() {
 
 function ReportsContent() {
   const e911Query = useQuery({ queryKey: ['pbx-e911'], queryFn: () => pbxApi.e911() });
-  const reportsQuery = useQuery({ queryKey: ['pbx-report-types'], queryFn: () => pbxApi.reportTypes() });
+  const reportsQuery = useQuery({
+    queryKey: ['pbx-report-types'],
+    queryFn: () => pbxApi.reportTypes(),
+  });
 
   const reportRows = useMemo(
     () =>
@@ -40,7 +47,9 @@ function ReportsContent() {
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="text-lg font-semibold text-gray-900 mb-3">E911 endpoint summary ({e911Rows.length})</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-3">
+          E911 endpoint summary ({e911Rows.length})
+        </h2>
         <PbxDataTable
           columns={[
             { key: 'phone_number', label: 'Phone' },

@@ -83,9 +83,7 @@ export const PBX_NAV_GROUPS = [
   },
   {
     label: 'Actions',
-    items: [
-      { name: 'Make Call', icon: PhoneCall, path: 'PBXMakeCall' },
-    ],
+    items: [{ name: 'Make Call', icon: PhoneCall, path: 'PBXMakeCall' }],
   },
 ];
 

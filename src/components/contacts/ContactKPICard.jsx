@@ -24,7 +24,9 @@ export default function ContactKPICard({
                 ) : (
                   <TrendingDown className="w-4 h-4 text-red-600" />
                 )}
-                <span className={`text-sm font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
+                <span
+                  className={`text-sm font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+                >
                   {trendValue}
                 </span>
               </div>

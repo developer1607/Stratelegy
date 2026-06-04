@@ -17,11 +17,19 @@ async function syncUserColumns() {
 }
 
 async function syncInviteColumns() {
-  await addColumnIfMissing('invites', 'portal_role_id', '`portal_role_id` VARCHAR(36) NULL AFTER `role`');
+  await addColumnIfMissing(
+    'invites',
+    'portal_role_id',
+    '`portal_role_id` VARCHAR(36) NULL AFTER `role`'
+  );
 }
 
 async function syncUserPermissionRoleColumns() {
-  await addColumnIfMissing('user_permissions', 'role_id', '`role_id` VARCHAR(36) NULL AFTER `user_name`');
+  await addColumnIfMissing(
+    'user_permissions',
+    'role_id',
+    '`role_id` VARCHAR(36) NULL AFTER `user_name`'
+  );
   await addColumnIfMissing(
     'user_permissions',
     'use_custom_permissions',
@@ -29,7 +37,9 @@ async function syncUserPermissionRoleColumns() {
   );
 
   if (!(await columnExists('user_permissions', 'role_id'))) return;
-  const indexes = await query(`SHOW INDEX FROM user_permissions WHERE Key_name = 'idx_user_permissions_role'`);
+  const indexes = await query(
+    `SHOW INDEX FROM user_permissions WHERE Key_name = 'idx_user_permissions_role'`
+  );
   if (indexes.length === 0) {
     await execute(`ALTER TABLE user_permissions ADD INDEX idx_user_permissions_role (role_id)`);
   }

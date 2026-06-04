@@ -3,7 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function ActivityFilters({ filters, onFilterChange, onSaveView }) {
   return (
@@ -22,17 +28,19 @@ export default function ActivityFilters({ filters, onFilterChange, onSaveView })
           <div className="space-y-2">
             {['Call', 'Email', 'Meeting', 'WhatsApp'].map((type) => (
               <div key={type} className="flex items-center space-x-2">
-                <Checkbox 
+                <Checkbox
                   id={type}
                   checked={filters.types?.includes(type)}
                   onCheckedChange={(checked) => {
-                    const newTypes = checked 
+                    const newTypes = checked
                       ? [...(filters.types || []), type]
-                      : (filters.types || []).filter(t => t !== type);
+                      : (filters.types || []).filter((t) => t !== type);
                     onFilterChange('types', newTypes);
                   }}
                 />
-                <label htmlFor={type} className="text-sm cursor-pointer">{type}</label>
+                <label htmlFor={type} className="text-sm cursor-pointer">
+                  {type}
+                </label>
               </div>
             ))}
           </div>
@@ -70,9 +78,7 @@ export default function ActivityFilters({ filters, onFilterChange, onSaveView })
           <Button variant="outline" className="w-full text-sm">
             More Filters (1)
           </Button>
-          <Button className="w-full mt-2 bg-blue-600 hover:bg-blue-700">
-            Filter
-          </Button>
+          <Button className="w-full mt-2 bg-blue-600 hover:bg-blue-700">Filter</Button>
         </div>
       </CardContent>
     </Card>

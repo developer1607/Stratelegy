@@ -94,7 +94,10 @@ export default function SupportDashboard() {
     }, 0);
   };
 
-  const totalTickets = Object.values(statusCounts).reduce((sum, count) => sum + Number(count || 0), 0);
+  const totalTickets = Object.values(statusCounts).reduce(
+    (sum, count) => sum + Number(count || 0),
+    0
+  );
 
   const handleStatusClick = (status) => {
     navigate(`/SupportTickets?status=${status}`);
@@ -126,7 +129,10 @@ export default function SupportDashboard() {
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSubmitTicket} disabled={!newTicket.title || !newTicket.category}>
+              <Button
+                onClick={handleSubmitTicket}
+                disabled={!newTicket.title || !newTicket.category}
+              >
                 Submit Ticket
               </Button>
             </div>
@@ -154,7 +160,7 @@ export default function SupportDashboard() {
         {STATUS_CONFIG.map((config) => {
           const count = getStatusCount(config.status);
           const Icon = config.icon;
-          
+
           return (
             <Card
               key={config.status}
@@ -183,15 +189,15 @@ export default function SupportDashboard() {
               {STATUS_CONFIG.map((config) => {
                 const count = getStatusCount(config.status);
                 const percentage = totalTickets > 0 ? (count / totalTickets) * 100 : 0;
-                
+
                 return (
                   <div key={config.status} className="flex items-center gap-3">
                     <div className={`w-3 h-3 rounded-full ${config.color}`}></div>
                     <span className="text-sm text-gray-600 flex-1">{config.label}</span>
                     <span className="text-sm font-medium text-gray-900">{count}</span>
                     <div className="w-24 bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${config.color}`} 
+                      <div
+                        className={`h-2 rounded-full ${config.color}`}
                         style={{ width: `${percentage}%` }}
                       ></div>
                     </div>
@@ -207,8 +213,8 @@ export default function SupportDashboard() {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
             <div className="space-y-3">
               {recentTickets.map((ticket) => (
-                <div 
-                  key={ticket.id} 
+                <div
+                  key={ticket.id}
                   className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
                   onClick={() => navigate(`/SupportTicketDetail?id=${ticket.id}`)}
                 >
@@ -216,12 +222,17 @@ export default function SupportDashboard() {
                     <p className="text-sm font-medium text-gray-900">{ticket.title}</p>
                     <p className="text-xs text-gray-500">#{ticket.ticket_number}</p>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full ${
-                    ticket.status === 'open' ? 'bg-blue-100 text-blue-700' :
-                    ticket.status === 'in_progress' ? 'bg-yellow-100 text-yellow-700' :
-                    ticket.status === 'resolved' ? 'bg-green-100 text-green-700' :
-                    'bg-gray-100 text-gray-700'
-                  }`}>
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${
+                      ticket.status === 'open'
+                        ? 'bg-blue-100 text-blue-700'
+                        : ticket.status === 'in_progress'
+                          ? 'bg-yellow-100 text-yellow-700'
+                          : ticket.status === 'resolved'
+                            ? 'bg-green-100 text-green-700'
+                            : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
                     {ticket.status}
                   </span>
                 </div>

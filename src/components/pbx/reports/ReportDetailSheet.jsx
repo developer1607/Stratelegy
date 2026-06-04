@@ -25,8 +25,10 @@ function DetailRow({ label, value }) {
 
 function statusBadge(status) {
   const normalized = String(status || '').toLowerCase();
-  if (normalized === 'completed') return <Badge className="bg-green-600 hover:bg-green-600">Completed</Badge>;
-  if (normalized === 'queued' || normalized === 'pending') return <Badge variant="secondary">Queued</Badge>;
+  if (normalized === 'completed')
+    return <Badge className="bg-green-600 hover:bg-green-600">Completed</Badge>;
+  if (normalized === 'queued' || normalized === 'pending')
+    return <Badge variant="secondary">Queued</Badge>;
   if (normalized === 'failed') return <Badge variant="destructive">Failed</Badge>;
   return <Badge variant="outline">{status || '—'}</Badge>;
 }
@@ -86,7 +88,9 @@ export default function ReportDetailSheet({ reportId, open, onOpenChange, onDown
             {formatJson(data.parameters) ? (
               <div className="py-2">
                 <p className="text-sm font-medium text-gray-500 mb-1">Parameters</p>
-                <pre className="text-xs bg-gray-50 rounded p-3 overflow-x-auto">{formatJson(data.parameters)}</pre>
+                <pre className="text-xs bg-gray-50 rounded p-3 overflow-x-auto">
+                  {formatJson(data.parameters)}
+                </pre>
               </div>
             ) : null}
           </dl>

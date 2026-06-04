@@ -4,18 +4,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
-  Search, 
+import {
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Search,
   Calendar as CalendarIcon,
   Phone,
   Users,
   Target,
   Edit2,
   MessageCircle,
-  MoreVertical
+  MoreVertical,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -23,13 +23,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { 
-  format, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  isSameDay, 
-  addMonths, 
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameDay,
+  addMonths,
   subMonths,
   startOfWeek,
   endOfWeek,
@@ -38,7 +38,7 @@ import {
   endOfDay,
   addDays,
   parseISO,
-  isSameMonth
+  isSameMonth,
 } from 'date-fns';
 import CalendarKPICard from '../components/calendar/CalendarKPICard';
 import CalendarFilters from '../components/calendar/CalendarFilters';
@@ -98,15 +98,16 @@ export default function Calendar() {
 
   // Filter events
   const filteredEvents = useMemo(() => {
-    return events.filter(event => {
+    return events.filter((event) => {
       const matchSearch = event.title?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchType = filters.eventTypes.length === 0 || filters.eventTypes.includes(event.event_type);
-      
+      const matchType =
+        filters.eventTypes.length === 0 || filters.eventTypes.includes(event.event_type);
+
       let matchDate = true;
       if (filters.dateRange) {
         const eventDate = parseISO(event.start_date);
         const today = startOfDay(new Date());
-        
+
         if (filters.dateRange === 'today') {
           matchDate = isSameDay(eventDate, today);
         } else if (filters.dateRange === 'tomorrow') {
@@ -124,7 +125,7 @@ export default function Calendar() {
           });
         }
       }
-      
+
       return matchSearch && matchType && matchDate;
     });
   }, [events, searchTerm, filters]);
@@ -136,21 +137,26 @@ export default function Calendar() {
     const weekStart = startOfWeek(today);
     const weekEnd = endOfWeek(today);
 
-    const todayEvents = events.filter(e => {
+    const todayEvents = events.filter((e) => {
       const eventDate = parseISO(e.start_date);
       return isWithinInterval(eventDate, { start: today, end: todayEnd });
     }).length;
 
     const totalEvents = events.length;
 
-    const meetingsThisWeek = events.filter(e => {
+    const meetingsThisWeek = events.filter((e) => {
       const eventDate = parseISO(e.start_date);
-      return e.event_type === 'meeting' && isWithinInterval(eventDate, { start: weekStart, end: weekEnd });
+      return (
+        e.event_type === 'meeting' &&
+        isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
+      );
     }).length;
 
-    const callsThisWeek = events.filter(e => {
+    const callsThisWeek = events.filter((e) => {
       const eventDate = parseISO(e.start_date);
-      return e.event_type === 'call' && isWithinInterval(eventDate, { start: weekStart, end: weekEnd });
+      return (
+        e.event_type === 'call' && isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
+      );
     }).length;
 
     return { todayEvents, totalEvents, meetingsThisWeek, callsThisWeek };
@@ -158,7 +164,7 @@ export default function Calendar() {
 
   // Get events for a specific day
   const getEventsForDay = (day) => {
-    return filteredEvents.filter(event => {
+    return filteredEvents.filter((event) => {
       const eventDate = parseISO(event.start_date);
       return isSameDay(eventDate, day);
     });
@@ -169,7 +175,7 @@ export default function Calendar() {
     const today = new Date();
     const nextWeek = addDays(today, 7);
     return filteredEvents
-      .filter(e => {
+      .filter((e) => {
         const eventDate = parseISO(e.start_date);
         return eventDate >= today && eventDate <= nextWeek && e.status === 'scheduled';
       })
@@ -205,7 +211,7 @@ export default function Calendar() {
     if (key === 'reset') {
       setFilters({ eventTypes: [], dateRange: null });
     } else {
-      setFilters(prev => ({ ...prev, [key]: value }));
+      setFilters((prev) => ({ ...prev, [key]: value }));
     }
   };
 
@@ -226,7 +232,13 @@ export default function Calendar() {
               className="pl-9 h-9"
             />
           </div>
-          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setSelectedEvent(null); setDialogOpen(true); }}>
+          <Button
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => {
+              setSelectedEvent(null);
+              setDialogOpen(true);
+            }}
+          >
             <Plus className="w-4 h-4 mr-2" />
             New Event
           </Button>
@@ -294,7 +306,10 @@ export default function Calendar() {
             {/* Days of Week */}
             <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
               {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                <div key={day} className="text-center text-xs sm:text-sm font-semibold text-gray-600 py-2">
+                <div
+                  key={day}
+                  className="text-center text-xs sm:text-sm font-semibold text-gray-600 py-2"
+                >
                   {day}
                 </div>
               ))}
@@ -314,11 +329,13 @@ export default function Calendar() {
                       isToday
                         ? 'bg-blue-600 text-white border-blue-600'
                         : isCurrentMonth
-                        ? 'bg-white hover:bg-gray-50'
-                        : 'bg-gray-50 text-gray-400'
+                          ? 'bg-white hover:bg-gray-50'
+                          : 'bg-gray-50 text-gray-400'
                     }`}
                   >
-                    <div className={`text-xs sm:text-sm font-medium mb-1 ${isToday ? 'text-white' : ''}`}>
+                    <div
+                      className={`text-xs sm:text-sm font-medium mb-1 ${isToday ? 'text-white' : ''}`}
+                    >
                       {format(day, 'd')}
                     </div>
                     <div className="space-y-0.5">
@@ -333,7 +350,9 @@ export default function Calendar() {
                             onClick={() => handleEdit(event)}
                             title={event.title}
                           >
-                            <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${isToday ? 'bg-white' : color.dot}`}></span>
+                            <span
+                              className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${isToday ? 'bg-white' : color.dot}`}
+                            ></span>
                             {event.title}
                           </div>
                         );
@@ -362,7 +381,10 @@ export default function Calendar() {
                   upcomingEvents.map((event) => {
                     const color = getEventColor(event.event_type);
                     return (
-                      <div key={event.id} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50">
+                      <div
+                        key={event.id}
+                        className="flex items-center gap-3 p-3 border rounded-lg hover:bg-gray-50"
+                      >
                         <div className={`w-2 h-12 rounded-full ${color.dot}`}></div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 truncate">{event.title}</p>
@@ -370,11 +392,18 @@ export default function Calendar() {
                             {format(parseISO(event.start_date), 'MMM d, h:mm a')}
                           </p>
                           {event.related_to_name && (
-                            <p className="text-xs text-gray-500">{event.related_to_type}: {event.related_to_name}</p>
+                            <p className="text-xs text-gray-500">
+                              {event.related_to_type}: {event.related_to_name}
+                            </p>
                           )}
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(event)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => handleEdit(event)}
+                          >
                             <Edit2 className="w-4 h-4" />
                           </Button>
                           {event.event_type === 'call' && (
@@ -400,8 +429,13 @@ export default function Calendar() {
                 {filteredEvents.slice(0, 10).map((event) => {
                   const color = getEventColor(event.event_type);
                   return (
-                    <div key={event.id} className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50">
-                      <div className={`w-10 h-10 rounded-lg ${color.bg} flex items-center justify-center flex-shrink-0`}>
+                    <div
+                      key={event.id}
+                      className="flex items-start gap-3 p-3 border rounded-lg hover:bg-gray-50"
+                    >
+                      <div
+                        className={`w-10 h-10 rounded-lg ${color.bg} flex items-center justify-center flex-shrink-0`}
+                      >
                         <div className={`w-2 h-2 rounded-full ${color.dot}`}></div>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -410,7 +444,9 @@ export default function Calendar() {
                           {format(parseISO(event.start_date), 'EEEE, MMM d • h:mm a')}
                         </p>
                         {event.description && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">{event.description}</p>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                            {event.description}
+                          </p>
                         )}
                       </div>
                       <DropdownMenu>
@@ -420,7 +456,9 @@ export default function Calendar() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(event)}>Edit</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEdit(event)}>
+                            Edit
+                          </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
                             onClick={() => deleteMutation.mutate(event.id)}

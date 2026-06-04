@@ -63,7 +63,5 @@ export async function cleanupObsoleteSchema() {
     return;
   }
 
-  console.warn(
-    '[db] entity_records still has rows — table retained until empty'
-  );
+  console.warn('[db] entity_records still has rows — table retained until empty');
 }

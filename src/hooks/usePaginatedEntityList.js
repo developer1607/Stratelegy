@@ -7,13 +7,16 @@ export const DEFAULT_PAGE_SIZE = 25;
 /**
  * Fetch a paginated entity list with total count from the server.
  */
-export function usePaginatedEntityList(entityName, {
-  sort = '-created_date',
-  pageSize = DEFAULT_PAGE_SIZE,
-  queryKeyPrefix,
-  enabled = true,
-  staleTime = 30_000,
-} = {}) {
+export function usePaginatedEntityList(
+  entityName,
+  {
+    sort = '-created_date',
+    pageSize = DEFAULT_PAGE_SIZE,
+    queryKeyPrefix,
+    enabled = true,
+    staleTime = 30_000,
+  } = {}
+) {
   const [page, setPage] = useState(0);
 
   const queryKey = [queryKeyPrefix || entityName, 'page', sort, page, pageSize];

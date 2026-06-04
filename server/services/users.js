@@ -72,7 +72,10 @@ export async function updateUser(id, data) {
   if (updates.length === 0) return rowToUser(existing);
 
   values.push(id);
-  await execute(`UPDATE users SET ${updates.join(', ')}, updated_date = NOW() WHERE id = ?`, values);
+  await execute(
+    `UPDATE users SET ${updates.join(', ')}, updated_date = NOW() WHERE id = ?`,
+    values
+  );
   return getUserById(id);
 }
 
@@ -100,7 +103,10 @@ export async function updateUserSupportRouting(userId, { departments, categories
   if (updates.length === 0) return getUserById(userId);
 
   values.push(userId);
-  await execute(`UPDATE users SET ${updates.join(', ')}, updated_date = NOW() WHERE id = ?`, values);
+  await execute(
+    `UPDATE users SET ${updates.join(', ')}, updated_date = NOW() WHERE id = ?`,
+    values
+  );
   return getUserById(userId);
 }
 

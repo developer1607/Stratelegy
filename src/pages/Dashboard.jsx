@@ -3,32 +3,32 @@ import { api } from '@/api/client';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Search,
-  Filter,
-  MoreHorizontal,
-  Plus,
-  Download
-} from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Plus, Download } from 'lucide-react';
 import { formatCurrency } from '@/utils';
-import { 
-  BarChart, 
-  Bar, 
-  LineChart, 
-  Line, 
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
   AreaChart,
   Area,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
 } from 'recharts';
 
 export default function Dashboard() {
@@ -55,7 +55,7 @@ export default function Dashboard() {
   });
 
   const filteredOpportunities = useMemo(() => {
-    return opportunities.filter(opp => {
+    return opportunities.filter((opp) => {
       if (ownerFilter !== 'all' && opp.owner !== ownerFilter) return false;
       if (stageFilter !== 'all' && opp.stage !== stageFilter) return false;
       if (sourceFilter !== 'all' && opp.source !== sourceFilter) return false;
@@ -65,30 +65,37 @@ export default function Dashboard() {
 
   const kpis = useMemo(() => {
     const totalLeads = leads.length;
-    const closedDeals = filteredOpportunities.filter(o => o.stage === 'closed_won');
+    const closedDeals = filteredOpportunities.filter((o) => o.stage === 'closed_won');
     const dealsClosedValue = closedDeals.reduce((sum, o) => sum + (o.amount || 0), 0);
-    
+
     const currentMonth = new Date().getMonth();
     const revenueThisMonth = filteredOpportunities
-      .filter(o => o.stage === 'closed_won' && new Date(o.updated_date).getMonth() === currentMonth)
+      .filter(
+        (o) => o.stage === 'closed_won' && new Date(o.updated_date).getMonth() === currentMonth
+      )
       .reduce((sum, o) => sum + (o.amount || 0), 0);
-    
+
     const salesTarget = 0;
-    const targetProgress = salesTarget > 0 ? ((revenueThisMonth / salesTarget) * 100).toFixed(1) : 0;
-    
-    const conversionRate = leads.length > 0 
-      ? ((leads.filter(l => l.status === 'won').length / leads.length) * 100).toFixed(1) 
-      : 0;
-    
-    const wonLeads = leads.filter(l => l.status === 'won');
-    const avgSalesCycle = wonLeads.length > 0
-      ? Math.round(wonLeads.reduce((sum, l) => {
-          const days = Math.floor(
-            (Date.now() - new Date(l.created_date).getTime()) / (1000 * 60 * 60 * 24)
-          );
-          return sum + days;
-        }, 0) / wonLeads.length)
-      : 0;
+    const targetProgress =
+      salesTarget > 0 ? ((revenueThisMonth / salesTarget) * 100).toFixed(1) : 0;
+
+    const conversionRate =
+      leads.length > 0
+        ? ((leads.filter((l) => l.status === 'won').length / leads.length) * 100).toFixed(1)
+        : 0;
+
+    const wonLeads = leads.filter((l) => l.status === 'won');
+    const avgSalesCycle =
+      wonLeads.length > 0
+        ? Math.round(
+            wonLeads.reduce((sum, l) => {
+              const days = Math.floor(
+                (Date.now() - new Date(l.created_date).getTime()) / (1000 * 60 * 60 * 24)
+              );
+              return sum + days;
+            }, 0) / wonLeads.length
+          )
+        : 0;
 
     return {
       totalLeads,
@@ -103,25 +110,27 @@ export default function Dashboard() {
 
   const pipelineData = useMemo(() => {
     const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won'];
-    return stages.map(stage => ({
+    return stages.map((stage) => ({
       stage: stage === 'closed_won' ? 'Won' : stage.charAt(0).toUpperCase() + stage.slice(1),
-      value: filteredOpportunities.filter(o => o.stage === stage).reduce((sum, o) => sum + (o.amount || 0), 0),
-      count: filteredOpportunities.filter(o => o.stage === stage).length,
+      value: filteredOpportunities
+        .filter((o) => o.stage === stage)
+        .reduce((sum, o) => sum + (o.amount || 0), 0),
+      count: filteredOpportunities.filter((o) => o.stage === stage).length,
     }));
   }, [filteredOpportunities]);
 
   const revenueOverTime = useMemo(() => {
     const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'];
     const currentMonth = new Date().getMonth();
-    
+
     return months.map((month, idx) => {
       const monthRevenue = opportunities
-        .filter(o => {
+        .filter((o) => {
           const oppMonth = new Date(o.updated_date).getMonth();
           return oppMonth === (currentMonth - 6 + idx + 12) % 12 && o.stage === 'closed_won';
         })
         .reduce((sum, o) => sum + (o.amount || 0), 0);
-      
+
       return {
         month,
         won: monthRevenue,
@@ -132,7 +141,7 @@ export default function Dashboard() {
 
   const topPerformers = useMemo(() => {
     const performerMap = {};
-    filteredOpportunities.forEach(opp => {
+    filteredOpportunities.forEach((opp) => {
       if (opp.owner) {
         if (!performerMap[opp.owner]) {
           performerMap[opp.owner] = { name: opp.owner, deals: 0, value: 0 };
@@ -143,12 +152,14 @@ export default function Dashboard() {
         }
       }
     });
-    return Object.values(performerMap).sort((a, b) => b.value - a.value).slice(0, 3);
+    return Object.values(performerMap)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 3);
   }, [filteredOpportunities]);
 
   const leadSources = useMemo(() => {
     const sourceMap = {};
-    leads.forEach(lead => {
+    leads.forEach((lead) => {
       const source = lead.source || 'Unknown';
       sourceMap[source] = (sourceMap[source] || 0) + 1;
     });
@@ -162,9 +173,7 @@ export default function Dashboard() {
   }, [filteredOpportunities]);
 
   const upcomingActivities = useMemo(() => {
-    return activities
-      .filter(a => new Date(a.date) >= new Date())
-      .slice(0, 3);
+    return activities.filter((a) => new Date(a.date) >= new Date()).slice(0, 3);
   }, [activities]);
 
   const stageColors = {
@@ -220,7 +229,9 @@ export default function Dashboard() {
             </div>
             <div className="mt-2 h-8">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={[{v:10},{v:12},{v:11},{v:14},{v:13},{v:15}]}>
+                <LineChart
+                  data={[{ v: 10 }, { v: 12 }, { v: 11 }, { v: 14 }, { v: 13 }, { v: 15 }]}
+                >
                   <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -234,11 +245,17 @@ export default function Dashboard() {
               <span className="text-xs sm:text-sm text-gray-600">Deals Closed</span>
             </div>
             <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">{formatCurrency(kpis.dealsClosedValue, true)}</span>
+              <span className="text-2xl sm:text-3xl font-bold">
+                {formatCurrency(kpis.dealsClosedValue, true)}
+              </span>
             </div>
             <div className="mt-2 h-8 flex items-end gap-1">
               {[40, 55, 45, 70, 60, 80, 75].map((h, i) => (
-                <div key={i} className="flex-1 bg-cyan-400 rounded-sm" style={{height: `${h}%`}}></div>
+                <div
+                  key={i}
+                  className="flex-1 bg-cyan-400 rounded-sm"
+                  style={{ height: `${h}%` }}
+                ></div>
               ))}
             </div>
           </CardContent>
@@ -250,12 +267,18 @@ export default function Dashboard() {
               <span className="text-xs sm:text-sm text-gray-600">Revenue This Month</span>
             </div>
             <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">{formatCurrency(kpis.revenueThisMonth, true)}</span>
+              <span className="text-2xl sm:text-3xl font-bold">
+                {formatCurrency(kpis.revenueThisMonth, true)}
+              </span>
               <div className="text-xs text-green-600 mb-1">+15%</div>
             </div>
             <div className="mt-2 h-8 flex items-end gap-1">
               {[30, 40, 50, 45, 60, 70, 80].map((h, i) => (
-                <div key={i} className="flex-1 bg-green-400 rounded-sm" style={{height: `${h}%`}}></div>
+                <div
+                  key={i}
+                  className="flex-1 bg-green-400 rounded-sm"
+                  style={{ height: `${h}%` }}
+                ></div>
               ))}
             </div>
           </CardContent>
@@ -267,15 +290,21 @@ export default function Dashboard() {
               <span className="text-xs sm:text-sm text-gray-600">Sales Target</span>
             </div>
             <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">{formatCurrency(kpis.salesTarget, true)}</span>
+              <span className="text-2xl sm:text-3xl font-bold">
+                {formatCurrency(kpis.salesTarget, true)}
+              </span>
               <div className="text-xs text-gray-600 mb-1">{kpis.targetProgress}%</div>
             </div>
             <div className="mt-2 h-8 flex items-end gap-1">
               {[30, 45, 60, 50, 70, 65, 75].map((h, i) => (
-                <div key={i} className="flex-1 rounded-sm" style={{
-                  height: `${h}%`,
-                  backgroundColor: i < 4 ? '#fbbf24' : '#3b82f6'
-                }}></div>
+                <div
+                  key={i}
+                  className="flex-1 rounded-sm"
+                  style={{
+                    height: `${h}%`,
+                    backgroundColor: i < 4 ? '#fbbf24' : '#3b82f6',
+                  }}
+                ></div>
               ))}
             </div>
           </CardContent>
@@ -291,8 +320,16 @@ export default function Dashboard() {
             </div>
             <div className="mt-2 h-8">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={[{v:25},{v:28},{v:30},{v:29},{v:32},{v:31}]}>
-                  <Area type="monotone" dataKey="v" stroke="#8b5cf6" fill="#8b5cf6" fillOpacity={0.3} />
+                <AreaChart
+                  data={[{ v: 25 }, { v: 28 }, { v: 30 }, { v: 29 }, { v: 32 }, { v: 31 }]}
+                >
+                  <Area
+                    type="monotone"
+                    dataKey="v"
+                    stroke="#8b5cf6"
+                    fill="#8b5cf6"
+                    fillOpacity={0.3}
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -310,7 +347,9 @@ export default function Dashboard() {
             </div>
             <div className="mt-2 h-8">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={[{v:30},{v:28},{v:29},{v:27},{v:26},{v:26}]}>
+                <LineChart
+                  data={[{ v: 30 }, { v: 28 }, { v: 29 }, { v: 27 }, { v: 26 }, { v: 26 }]}
+                >
                   <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
@@ -326,7 +365,7 @@ export default function Dashboard() {
             <Filter className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">Filter</span>
           </Button>
-          
+
           <Select value={stageFilter} onValueChange={setStageFilter}>
             <SelectTrigger className="w-full sm:w-32">
               <SelectValue placeholder="Stage" />
@@ -369,7 +408,9 @@ export default function Dashboard() {
             <Input placeholder="Stage: Source" className="pl-9 h-9" />
           </div>
 
-          <Button variant="ghost" size="sm">More...</Button>
+          <Button variant="ghost" size="sm">
+            More...
+          </Button>
         </div>
       </div>
 
@@ -392,8 +433,12 @@ export default function Dashboard() {
             <div className="flex flex-wrap gap-4 mt-4 text-xs">
               {pipelineData.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded ${stageColors[item.stage.toLowerCase().replace(' ', '_')] || 'bg-gray-400'}`}></div>
-                  <span className="text-gray-600">{item.stage}: {formatCurrency(item.value, true)}</span>
+                  <div
+                    className={`w-3 h-3 rounded ${stageColors[item.stage.toLowerCase().replace(' ', '_')] || 'bg-gray-400'}`}
+                  ></div>
+                  <span className="text-gray-600">
+                    {item.stage}: {formatCurrency(item.value, true)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -415,8 +460,22 @@ export default function Dashboard() {
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Legend />
-                <Area type="monotone" dataKey="won" stroke="#10b981" fill="#10b981" fillOpacity={0.6} name="Won" />
-                <Area type="monotone" dataKey="target" stroke="#ef4444" fill="#ef4444" fillOpacity={0.3} name="Target" />
+                <Area
+                  type="monotone"
+                  dataKey="won"
+                  stroke="#10b981"
+                  fill="#10b981"
+                  fillOpacity={0.6}
+                  name="Won"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="target"
+                  stroke="#ef4444"
+                  fill="#ef4444"
+                  fillOpacity={0.3}
+                  name="Target"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
@@ -447,7 +506,10 @@ export default function Dashboard() {
                 <div key={idx} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-8 h-8 bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-semibold">
-                      {performer.name.split(' ').map(n => n[0]).join('')}
+                      {performer.name
+                        .split(' ')
+                        .map((n) => n[0])
+                        .join('')}
                     </Avatar>
                     <div>
                       <p className="text-sm font-medium">{performer.name}</p>
@@ -455,8 +517,16 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm font-semibold">{formatCurrency(performer.value, true)}</span>
-                    <Badge className={performer.deals > 0 ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}>
+                    <span className="text-sm font-semibold">
+                      {formatCurrency(performer.value, true)}
+                    </span>
+                    <Badge
+                      className={
+                        performer.deals > 0
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-blue-100 text-blue-800'
+                      }
+                    >
                       {performer.deals > 0 ? 'Won' : 'Active'}
                     </Badge>
                   </div>
@@ -479,7 +549,10 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-3">
               {leadSources.slice(0, 4).map((source, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                <div
+                  key={idx}
+                  className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+                >
                   <div className="flex items-center gap-3">
                     <Checkbox />
                     <span className="text-sm">Follow up with {source.source}</span>
@@ -503,20 +576,25 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingActivities.length > 0 ? upcomingActivities.map((activity, idx) => (
-                <div key={idx} className="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
-                  <div className="flex items-center gap-3">
-                    <Checkbox />
-                    <div>
-                      <p className="text-sm">{activity.description}</p>
-                      <p className="text-xs text-gray-500">{activity.related_to_name}</p>
+              {upcomingActivities.length > 0 ? (
+                upcomingActivities.map((activity, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Checkbox />
+                      <div>
+                        <p className="text-sm">{activity.description}</p>
+                        <p className="text-xs text-gray-500">{activity.related_to_name}</p>
+                      </div>
                     </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(activity.date).toLocaleDateString()}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-500">
-                    {new Date(activity.date).toLocaleDateString()}
-                  </span>
-                </div>
-              )) : (
+                ))
+              ) : (
                 <p className="text-sm text-gray-500 text-center py-4">No upcoming activities</p>
               )}
             </div>
@@ -579,8 +657,11 @@ export default function Dashboard() {
                     </td>
                     <td>
                       <Badge variant="outline" className="text-xs">
-                        {deal.stage === 'closed_won' ? 'Contacted' : 
-                         deal.stage === 'negotiation' ? 'Proposal' : 'Contacted'}
+                        {deal.stage === 'closed_won'
+                          ? 'Contacted'
+                          : deal.stage === 'negotiation'
+                            ? 'Proposal'
+                            : 'Contacted'}
                       </Badge>
                     </td>
                     <td>

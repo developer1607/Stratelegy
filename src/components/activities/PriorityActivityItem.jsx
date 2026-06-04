@@ -4,12 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2 } from 'lucide-react';
 
-export default function PriorityActivityItem({ activity, onMarkComplete, onReschedule: _onReschedule = undefined }) {
+export default function PriorityActivityItem({
+  activity,
+  onMarkComplete,
+  onReschedule: _onReschedule = undefined,
+}) {
   const activityTime = new Date(activity.date).getTime();
   const now = Date.now();
   const isOverdue = activityTime < now;
   const hoursDiff = Math.abs(Math.floor((activityTime - now) / (1000 * 60 * 60)));
-  
+
   const getOverdueText = () => {
     const days = Math.floor(hoursDiff / 24);
     if (days > 0) return `${days}d overdue`;
@@ -20,7 +24,10 @@ export default function PriorityActivityItem({ activity, onMarkComplete, onResch
     <div className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg border-b">
       <div className="flex items-center gap-3 flex-1">
         <Avatar className="w-10 h-10 bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-semibold">
-          {activity.related_to_name?.split(' ').map(n => n[0]).join('') || 'A'}
+          {activity.related_to_name
+            ?.split(' ')
+            .map((n) => n[0])
+            .join('') || 'A'}
         </Avatar>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -36,11 +43,14 @@ export default function PriorityActivityItem({ activity, onMarkComplete, onResch
       </div>
       <div className="flex items-center gap-2">
         <span className={`text-sm font-medium ${isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
-          {new Date(activity.date).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+          {new Date(activity.date).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+          })}
         </span>
-        <Button 
-          variant="ghost" 
-          size="sm" 
+        <Button
+          variant="ghost"
+          size="sm"
           className="text-xs"
           onClick={() => onMarkComplete(activity.id)}
         >

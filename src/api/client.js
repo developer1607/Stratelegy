@@ -22,7 +22,9 @@ async function request(method, path, body, options = {}) {
   });
 
   const contentType = res.headers.get('content-type') || '';
-  const data = contentType.includes('application/json') ? await res.json().catch(() => ({})) : await res.text();
+  const data = contentType.includes('application/json')
+    ? await res.json().catch(() => ({}))
+    : await res.text();
 
   if (!res.ok) {
     throw new ApiError(data?.message || res.statusText, res.status, data);
@@ -118,9 +120,23 @@ function createEntityClient(entityName) {
 }
 
 const ENTITY_NAMES = [
-  'Account', 'Contact', 'Lead', 'Opportunity', 'Activity', 'CalendarEvent',
-  'ContactSource', 'LeadStage', 'ActivityType', 'AccountTier', 'Industry', 'DefaultSettings',
-  'Ticket', 'TicketComment', 'KBArticle', 'UserPermissions', 'User',
+  'Account',
+  'Contact',
+  'Lead',
+  'Opportunity',
+  'Activity',
+  'CalendarEvent',
+  'ContactSource',
+  'LeadStage',
+  'ActivityType',
+  'AccountTier',
+  'Industry',
+  'DefaultSettings',
+  'Ticket',
+  'TicketComment',
+  'KBArticle',
+  'UserPermissions',
+  'User',
 ];
 
 const entities = {};
@@ -138,15 +154,14 @@ export const api = {
       request('PATCH', '/api/auth/me', { current_password, new_password }),
     logout: (shouldRedirect = true) => {
       clearToken();
-      request('POST', '/api/auth/logout').catch(() => { });
+      request('POST', '/api/auth/logout').catch(() => {});
       if (shouldRedirect) {
         window.location.href = '/login';
       }
     },
     redirectToLogin: (returnUrl) => {
       const from =
-        returnUrl ||
-        `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        returnUrl || `${window.location.pathname}${window.location.search}${window.location.hash}`;
       window.location.href = `/login?from_url=${encodeURIComponent(from)}`;
     },
     login: async (email, password) => {
@@ -167,7 +182,15 @@ export const api = {
   },
 
   users: {
-    createUser: ({ email, password, full_name, role, grant_crm_access, permissions, portal_role_id }) =>
+    createUser: ({
+      email,
+      password,
+      full_name,
+      role,
+      grant_crm_access,
+      permissions,
+      portal_role_id,
+    }) =>
       request('POST', '/api/users', {
         email,
         password,

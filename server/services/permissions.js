@@ -187,7 +187,10 @@ export async function assignPortalRole({ userId, userEmail, userName, roleId }) 
   try {
     const defaultDepts = ROLE_DEFAULT_DEPARTMENTS[role.slug];
     if (defaultDepts?.length) {
-      await execute('UPDATE users SET departments = ? WHERE id = ?', [defaultDepts.join(','), userId]);
+      await execute('UPDATE users SET departments = ? WHERE id = ?', [
+        defaultDepts.join(','),
+        userId,
+      ]);
     }
   } catch (e) {
     console.error('[permissions] support routing defaults failed:', e.message);
@@ -251,13 +254,44 @@ export function canWriteEntity(user, permissions, entityName) {
 }
 
 function moduleForPage(pageName) {
-  if (['Dashboard', 'Accounts', 'Contacts', 'Leads', 'Calendar', 'Activities', 'Reports', 'Settings', 'Profile'].includes(pageName)) {
+  if (
+    [
+      'Dashboard',
+      'Accounts',
+      'Contacts',
+      'Leads',
+      'Calendar',
+      'Activities',
+      'Reports',
+      'Settings',
+      'Profile',
+    ].includes(pageName)
+  ) {
     return 'crm';
   }
-  if (['SupportDashboard', 'SupportTickets', 'SupportTicketDetail', 'KnowledgeBase'].includes(pageName)) {
+  if (
+    ['SupportDashboard', 'SupportTickets', 'SupportTicketDetail', 'KnowledgeBase'].includes(
+      pageName
+    )
+  ) {
     return 'support';
   }
-  if (pageName.startsWith('PBX') || ['Extensions', 'CallLogs', 'CallRouting', 'Voicemail', 'EndpointControl', 'OfflineEndpoints', 'SIPALG', 'E911Review', 'E911Reports', 'Troubleshooting', 'SIPTrunks'].includes(pageName)) {
+  if (
+    pageName.startsWith('PBX') ||
+    [
+      'Extensions',
+      'CallLogs',
+      'CallRouting',
+      'Voicemail',
+      'EndpointControl',
+      'OfflineEndpoints',
+      'SIPALG',
+      'E911Review',
+      'E911Reports',
+      'Troubleshooting',
+      'SIPTrunks',
+    ].includes(pageName)
+  ) {
     return 'pbx';
   }
   return null;

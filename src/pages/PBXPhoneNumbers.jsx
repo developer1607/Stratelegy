@@ -8,7 +8,10 @@ import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
 
 export default function PBXPhoneNumbers() {
   return (
-    <PbxShell title="Phone Numbers" description="PBX and inventory phone numbers for the selected domain">
+    <PbxShell
+      title="Phone Numbers"
+      description="PBX and inventory phone numbers for the selected domain"
+    >
       {({ domain }) => <PhoneNumbersContent domain={domain} />}
     </PbxShell>
   );
@@ -19,7 +22,11 @@ function PhoneNumbersContent({ domain }) {
   const [scope, setScope] = useState('domain');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-phone-numbers', domain, scope],
     queryFn: () =>
       scope === 'inventory'
@@ -56,7 +63,11 @@ function PhoneNumbersContent({ domain }) {
 
   return (
     <div className="space-y-4">
-      <PbxListToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search phone numbers…">
+      <PbxListToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search phone numbers…"
+      >
         {statusOptions.length > 0 && (
           <PbxFilterSelect
             value={statusFilter}
@@ -90,7 +101,11 @@ function PhoneNumbersContent({ domain }) {
           { key: 'status', label: 'Status' },
         ]}
         rows={filteredRows}
-        emptyMessage={scope === 'inventory' ? 'No inventory phone numbers found.' : 'No phone numbers for this domain.'}
+        emptyMessage={
+          scope === 'inventory'
+            ? 'No inventory phone numbers found.'
+            : 'No phone numbers for this domain.'
+        }
       />
     </div>
   );

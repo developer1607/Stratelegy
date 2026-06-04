@@ -21,9 +21,7 @@ export default function TablePagination({
   return (
     <div className={`flex items-center justify-between gap-4 px-2 py-3 ${className}`}>
       <p className="text-sm text-muted-foreground">
-        {total === 0
-          ? 'No results'
-          : `Showing ${start}–${end} of ${total.toLocaleString()}`}
+        {total === 0 ? 'No results' : `Showing ${start}–${end} of ${total.toLocaleString()}`}
       </p>
       <div className="flex items-center gap-2">
         <Button

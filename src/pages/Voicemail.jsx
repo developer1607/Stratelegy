@@ -78,15 +78,27 @@ function VoicemailContent({ domain }) {
       </PbxListToolbar>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Auto attendants</h2>
-        <PbxDataTable columns={aaColumns} rows={autoAttendants} emptyMessage="No auto attendants match your filters." />
+        <PbxDataTable
+          columns={aaColumns}
+          rows={autoAttendants}
+          emptyMessage="No auto attendants match your filters."
+        />
       </section>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Call queues</h2>
-        <PbxDataTable columns={aaColumns} rows={callQueues} emptyMessage="No call queues match your filters." />
+        <PbxDataTable
+          columns={aaColumns}
+          rows={callQueues}
+          emptyMessage="No call queues match your filters."
+        />
       </section>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">All subscribers</h2>
-        <PbxDataTable columns={aaColumns} rows={allSubscribers} emptyMessage="No subscribers match your filters." />
+        <PbxDataTable
+          columns={aaColumns}
+          rows={allSubscribers}
+          emptyMessage="No subscribers match your filters."
+        />
       </section>
     </div>
   );

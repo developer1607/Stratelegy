@@ -54,7 +54,8 @@ export default function RouteByAniDialog({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: () => pbxApi.deleteRouteByAni({ domain: form.domain, ani: form.ani, dnis: form.dnis }),
+    mutationFn: () =>
+      pbxApi.deleteRouteByAni({ domain: form.domain, ani: form.ani, dnis: form.dnis }),
     onSuccess: () => {
       toast.success('Route-by-ANI removed');
       setOpen(false);
@@ -79,11 +80,36 @@ export default function RouteByAniDialog({
         </DialogDescription>
       </DialogHeader>
       <div className="grid sm:grid-cols-2 gap-3 py-4">
-        <PbxFormField label="Domain" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} required />
-        <PbxFormField label="ANI" value={form.ani} onChange={(e) => setForm({ ...form, ani: e.target.value })} required readOnly={isEdit} />
-        <PbxFormField label="DNIS (optional)" value={form.dnis} onChange={(e) => setForm({ ...form, dnis: e.target.value })} readOnly={isEdit} />
-        <PbxFormField label="Destination" value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} required />
-        <PbxFormField label="Application" value={form.application} onChange={(e) => setForm({ ...form, application: e.target.value })} />
+        <PbxFormField
+          label="Domain"
+          value={form.domain}
+          onChange={(e) => setForm({ ...form, domain: e.target.value })}
+          required
+        />
+        <PbxFormField
+          label="ANI"
+          value={form.ani}
+          onChange={(e) => setForm({ ...form, ani: e.target.value })}
+          required
+          readOnly={isEdit}
+        />
+        <PbxFormField
+          label="DNIS (optional)"
+          value={form.dnis}
+          onChange={(e) => setForm({ ...form, dnis: e.target.value })}
+          readOnly={isEdit}
+        />
+        <PbxFormField
+          label="Destination"
+          value={form.destination}
+          onChange={(e) => setForm({ ...form, destination: e.target.value })}
+          required
+        />
+        <PbxFormField
+          label="Application"
+          value={form.application}
+          onChange={(e) => setForm({ ...form, application: e.target.value })}
+        />
       </div>
       <DialogFooter className="gap-2 sm:justify-between">
         {isEdit ? (

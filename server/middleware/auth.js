@@ -45,15 +45,11 @@ export function requireAdmin(req, res, next) {
 }
 
 export function signToken(user) {
-  return jwt.sign(
-    { sub: user.id, email: user.email, role: user.role },
-    config.jwtSecret,
-    {
-      expiresIn: config.isProduction ? '24h' : '7d',
-      issuer: 'stratelegy-insight',
-      audience: 'stratelegy-portal',
-    }
-  );
+  return jwt.sign({ sub: user.id, email: user.email, role: user.role }, config.jwtSecret, {
+    expiresIn: config.isProduction ? '24h' : '7d',
+    issuer: 'stratelegy-insight',
+    audience: 'stratelegy-portal',
+  });
 }
 
 function extractToken(req) {

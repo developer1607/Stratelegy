@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/auth.js';
-import { buildPermissionGroupsForUI, buildPagePermissionMap } from '../constants/permissionRegistry.js';
+import {
+  buildPermissionGroupsForUI,
+  buildPagePermissionMap,
+} from '../constants/permissionRegistry.js';
 import { PERMISSION_KEYS } from '../constants/permissions.js';
 
 const router = Router();

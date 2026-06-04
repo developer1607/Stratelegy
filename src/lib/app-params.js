@@ -68,7 +68,9 @@ const getAppParams = () => {
         : `${window.location.pathname}${window.location.search}${window.location.hash}`,
     }),
     functionsVersion: getAppParamValue('functions_version'),
-    appBaseUrl: getAppParamValue('app_base_url', { defaultValue: import.meta.env.VITE_APP_BASE_URL }),
+    appBaseUrl: getAppParamValue('app_base_url', {
+      defaultValue: import.meta.env.VITE_APP_BASE_URL,
+    }),
   };
 };
 

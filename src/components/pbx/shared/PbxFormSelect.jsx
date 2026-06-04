@@ -1,6 +1,12 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function PbxFormSelect({
   label,
@@ -18,7 +24,12 @@ export default function PbxFormSelect({
   return (
     <div className={`space-y-1.5 ${className || ''}`}>
       {label ? <Label htmlFor={fieldId}>{label}</Label> : null}
-      <Select value={value || undefined} onValueChange={onValueChange} disabled={disabled} required={required}>
+      <Select
+        value={value || undefined}
+        onValueChange={onValueChange}
+        disabled={disabled}
+        required={required}
+      >
         <SelectTrigger id={fieldId} className="bg-white">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

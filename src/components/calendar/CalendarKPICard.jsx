@@ -2,7 +2,14 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 
-export default function CalendarKPICard({ title, value, trend, trendValue, icon: Icon, color = 'blue' }) {
+export default function CalendarKPICard({
+  title,
+  value,
+  trend,
+  trendValue,
+  icon: Icon,
+  color = 'blue',
+}) {
   const colorClasses = {
     blue: { bg: 'bg-blue-50', text: 'text-blue-600', chart: 'bg-blue-200' },
     green: { bg: 'bg-green-50', text: 'text-green-600', chart: 'bg-green-200' },
@@ -20,8 +27,14 @@ export default function CalendarKPICard({ title, value, trend, trendValue, icon:
             <Icon className={`w-5 h-5 ${colorClass.text}`} />
           </div>
           {trend && (
-            <div className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-              {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            <div
+              className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {trend === 'up' ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
               <span>{trendValue}</span>
             </div>
           )}

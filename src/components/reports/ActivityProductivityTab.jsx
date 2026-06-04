@@ -1,15 +1,35 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 import { format, parseISO, isAfter } from 'date-fns';
 
 export default function ActivityProductivityTab({ filteredActivities, filteredOpportunities }) {
   // Activities by Type
   const activitiesByType = React.useMemo(() => {
     const typeCounts = {};
-    filteredActivities.forEach(activity => {
+    filteredActivities.forEach((activity) => {
       const type = activity.type || 'Unknown';
       typeCounts[type] = (typeCounts[type] || 0) + 1;
     });
@@ -19,7 +39,7 @@ export default function ActivityProductivityTab({ filteredActivities, filteredOp
   // Activities Over Time
   const activitiesOverTime = React.useMemo(() => {
     const monthlyData = {};
-    filteredActivities.forEach(activity => {
+    filteredActivities.forEach((activity) => {
       if (activity.date) {
         const month = format(parseISO(activity.date), 'MMM yyyy');
         monthlyData[month] = (monthlyData[month] || 0) + 1;
@@ -29,21 +49,23 @@ export default function ActivityProductivityTab({ filteredActivities, filteredOp
   }, [filteredActivities]);
 
   // Activities vs Wins
-  const wonDeals = filteredOpportunities.filter(o => o.stage === 'closed_won');
-  const activitiesVsWins = activitiesOverTime.map(item => {
-    const wonCount = wonDeals.filter(d => d.close_date && format(parseISO(d.close_date), 'MMM yyyy') === item.month).length;
+  const wonDeals = filteredOpportunities.filter((o) => o.stage === 'closed_won');
+  const activitiesVsWins = activitiesOverTime.map((item) => {
+    const wonCount = wonDeals.filter(
+      (d) => d.close_date && format(parseISO(d.close_date), 'MMM yyyy') === item.month
+    ).length;
     return { ...item, won: wonCount };
   });
 
   // Overdue Activities
   const overdueActivities = filteredActivities
-    .filter(a => a.date && isAfter(new Date(), parseISO(a.date)) && a.type !== 'Note')
+    .filter((a) => a.date && isAfter(new Date(), parseISO(a.date)) && a.type !== 'Note')
     .slice(0, 20);
 
   // Activities by Owner
   const activitiesByOwner = React.useMemo(() => {
     const ownerCounts = {};
-    filteredActivities.forEach(activity => {
+    filteredActivities.forEach((activity) => {
       const owner = activity.created_by || 'Unassigned';
       ownerCounts[owner] = (ownerCounts[owner] || 0) + 1;
     });
@@ -139,7 +161,9 @@ export default function ActivityProductivityTab({ filteredActivities, filteredOp
               <TableBody>
                 {overdueActivities.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No overdue activities</TableCell>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No overdue activities
+                    </TableCell>
                   </TableRow>
                 ) : (
                   overdueActivities.map((activity) => (
@@ -172,7 +196,9 @@ export default function ActivityProductivityTab({ filteredActivities, filteredOp
               <TableBody>
                 {activitiesByOwner.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={2} className="text-center text-gray-500">No activities</TableCell>
+                    <TableCell colSpan={2} className="text-center text-gray-500">
+                      No activities
+                    </TableCell>
                   </TableRow>
                 ) : (
                   activitiesByOwner.map((item, idx) => (

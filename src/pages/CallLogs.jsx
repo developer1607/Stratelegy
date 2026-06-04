@@ -6,7 +6,13 @@ import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { matchSearch, matchSelect, uniqueFieldValues, daysAgo, todayInput } from '@/lib/listFilters';
+import {
+  matchSearch,
+  matchSelect,
+  uniqueFieldValues,
+  daysAgo,
+  todayInput,
+} from '@/lib/listFilters';
 
 export default function CallLogs() {
   return (
@@ -23,7 +29,11 @@ function LogsContent() {
   const [resourceFilter, setResourceFilter] = useState('all');
   const [actionFilter, setActionFilter] = useState('all');
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-audit-logs', startDate, endDate],
     queryFn: () => pbxApi.auditLogs({ start_date: startDate, end_date: endDate, page: 1 }),
     retry: false,
@@ -46,7 +56,9 @@ function LogsContent() {
 
   const rows = useMemo(() => {
     return rawRows.filter((row) => {
-      if (!matchSearch(row, search, ['resource', 'action', 'user_id', 'request_id', 'ip_address'])) {
+      if (
+        !matchSearch(row, search, ['resource', 'action', 'user_id', 'request_id', 'ip_address'])
+      ) {
         return false;
       }
       if (!matchSelect(row.resource, resourceFilter)) return false;

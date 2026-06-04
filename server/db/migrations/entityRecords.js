@@ -20,10 +20,9 @@ export async function migrateEntitiesFromEntityRecords() {
       continue;
     }
 
-    const legacyRows = await query(
-      'SELECT * FROM entity_records WHERE entity_name = ?',
-      [entityName]
-    );
+    const legacyRows = await query('SELECT * FROM entity_records WHERE entity_name = ?', [
+      entityName,
+    ]);
 
     let migrated = 0;
     for (const row of legacyRows) {
@@ -35,7 +34,8 @@ export async function migrateEntitiesFromEntityRecords() {
       for (const [col, spec] of Object.entries(def.columns)) {
         if (col === 'id' || col === 'created_date' || col === 'updated_date') continue;
 
-        const apiField = spec.apiField || (def.configEntity && col === 'sort_order' ? 'order' : col);
+        const apiField =
+          spec.apiField || (def.configEntity && col === 'sort_order' ? 'order' : col);
         let value = payload[apiField];
         if (value === undefined && col in payload) value = payload[col];
 
@@ -81,7 +81,9 @@ export async function migrateEntitiesFromEntityRecords() {
     counts[entityName] = { migrated, skipped: false };
     if (migrated > 0) {
       anyMigrated = true;
-      console.log(`[db] Migrated ${migrated} ${entityName} records from entity_records to ${def.table}`);
+      console.log(
+        `[db] Migrated ${migrated} ${entityName} records from entity_records to ${def.table}`
+      );
     }
   }
 
@@ -101,7 +103,10 @@ export async function migrateEntitiesFromEntityRecords() {
 }
 
 async function migrateTicketsIfEmpty() {
-  const result = { tickets: { migrated: 0, skipped: true }, comments: { migrated: 0, skipped: true } };
+  const result = {
+    tickets: { migrated: 0, skipped: true },
+    comments: { migrated: 0, skipped: true },
+  };
 
   const ticketsExist = await queryOne('SELECT COUNT(*) AS c FROM tickets');
   if (Number(ticketsExist?.c ?? 0) > 0) {
@@ -111,9 +116,7 @@ async function migrateTicketsIfEmpty() {
   result.tickets.skipped = false;
   result.comments.skipped = false;
 
-  const legacyTickets = await query(
-    "SELECT * FROM entity_records WHERE entity_name = 'Ticket'"
-  );
+  const legacyTickets = await query("SELECT * FROM entity_records WHERE entity_name = 'Ticket'");
   const legacyComments = await query(
     "SELECT * FROM entity_records WHERE entity_name = 'TicketComment'"
   );
@@ -178,10 +181,14 @@ async function migrateTicketsIfEmpty() {
   }
 
   if (result.tickets.migrated > 0) {
-    console.log(`[db] Migrated ${result.tickets.migrated} tickets from entity_records to tickets table`);
+    console.log(
+      `[db] Migrated ${result.tickets.migrated} tickets from entity_records to tickets table`
+    );
   }
   if (result.comments.migrated > 0) {
-    console.log(`[db] Migrated ${result.comments.migrated} TicketComment records from entity_records`);
+    console.log(
+      `[db] Migrated ${result.comments.migrated} TicketComment records from entity_records`
+    );
   }
 
   return result;

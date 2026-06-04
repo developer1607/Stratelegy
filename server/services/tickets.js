@@ -73,7 +73,10 @@ export async function onTicketCreated(ticket, { actorEmail } = {}) {
 }
 
 export async function createTicketFromEmail({ subject, body, fromEmail }) {
-  const cleanBody = body.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  const cleanBody = body
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   const ticket = await ticketStore.createTicket({
     title: subject.substring(0, 200),
     description: `**From:** ${fromEmail}\n\n${cleanBody || body}`,

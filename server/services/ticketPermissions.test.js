@@ -49,8 +49,12 @@ test('assign-only user cannot change ticket title', () => {
 
 test('assign-only user can unassign a ticket', () => {
   assert.doesNotThrow(() =>
-    assertTicketUpdateAllowed(assignOnly, { ...existing, assigned_to: 'agent@example.com' }, {
-      assigned_to: null,
-    })
+    assertTicketUpdateAllowed(
+      assignOnly,
+      { ...existing, assigned_to: 'agent@example.com' },
+      {
+        assigned_to: null,
+      }
+    )
   );
 });

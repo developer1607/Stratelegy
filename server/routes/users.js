@@ -1,6 +1,12 @@
 import { Router } from 'express';
 import { requireAdmin } from '../middleware/auth.js';
-import { createUser, inviteUser, getUserById, setUserPasswordAdmin, updateUserSupportRouting } from '../services/users.js';
+import {
+  createUser,
+  inviteUser,
+  getUserById,
+  setUserPasswordAdmin,
+  updateUserSupportRouting,
+} from '../services/users.js';
 import {
   assignPortalRole,
   setUserPermissionFlags,
@@ -70,7 +76,9 @@ router.post('/:id/portal-role', requireAdmin, async (req, res, next) => {
     const user = await getUserById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     if (user.role === 'admin') {
-      return res.status(400).json({ message: 'Admin users have full access and do not use portal roles' });
+      return res
+        .status(400)
+        .json({ message: 'Admin users have full access and do not use portal roles' });
     }
     const roleId = req.body?.role_id ?? req.body?.roleId;
     if (!roleId) return res.status(400).json({ message: 'role_id is required' });
@@ -117,7 +125,9 @@ router.patch('/:id/permissions', requireAdmin, async (req, res, next) => {
     const user = await getUserById(req.params.id);
     if (!user) return res.status(404).json({ message: 'User not found' });
     if (user.role === 'admin') {
-      return res.status(400).json({ message: 'Admin users have full access and do not use portal roles' });
+      return res
+        .status(400)
+        .json({ message: 'Admin users have full access and do not use portal roles' });
     }
 
     const updates = {};

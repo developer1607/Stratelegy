@@ -19,7 +19,11 @@ export function usePermissions() {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
 
-  const { data: storedPermissions, isLoading, refetch } = useQuery({
+  const {
+    data: storedPermissions,
+    isLoading,
+    refetch,
+  } = useQuery({
     queryKey: ['layout-user-permissions', user?.id],
     queryFn: async () => {
       if (!user) return null;

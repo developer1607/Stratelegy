@@ -2,21 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
-import {
-  Bell,
-  Check,
-  CheckCheck,
-  MoreHorizontal,
-  Trash2,
-  MailOpen,
-} from 'lucide-react';
+import { Bell, Check, CheckCheck, MoreHorizontal, Trash2, MailOpen } from 'lucide-react';
 import { api } from '@/api/client';
 import { Button } from '@/components/ui/button';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   DropdownMenu,
@@ -186,9 +175,7 @@ export default function NotificationBell({ user }) {
           variant="ghost"
           size="icon"
           className="text-gray-600 hidden sm:flex relative"
-          aria-label={
-            unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'
-          }
+          aria-label={unreadCount > 0 ? `${unreadCount} unread notifications` : 'Notifications'}
         >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
@@ -251,9 +238,7 @@ export default function NotificationBell({ user }) {
         </div>
 
         <ScrollArea className="h-[min(22rem,50vh)]">
-          {isLoading && (
-            <p className="text-sm text-gray-500 text-center py-10">Loading…</p>
-          )}
+          {isLoading && <p className="text-sm text-gray-500 text-center py-10">Loading…</p>}
           {!isLoading && notifications.length === 0 && (
             <div className="text-center py-10 px-4">
               <Bell className="w-8 h-8 text-gray-300 mx-auto mb-2" />
@@ -271,12 +256,8 @@ export default function NotificationBell({ user }) {
                 key={n.id}
                 notification={n}
                 onOpen={handleOpen}
-                onMarkRead={(item) =>
-                  markReadMutation.mutate({ id: item.id, read: true })
-                }
-                onMarkUnread={(item) =>
-                  markReadMutation.mutate({ id: item.id, read: false })
-                }
+                onMarkRead={(item) => markReadMutation.mutate({ id: item.id, read: true })}
+                onMarkUnread={(item) => markReadMutation.mutate({ id: item.id, read: false })}
                 onDelete={(item) => deleteMutation.mutate(item.id)}
               />
             ))}

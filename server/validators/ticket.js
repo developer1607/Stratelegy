@@ -69,10 +69,12 @@ export function validateTicketCreate(data) {
   const errors = [];
 
   if (!d.title || !String(d.title).trim()) errors.push('title is required');
-  if (!d.category || !TICKET_CATEGORY_VALUES.includes(d.category)) errors.push('valid category is required');
+  if (!d.category || !TICKET_CATEGORY_VALUES.includes(d.category))
+    errors.push('valid category is required');
   if (d.status && !TICKET_STATUS_VALUES.includes(d.status)) errors.push('invalid status');
   if (d.priority && !TICKET_PRIORITY_VALUES.includes(d.priority)) errors.push('invalid priority');
-  if (d.department && !TICKET_DEPARTMENT_VALUES.includes(d.department)) errors.push('invalid department');
+  if (d.department && !TICKET_DEPARTMENT_VALUES.includes(d.department))
+    errors.push('invalid department');
   if (d.source && !TICKET_SOURCE_VALUES.includes(d.source)) errors.push('invalid source');
   if (d.requester_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.requester_email)) {
     errors.push('invalid requester_email');
@@ -104,11 +106,17 @@ export function validateTicketUpdate(data) {
   const errors = [];
 
   if (d.title !== undefined && !String(d.title).trim()) errors.push('title cannot be empty');
-  if (d.category !== undefined && d.category !== '' && !TICKET_CATEGORY_VALUES.includes(d.category)) {
+  if (
+    d.category !== undefined &&
+    d.category !== '' &&
+    !TICKET_CATEGORY_VALUES.includes(d.category)
+  ) {
     errors.push('invalid category');
   }
-  if (d.status !== undefined && !TICKET_STATUS_VALUES.includes(d.status)) errors.push('invalid status');
-  if (d.priority !== undefined && !TICKET_PRIORITY_VALUES.includes(d.priority)) errors.push('invalid priority');
+  if (d.status !== undefined && !TICKET_STATUS_VALUES.includes(d.status))
+    errors.push('invalid status');
+  if (d.priority !== undefined && !TICKET_PRIORITY_VALUES.includes(d.priority))
+    errors.push('invalid priority');
   if (
     d.department !== undefined &&
     d.department !== null &&
@@ -126,7 +134,8 @@ export function validateTicketUpdate(data) {
     errors.push('invalid source');
   }
   if (d.requester_email !== undefined && d.requester_email !== null && d.requester_email !== '') {
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.requester_email)) errors.push('invalid requester_email');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(d.requester_email))
+      errors.push('invalid requester_email');
   }
 
   if (errors.length) {

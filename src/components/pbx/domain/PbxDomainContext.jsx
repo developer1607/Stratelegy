@@ -20,7 +20,11 @@ export function PbxDomainProvider({ children, currentPageName }) {
     () => urlDomain || localStorage.getItem(STORAGE_KEY) || ''
   );
 
-  const { data: domains = [], isLoading, error } = useQuery({
+  const {
+    data: domains = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-domains'],
     queryFn: () => pbxApi.domains(),
     staleTime: 5 * 60 * 1000,
@@ -55,7 +59,8 @@ export function PbxDomainProvider({ children, currentPageName }) {
     if (!domain || !exists) {
       const urlMatch = urlDomain ? findDomainRecord(domains, urlDomain) : null;
       const next = urlMatch?.domain || domains[0]?.domain || '';
-      if (next && !domainsMatch(next, domain)) setDomain(next, { updateUrl: syncDomainToUrl && !urlDomain });
+      if (next && !domainsMatch(next, domain))
+        setDomain(next, { updateUrl: syncDomainToUrl && !urlDomain });
     }
   }, [domains, domain, urlDomain, setDomain, syncDomainToUrl]);
 

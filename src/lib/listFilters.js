@@ -1,9 +1,15 @@
 /** Client-side list filtering helpers */
 
 export function matchSearch(row, query, keys) {
-  const q = String(query || '').trim().toLowerCase();
+  const q = String(query || '')
+    .trim()
+    .toLowerCase();
   if (!q) return true;
-  return keys.some((key) => String(row[key] ?? '').toLowerCase().includes(q));
+  return keys.some((key) =>
+    String(row[key] ?? '')
+      .toLowerCase()
+      .includes(q)
+  );
 }
 
 export function matchSelect(value, filter, allValue = 'all') {

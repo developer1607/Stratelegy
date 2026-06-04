@@ -17,8 +17,14 @@ export default function AccountKPICard({
         <div className="flex justify-between items-start mb-3">
           <span className="text-xs text-gray-600">{title}</span>
           {trend && (
-            <div className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-              {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            <div
+              className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+            >
+              {trend === 'up' ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
               <span>{trendValue}</span>
             </div>
           )}
@@ -28,13 +34,18 @@ export default function AccountKPICard({
           {chartData && (
             <div className="h-10 w-24 flex items-end gap-0.5">
               {chartData.map((height, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={`flex-1 rounded-sm ${
-                    color === 'blue' ? 'bg-blue-400' : 
-                    color === 'green' ? 'bg-green-400' : 
-                    color === 'cyan' ? 'bg-cyan-400' : 
-                    color === 'red' ? 'bg-red-400' : 'bg-purple-400'
+                    color === 'blue'
+                      ? 'bg-blue-400'
+                      : color === 'green'
+                        ? 'bg-green-400'
+                        : color === 'cyan'
+                          ? 'bg-cyan-400'
+                          : color === 'red'
+                            ? 'bg-red-400'
+                            : 'bg-purple-400'
                   }`}
                   style={{ height: `${height}%` }}
                 />

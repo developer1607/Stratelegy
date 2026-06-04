@@ -7,10 +7,7 @@ import {
   validateCommentCreate,
 } from '../validators/ticket.js';
 import { sendTicketUpdatedEmail, sendTicketCommentEmails } from './email/notifications.js';
-import {
-  onTicketUpdatedNotification,
-  onTicketCommentNotification,
-} from './notificationEvents.js';
+import { onTicketUpdatedNotification, onTicketCommentNotification } from './notificationEvents.js';
 import { clampLimit } from '../utils/sql.js';
 
 function rowToTicket(row) {
@@ -48,7 +45,10 @@ function rowToComment(row) {
   };
 }
 
-function parseSort(sort, allowed = ['created_date', 'updated_date', 'ticket_number', 'status', 'priority']) {
+function parseSort(
+  sort,
+  allowed = ['created_date', 'updated_date', 'ticket_number', 'status', 'priority']
+) {
   if (!sort) return { field: 'created_date', desc: true };
   const desc = sort.startsWith('-');
   const field = desc ? sort.slice(1) : sort;
@@ -161,7 +161,9 @@ export async function listTicketsFilteredPage(filterOptions = {}) {
 
   const countRow = await queryOne(`SELECT COUNT(*) AS total${sql}`, params);
   const rows = await query(
-    `SELECT *${sql} ORDER BY ${field} ${dir} LIMIT ${limit} OFFSET ${offset}`.replace(/\s+/g, ' ').trim(),
+    `SELECT *${sql} ORDER BY ${field} ${dir} LIMIT ${limit} OFFSET ${offset}`
+      .replace(/\s+/g, ' ')
+      .trim(),
     params
   );
 
@@ -204,7 +206,19 @@ export async function filterTickets(filterQuery = {}, sort) {
       continue;
     }
     const col = key === 'assignee' ? 'assigned_to' : key;
-    if (['id', 'status', 'priority', 'category', 'department', 'source', 'assigned_to', 'requester_email', 'created_by'].includes(col)) {
+    if (
+      [
+        'id',
+        'status',
+        'priority',
+        'category',
+        'department',
+        'source',
+        'assigned_to',
+        'requester_email',
+        'created_by',
+      ].includes(col)
+    ) {
       sql += ` AND ${col} = ?`;
       params.push(value);
     }
@@ -254,7 +268,10 @@ export async function updateTicket(id, rawData, { actorEmail } = {}) {
   const setClause = keys.map((k) => `${k} = ?`).join(', ');
   const values = keys.map((k) => updates[k]);
 
-  await execute(`UPDATE tickets SET ${setClause}, updated_date = NOW() WHERE id = ?`, [...values, id]);
+  await execute(`UPDATE tickets SET ${setClause}, updated_date = NOW() WHERE id = ?`, [
+    ...values,
+    id,
+  ]);
   const ticket = await getTicket(id);
 
   try {

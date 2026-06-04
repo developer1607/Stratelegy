@@ -1,18 +1,33 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Download, FileText, RotateCcw, Calendar, User } from 'lucide-react';
 import PermissionGate from '@/components/PermissionGate';
 
-export default function GlobalFilters({ filters, onFilterChange, onExportCSV, onExportPDF, owners = [] }) {
+export default function GlobalFilters({
+  filters,
+  onFilterChange,
+  onExportCSV,
+  onExportPDF,
+  owners = [],
+}) {
   return (
     <Card className="p-4 mb-6 sticky top-0 z-10 bg-white shadow-md border-gray-200">
       <div className="flex flex-col lg:flex-row gap-4 items-center">
         <div className="flex flex-wrap gap-3 flex-1">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-gray-500" />
-            <Select value={filters.dateRange} onValueChange={(value) => onFilterChange('dateRange', value)}>
+            <Select
+              value={filters.dateRange}
+              onValueChange={(value) => onFilterChange('dateRange', value)}
+            >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Date: This Quarter" />
               </SelectTrigger>
@@ -36,7 +51,9 @@ export default function GlobalFilters({ filters, onFilterChange, onExportCSV, on
               <SelectContent>
                 <SelectItem value="all">All Owners</SelectItem>
                 {owners.map((owner) => (
-                  <SelectItem key={owner} value={owner}>{owner}</SelectItem>
+                  <SelectItem key={owner} value={owner}>
+                    {owner}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -77,7 +94,11 @@ export default function GlobalFilters({ filters, onFilterChange, onExportCSV, on
 
         <PermissionGate permission="can_export_data">
           <div className="flex gap-2">
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white" size="sm" onClick={onExportCSV}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              size="sm"
+              onClick={onExportCSV}
+            >
               <Download className="w-4 h-4 mr-2" />
               Export CSV
             </Button>

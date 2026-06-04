@@ -1,8 +1,3 @@
-/**
- * SkySwitch often returns object maps keyed by ID (see apiDocumentation.md domain/reseller examples).
- * Normalize to arrays with stable identifier fields.
- */
-
 export function normalizeObjectMap(data, idField) {
   if (Array.isArray(data)) {
     return data.map((item) => normalizeRecord(item, idField));
@@ -24,12 +19,16 @@ function normalizeRecord(record, idField) {
 
 export function normalizeDomainList(data) {
   return normalizeObjectMap(data, 'domain').sort((a, b) =>
-    (a.domain || '').localeCompare(b.domain || '', undefined, { sensitivity: 'base' })
+    (a.domain || '').localeCompare(b.domain || '', undefined, {
+      sensitivity: 'base',
+    })
   );
 }
 
 export function normalizeResellerList(data) {
   return normalizeObjectMap(data, 'name').sort((a, b) =>
-    (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' })
+    (a.name || '').localeCompare(b.name || '', undefined, {
+      sensitivity: 'base',
+    })
   );
 }

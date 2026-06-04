@@ -26,7 +26,11 @@ function E911Content() {
   const [routingFilter, setRoutingFilter] = useState('all');
   const [editPhone, setEditPhone] = useState(null);
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-e911'],
     queryFn: () => pbxApi.e911(),
   });
@@ -40,7 +44,8 @@ function E911Content() {
       phone_number: item.phone_number,
       city: item.location?.address?.civic_address?.city,
       state: item.location?.address?.civic_address?.state,
-      street: `${item.location?.address?.civic_address?.street_number || ''} ${item.location?.address?.civic_address?.street_name || ''}`.trim(),
+      street:
+        `${item.location?.address?.civic_address?.street_number || ''} ${item.location?.address?.civic_address?.street_name || ''}`.trim(),
       zip_code: item.location?.address?.civic_address?.zip_code,
       routing_status: item.location?.level_of_service?.routing_status,
       name: item.location?.address?.civic_address?.name,
@@ -50,7 +55,8 @@ function E911Content() {
       stateOptions: uniqueFieldValues(list, 'state'),
       routingOptions: uniqueFieldValues(list, 'routing_status'),
       rows: list.filter((row) => {
-        if (!matchSearch(row, search, ['phone_number', 'city', 'name', 'street', 'zip_code'])) return false;
+        if (!matchSearch(row, search, ['phone_number', 'city', 'name', 'street', 'zip_code']))
+          return false;
         if (!matchSelect(row.state, stateFilter)) return false;
         if (!matchSelect(row.routing_status, routingFilter)) return false;
         return true;
@@ -87,7 +93,11 @@ function E911Content() {
 
   return (
     <div className="space-y-4">
-      <PbxListToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search phone, city, or name…">
+      <PbxListToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search phone, city, or name…"
+      >
         <PbxFilterSelect
           value={stateFilter}
           onValueChange={setStateFilter}

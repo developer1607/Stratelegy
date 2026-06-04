@@ -2,7 +2,10 @@ import { CLOSED_TICKET_STATUSES } from '../constants/permissionRegistry.js';
 import { hasPermission } from '../constants/permissions.js';
 
 export function canViewTickets(permissions) {
-  return hasPermission(permissions, 'can_view_tickets') || hasPermission(permissions, 'can_view_tickets_page');
+  return (
+    hasPermission(permissions, 'can_view_tickets') ||
+    hasPermission(permissions, 'can_view_tickets_page')
+  );
 }
 
 export function canCreateTickets(permissions) {
@@ -57,10 +60,9 @@ export function assertTicketUpdateAllowed(permissions, existingTicket, updates) 
     'requester',
     'requester_email',
   ];
-  const needsEdit = keys.some(
-    (k) => editFields.includes(k) && updates[k] !== existingTicket?.[k]
-  );
-  const assigns = keys.includes('assigned_to') && updates.assigned_to !== existingTicket?.assigned_to;
+  const needsEdit = keys.some((k) => editFields.includes(k) && updates[k] !== existingTicket?.[k]);
+  const assigns =
+    keys.includes('assigned_to') && updates.assigned_to !== existingTicket?.assigned_to;
   const statusChanging = keys.includes('status') && updates.status !== existingTicket?.status;
   const closes = statusChanging && CLOSED_TICKET_STATUSES.has(updates.status);
   const needsEditForStatus = statusChanging && !closes;

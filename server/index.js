@@ -78,7 +78,9 @@ app.get('/api/health', async (_req, res) => {
     await queryOne('SELECT 1 AS ok');
     res.json({ status: 'ok', database: 'connected', timestamp: new Date().toISOString() });
   } catch {
-    res.status(503).json({ status: 'degraded', database: 'unavailable', timestamp: new Date().toISOString() });
+    res
+      .status(503)
+      .json({ status: 'degraded', database: 'unavailable', timestamp: new Date().toISOString() });
   }
 });
 
@@ -139,7 +141,9 @@ await setupFrontend();
 
 const { host, port, mysql } = config;
 app.listen(port, host, () => {
-  console.log(`[server] Stratelegy Insight running at http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`);
+  console.log(
+    `[server] Stratelegy Insight running at http://${host === '0.0.0.0' ? 'localhost' : host}:${port}`
+  );
   console.log(`[server] Environment: ${config.isProduction ? 'production' : 'development'}`);
   console.log(`[server] Database: MySQL ${mysql.database}@${mysql.host}:${mysql.port}`);
 });

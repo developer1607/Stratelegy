@@ -14,7 +14,10 @@ const ataColumns = [
 
 export default function OfflineEndpoints() {
   return (
-    <PbxShell title="Offline Endpoints" description="Fax ATAs with offline delivery and messaging endpoints">
+    <PbxShell
+      title="Offline Endpoints"
+      description="Fax ATAs with offline delivery and messaging endpoints"
+    >
       {({ domain }) => <OfflineContent domain={domain} />}
     </PbxShell>
   );
@@ -79,12 +82,20 @@ function OfflineContent({ domain }) {
       </PbxListToolbar>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Offline fax ATAs</h2>
-        <PbxDataTable columns={ataColumns} rows={offlineRows} emptyMessage="No offline fax ATAs match your filters." />
+        <PbxDataTable
+          columns={ataColumns}
+          rows={offlineRows}
+          emptyMessage="No offline fax ATAs match your filters."
+        />
       </section>
       {!showOfflineOnly && (
         <section>
           <h2 className="text-lg font-semibold text-gray-900 mb-3">All fax ATAs</h2>
-          <PbxDataTable columns={ataColumns} rows={allRows} emptyMessage="No fax ATAs match your filters." />
+          <PbxDataTable
+            columns={ataColumns}
+            rows={allRows}
+            emptyMessage="No fax ATAs match your filters."
+          />
         </section>
       )}
     </div>

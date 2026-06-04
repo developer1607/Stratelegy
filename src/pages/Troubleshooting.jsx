@@ -31,9 +31,14 @@ function TroubleshootingContent({ domain }) {
           <p className="text-lg font-semibold text-gray-900 mt-1">
             {data.status?.connected ? 'Connected' : 'Not connected'}
           </p>
-          {data.status?.message && <p className="text-sm text-gray-500 mt-1">{data.status.message}</p>}
+          {data.status?.message && (
+            <p className="text-sm text-gray-500 mt-1">{data.status.message}</p>
+          )}
         </div>
-        <Badge className={data.status?.connected ? 'bg-green-600 hover:bg-green-600' : ''} variant={data.status?.connected ? 'default' : 'destructive'}>
+        <Badge
+          className={data.status?.connected ? 'bg-green-600 hover:bg-green-600' : ''}
+          variant={data.status?.connected ? 'default' : 'destructive'}
+        >
           {data.status?.connected ? 'Healthy' : 'Check credentials'}
         </Badge>
       </div>
@@ -48,9 +53,16 @@ function TroubleshootingContent({ domain }) {
       />
 
       <div className="bg-white rounded-lg shadow p-6 text-sm text-gray-600">
-        <p><span className="font-medium text-gray-900">Account:</span> {data.status?.accountId || '—'}</p>
-        <p className="mt-2"><span className="font-medium text-gray-900">Domain:</span> {data.domain}</p>
-        <p className="mt-2"><span className="font-medium text-gray-900">Checked at:</span> {data.checkedAt}</p>
+        <p>
+          <span className="font-medium text-gray-900">Account:</span>{' '}
+          {data.status?.accountId || '—'}
+        </p>
+        <p className="mt-2">
+          <span className="font-medium text-gray-900">Domain:</span> {data.domain}
+        </p>
+        <p className="mt-2">
+          <span className="font-medium text-gray-900">Checked at:</span> {data.checkedAt}
+        </p>
       </div>
     </div>
   );

@@ -30,7 +30,9 @@ export default function AddE911Dialog({ onSuccess }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>New E911 endpoint</DialogTitle>
-            <DialogDescription>Enter the phone number to provision emergency location data.</DialogDescription>
+            <DialogDescription>
+              Enter the phone number to provision emergency location data.
+            </DialogDescription>
           </DialogHeader>
           <PbxFormField
             label="Phone number"

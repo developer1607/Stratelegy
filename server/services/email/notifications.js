@@ -71,10 +71,14 @@ export async function sendTicketAssignedEmail(ticket, assigneeName) {
 
 export async function sendTicketUpdatedEmail(ticket, oldTicket) {
   const changes = [];
-  if (oldTicket.status !== ticket.status) changes.push(`Status: ${oldTicket.status} → ${ticket.status}`);
-  if (oldTicket.priority !== ticket.priority) changes.push(`Priority: ${oldTicket.priority} → ${ticket.priority}`);
+  if (oldTicket.status !== ticket.status)
+    changes.push(`Status: ${oldTicket.status} → ${ticket.status}`);
+  if (oldTicket.priority !== ticket.priority)
+    changes.push(`Priority: ${oldTicket.priority} → ${ticket.priority}`);
   if (oldTicket.assigned_to !== ticket.assigned_to) {
-    changes.push(`Assignee: ${oldTicket.assigned_to || 'Unassigned'} → ${ticket.assigned_to || 'Unassigned'}`);
+    changes.push(
+      `Assignee: ${oldTicket.assigned_to || 'Unassigned'} → ${ticket.assigned_to || 'Unassigned'}`
+    );
   }
   if (changes.length === 0) return { sent: false, skipped: true, reason: 'no_notifiable_changes' };
 
@@ -110,7 +114,11 @@ export async function sendTicketCommentEmails(ticket, comment, { actorEmail } = 
   const results = [];
   const recipients = new Set();
 
-  if (!comment.is_internal && isValidEmail(ticket.requester_email) && ticket.requester_email !== actorEmail) {
+  if (
+    !comment.is_internal &&
+    isValidEmail(ticket.requester_email) &&
+    ticket.requester_email !== actorEmail
+  ) {
     recipients.add(ticket.requester_email);
   }
 

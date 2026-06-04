@@ -52,8 +52,8 @@ export default function PBXDomains() {
 
   const selectedHiddenBySearch = Boolean(
     selectedRecord &&
-      (search.trim() || resellerFilter !== 'all') &&
-      !filtered.some((d) => domainsMatch(d.domain, selectedDomain))
+    (search.trim() || resellerFilter !== 'all') &&
+    !filtered.some((d) => domainsMatch(d.domain, selectedDomain))
   );
 
   const rows = filtered.map((item) => ({
@@ -133,7 +133,8 @@ export default function PBXDomains() {
             <Globe className="h-10 w-10 text-gray-300 mx-auto mb-3" />
             <p className="font-medium text-gray-900">No PBX domains found</p>
             <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-              No domains were found for this account. Contact your administrator if you expect domains to appear here.
+              No domains were found for this account. Contact your administrator if you expect
+              domains to appear here.
             </p>
           </CardContent>
         </Card>
@@ -153,7 +154,9 @@ export default function PBXDomains() {
                     <p className="text-sm text-gray-600 mt-1">{selectedRecord.description}</p>
                   ) : null}
                   {selectedRecord.reseller ? (
-                    <p className="text-xs text-gray-500 mt-1">Reseller: {selectedRecord.reseller}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Reseller: {selectedRecord.reseller}
+                    </p>
                   ) : null}
                 </div>
                 <Button asChild className="bg-[#F07020] hover:bg-[#e06518] shrink-0">
@@ -177,7 +180,8 @@ export default function PBXDomains() {
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-3 text-sm text-amber-900 flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  Selected domain <span className="font-mono font-medium">{selectedRecord.domain}</span> is hidden
+                  Selected domain{' '}
+                  <span className="font-mono font-medium">{selectedRecord.domain}</span> is hidden
                   by filters.
                 </span>
                 <Button
@@ -217,7 +221,9 @@ export default function PBXDomains() {
             columns={columns}
             rows={rows}
             rowClassName={(row) =>
-              row.isSelected ? 'bg-orange-50 hover:bg-orange-50 ring-1 ring-inset ring-[#F07020]/25' : ''
+              row.isSelected
+                ? 'bg-orange-50 hover:bg-orange-50 ring-1 ring-inset ring-[#F07020]/25'
+                : ''
             }
             emptyMessage="No domains match your filters."
           />

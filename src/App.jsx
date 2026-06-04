@@ -1,9 +1,9 @@
-import { Toaster } from "@/components/ui/toaster"
-import { Toaster as SonnerToaster } from "@/components/ui/sonner"
-import { QueryClientProvider } from '@tanstack/react-query'
-import { queryClientInstance } from '@/lib/query-client'
-import NavigationTracker from '@/lib/NavigationTracker'
-import { pagesConfig } from './pages.config'
+import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from '@/components/ui/sonner';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { queryClientInstance } from '@/lib/query-client';
+import NavigationTracker from '@/lib/NavigationTracker';
+import { pagesConfig } from './pages.config';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -16,9 +16,8 @@ const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
-const LayoutWrapper = ({ children, currentPageName }) => Layout ?
-  <Layout currentPageName={currentPageName}>{children}</Layout>
-  : <>{children}</>;
+const LayoutWrapper = ({ children, currentPageName }) =>
+  Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : <>{children}</>;
 
 function ProtectedPage({ pageName, children }) {
   return (
@@ -60,31 +59,32 @@ const AuthenticatedApp = () => {
   return (
     <ErrorBoundary>
       <Routes>
-      <Route path="/" element={
-        <ProtectedPage pageName={mainPageKey}>
-          <MainPage />
-        </ProtectedPage>
-      } />
-      {Object.entries(Pages).map(([path, Page]) => (
         <Route
-          key={path}
-          path={`/${path}`}
+          path="/"
           element={
-            <ProtectedPage pageName={path}>
-              <Page />
+            <ProtectedPage pageName={mainPageKey}>
+              <MainPage />
             </ProtectedPage>
           }
         />
-      ))}
-      <Route path="*" element={<PageNotFound />} />
+        {Object.entries(Pages).map(([path, Page]) => (
+          <Route
+            key={path}
+            path={`/${path}`}
+            element={
+              <ProtectedPage pageName={path}>
+                <Page />
+              </ProtectedPage>
+            }
+          />
+        ))}
+        <Route path="*" element={<PageNotFound />} />
       </Routes>
     </ErrorBoundary>
   );
 };
 
-
 function App() {
-
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
@@ -96,7 +96,7 @@ function App() {
         <SonnerToaster richColors closeButton position="top-right" />
       </QueryClientProvider>
     </AuthProvider>
-  )
+  );
 }
 
-export default App
+export default App;

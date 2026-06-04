@@ -1,5 +1,8 @@
 /** Map API errors to user-friendly messages — never show SQL or raw server internals. */
-export function getUserFacingErrorMessage(error, fallback = 'Something went wrong. Please try again.') {
+export function getUserFacingErrorMessage(
+  error,
+  fallback = 'Something went wrong. Please try again.'
+) {
   if (!error) return fallback;
 
   const code = error?.data?.code || error?.extra_data?.reason;

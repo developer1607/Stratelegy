@@ -30,10 +30,7 @@ test('validateTicketCreate returns normalized defaults', () => {
 });
 
 test('validateTicketUpdate rejects invalid status', () => {
-  assert.throws(
-    () => validateTicketUpdate({ status: 'not_a_status' }),
-    /invalid status/
-  );
+  assert.throws(() => validateTicketUpdate({ status: 'not_a_status' }), /invalid status/);
 });
 
 test('validateCommentCreate requires ticket_id and message', () => {

@@ -29,7 +29,9 @@ function SipAlgContent({ domain }) {
 
   const rows = useMemo(() => {
     return settings.filter((row) => {
-      if (!matchSearch(row, search, ['config_name', 'config_value', 'description', 'server_name'])) {
+      if (
+        !matchSearch(row, search, ['config_name', 'config_value', 'description', 'server_name'])
+      ) {
         return false;
       }
       return matchSelect(row.server_name, serverFilter);

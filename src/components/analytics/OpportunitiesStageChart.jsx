@@ -11,16 +11,16 @@ export default function OpportunitiesStageChart({ opportunities = [] }) {
       proposal: '#eab308',
       negotiation: '#f97316',
     };
-    
-    opportunities.forEach(opp => {
+
+    opportunities.forEach((opp) => {
       const stage = opp.stage || 'prospecting';
       if (['prospecting', 'qualification', 'proposal', 'negotiation'].includes(stage)) {
         stages[stage] = (stages[stage] || 0) + 1;
       }
     });
-    
+
     const total = Object.values(stages).reduce((sum, val) => sum + val, 0) || 1;
-    
+
     return Object.entries(stages).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
       value: Math.round((value / total) * 100),
@@ -63,7 +63,9 @@ export default function OpportunitiesStageChart({ opportunities = [] }) {
           {data.map((item, index) => (
             <div key={index} className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-              <span className="text-sm text-gray-600">{item.name} {item.value}%</span>
+              <span className="text-sm text-gray-600">
+                {item.name} {item.value}%
+              </span>
             </div>
           ))}
         </div>

@@ -42,10 +42,10 @@ export async function createNotification({
 }
 
 export async function getNotificationForUser(id, userId) {
-  const row = await queryOne(
-    'SELECT * FROM user_notifications WHERE id = ? AND user_id = ?',
-    [id, userId]
-  );
+  const row = await queryOne('SELECT * FROM user_notifications WHERE id = ? AND user_id = ?', [
+    id,
+    userId,
+  ]);
   if (!row) {
     const err = new Error('Notification not found');
     err.status = 404;
@@ -54,7 +54,10 @@ export async function getNotificationForUser(id, userId) {
   return rowToNotification(row);
 }
 
-export async function listNotifications(userId, { unreadOnly = false, limit = 30, offset = 0 } = {}) {
+export async function listNotifications(
+  userId,
+  { unreadOnly = false, limit = 30, offset = 0 } = {}
+) {
   const safeLimit = clampLimit(limit, { default: 30, max: 100 });
   const safeOffset = Math.max(0, Number(offset) || 0);
 
@@ -88,15 +91,15 @@ export async function getUnreadCount(userId) {
 export async function setNotificationRead(id, userId, read = true) {
   await getNotificationForUser(id, userId);
   if (read) {
-    await execute(
-      'UPDATE user_notifications SET read_at = NOW() WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    await execute('UPDATE user_notifications SET read_at = NOW() WHERE id = ? AND user_id = ?', [
+      id,
+      userId,
+    ]);
   } else {
-    await execute(
-      'UPDATE user_notifications SET read_at = NULL WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
+    await execute('UPDATE user_notifications SET read_at = NULL WHERE id = ? AND user_id = ?', [
+      id,
+      userId,
+    ]);
   }
   return getNotificationForUser(id, userId);
 }

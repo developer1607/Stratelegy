@@ -27,7 +27,11 @@ function ExtensionsContent({ domain }) {
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('all');
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-extensions', domain],
     queryFn: () => pbxApi.extensions(domain),
     enabled: !!domain,
@@ -37,7 +41,15 @@ function ExtensionsContent({ domain }) {
 
   const rows = useMemo(() => {
     return data.filter((row) => {
-      if (!matchSearch(row, search, ['user', 'name', 'subscriber_login', 'email_address', 'caller_id'])) {
+      if (
+        !matchSearch(row, search, [
+          'user',
+          'name',
+          'subscriber_login',
+          'email_address',
+          'caller_id',
+        ])
+      ) {
         return false;
       }
       return matchSelect(row.group, groupFilter);
@@ -63,7 +75,11 @@ function ExtensionsContent({ domain }) {
           allLabel="All groups"
         />
       </PbxListToolbar>
-      <PbxDataTable columns={columns} rows={rows} emptyMessage="No extensions match your filters." />
+      <PbxDataTable
+        columns={columns}
+        rows={rows}
+        emptyMessage="No extensions match your filters."
+      />
     </div>
   );
 }

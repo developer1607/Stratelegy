@@ -17,7 +17,11 @@ export function PbxStatusBadge() {
 
   if (!data) return null;
   if (!data.configured) {
-    return <Badge variant="outline" className="text-amber-700 border-amber-300">SkySwitch not configured</Badge>;
+    return (
+      <Badge variant="outline" className="text-amber-700 border-amber-300">
+        SkySwitch not configured
+      </Badge>
+    );
   }
   return data.connected ? (
     <Badge className="bg-green-600 hover:bg-green-600">SkySwitch connected</Badge>
@@ -26,13 +30,7 @@ export function PbxStatusBadge() {
   );
 }
 
-export default function PbxShell({
-  title,
-  description,
-  children,
-  actions,
-  requiresDomain = true,
-}) {
+export default function PbxShell({ title, description, children, actions, requiresDomain = true }) {
   const { domain, domains, isLoading, error } = usePbxDomain();
 
   return (
@@ -51,7 +49,9 @@ export default function PbxShell({
       {requiresDomain && error && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
           <p className="font-medium">Failed to load PBX domains</p>
-          <p className="text-sm mt-1">{getUserFacingErrorMessage(error, 'Could not load PBX domains.')}</p>
+          <p className="text-sm mt-1">
+            {getUserFacingErrorMessage(error, 'Could not load PBX domains.')}
+          </p>
         </div>
       )}
 
@@ -84,12 +84,18 @@ export function PbxError({ error }) {
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
       <p className="font-medium">Request failed</p>
-      <p className="text-sm mt-1">{getUserFacingErrorMessage(error, 'Could not load phone system data.')}</p>
+      <p className="text-sm mt-1">
+        {getUserFacingErrorMessage(error, 'Could not load phone system data.')}
+      </p>
       {error.data?.code === 'skyswitch_log_scope_required' && (
-        <p className="text-sm mt-2">Log access is not enabled for this account. Contact your administrator.</p>
+        <p className="text-sm mt-2">
+          Log access is not enabled for this account. Contact your administrator.
+        </p>
       )}
       {error.data?.code === 'skyswitch_report_scope_required' && (
-        <p className="text-sm mt-2">Report access is not enabled for this account. Contact your administrator.</p>
+        <p className="text-sm mt-2">
+          Report access is not enabled for this account. Contact your administrator.
+        </p>
       )}
     </div>
   );
@@ -117,19 +123,20 @@ export function PbxDataTable({ columns, rows, emptyMessage = 'No records found.'
           </thead>
           <tbody>
             {rows.map((row, idx) => {
-              const extraClass = typeof rowClassName === 'function' ? rowClassName(row) : rowClassName || '';
+              const extraClass =
+                typeof rowClassName === 'function' ? rowClassName(row) : rowClassName || '';
               return (
-              <tr
-                key={row.id || row.user || row.phone_number || row.domain || idx}
-                className={`border-b last:border-0 hover:bg-gray-50 ${extraClass}`.trim()}
-              >
-                {columns.map((col) => (
-                  <td key={col.key} className="px-4 py-3 text-gray-800 align-middle">
-                    {col.render ? col.render(row) : (row[col.key] ?? '—')}
-                  </td>
-                ))}
-              </tr>
-            );
+                <tr
+                  key={row.id || row.user || row.phone_number || row.domain || idx}
+                  className={`border-b last:border-0 hover:bg-gray-50 ${extraClass}`.trim()}
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-4 py-3 text-gray-800 align-middle">
+                      {col.render ? col.render(row) : (row[col.key] ?? '—')}
+                    </td>
+                  ))}
+                </tr>
+              );
             })}
           </tbody>
         </table>

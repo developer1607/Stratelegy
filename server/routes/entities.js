@@ -177,9 +177,7 @@ router.patch('/:entityName/:id', async (req, res, next) => {
     } else if (!checkWrite(req, entityName)) {
       return res.status(403).json({ message: 'You do not have permission to modify this data' });
     }
-    res.json(
-      await updateEntity(entityName, id, req.body, { actorEmail: req.user?.email })
-    );
+    res.json(await updateEntity(entityName, id, req.body, { actorEmail: req.user?.email }));
   } catch (e) {
     next(e);
   }

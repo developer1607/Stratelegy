@@ -4,7 +4,14 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
 
-export default function ConfigListManager({ title, items, onAdd, onUpdate, onDelete, isLoading: _isLoading = false }) {
+export default function ConfigListManager({
+  title,
+  items,
+  onAdd,
+  onUpdate,
+  onDelete,
+  isLoading: _isLoading = false,
+}) {
   const [editingId, setEditingId] = useState(null);
   const [editValue, setEditValue] = useState('');
   const [newValue, setNewValue] = useState('');
@@ -37,7 +44,10 @@ export default function ConfigListManager({ title, items, onAdd, onUpdate, onDel
       <CardContent>
         <div className="space-y-2 mb-4">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50">
+            <div
+              key={item.id}
+              className="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50"
+            >
               {editingId === item.id ? (
                 <>
                   <Input
@@ -59,9 +69,9 @@ export default function ConfigListManager({ title, items, onAdd, onUpdate, onDel
                   <Button size="icon" variant="ghost" onClick={() => handleStartEdit(item)}>
                     <Edit2 className="w-4 h-4" />
                   </Button>
-                  <Button 
-                    size="icon" 
-                    variant="ghost" 
+                  <Button
+                    size="icon"
+                    variant="ghost"
                     onClick={() => onDelete(item.id)}
                     className="text-red-600 hover:text-red-700"
                   >

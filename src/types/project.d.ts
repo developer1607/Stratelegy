@@ -1,7 +1,4 @@
-import type {
-  UseMutationOptions,
-  UseMutationResult,
-} from '@tanstack/react-query';
+import type { UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 
 declare module '@tanstack/react-query' {
   export function useMutation<TData = unknown, TError = Error, TVariables = unknown>(

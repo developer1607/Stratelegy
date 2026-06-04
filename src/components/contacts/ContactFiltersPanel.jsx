@@ -8,7 +8,7 @@ export default function ContactFiltersPanel({ filters, onFilterChange, onClose: 
   const handleCheckboxChange = (category, value) => {
     const currentValues = filters[category] || [];
     const newValues = currentValues.includes(value)
-      ? currentValues.filter(v => v !== value)
+      ? currentValues.filter((v) => v !== value)
       : [...currentValues, value];
     onFilterChange(category, newValues);
   };
@@ -57,7 +57,10 @@ export default function ContactFiltersPanel({ filters, onFilterChange, onClose: 
                   checked={filters.priorities?.includes(priority)}
                   onCheckedChange={() => handleCheckboxChange('priorities', priority)}
                 />
-                <Label htmlFor={`priority-${priority}`} className="text-sm font-normal cursor-pointer">
+                <Label
+                  htmlFor={`priority-${priority}`}
+                  className="text-sm font-normal cursor-pointer"
+                >
                   {priority}
                 </Label>
               </div>
@@ -75,7 +78,9 @@ export default function ContactFiltersPanel({ filters, onFilterChange, onClose: 
               <Checkbox
                 id="no-activity"
                 checked={filters.noRecentActivity}
-                onCheckedChange={() => onFilterChange('noRecentActivity', !filters.noRecentActivity)}
+                onCheckedChange={() =>
+                  onFilterChange('noRecentActivity', !filters.noRecentActivity)
+                }
               />
               <Label htmlFor="no-activity" className="text-sm font-normal cursor-pointer">
                 No Recent Activity (30+ days)
@@ -139,7 +144,10 @@ export default function ContactFiltersPanel({ filters, onFilterChange, onClose: 
                   checked={filters.engagementLevels?.includes(level)}
                   onCheckedChange={() => handleCheckboxChange('engagementLevels', level)}
                 />
-                <Label htmlFor={`engagement-${level}`} className="text-sm font-normal cursor-pointer">
+                <Label
+                  htmlFor={`engagement-${level}`}
+                  className="text-sm font-normal cursor-pointer"
+                >
                   {level}
                 </Label>
               </div>

@@ -4,25 +4,25 @@ This document defines how we build, secure, and maintain this codebase.
 
 ## Architecture
 
-| Layer | Path | Responsibility |
-|-------|------|----------------|
-| Frontend | `src/` | React SPA, pages, components, client API |
-| Backend | `server/` | Express API, services, middleware, DB |
-| Shared | `shared/` | Cross-runtime modules (permissions registry) |
-| Scripts | `scripts/` | Ops and audit tooling |
+| Layer    | Path       | Responsibility                               |
+| -------- | ---------- | -------------------------------------------- |
+| Frontend | `src/`     | React SPA, pages, components, client API     |
+| Backend  | `server/`  | Express API, services, middleware, DB        |
+| Shared   | `shared/`  | Cross-runtime modules (permissions registry) |
+| Scripts  | `scripts/` | Ops and audit tooling                        |
 
 **Single-server model:** Express serves `/api/*` and the Vite-built SPA from `dist/` in production.
 
 ## Naming conventions
 
-| Context | Convention | Example |
-|---------|------------|---------|
-| React components | PascalCase files | `UserManagement.jsx` |
-| Server modules | camelCase | `ticketStore.js` |
-| DB / API fields | snake_case | `created_date`, `full_name` |
-| Permission keys | snake_case | `can_view_tickets_page` |
-| Environment variables | SCREAMING_SNAKE | `JWT_SECRET` |
-| Client imports | `@/` alias → `src/` | `@/lib/errors` |
+| Context               | Convention          | Example                     |
+| --------------------- | ------------------- | --------------------------- |
+| React components      | PascalCase files    | `UserManagement.jsx`        |
+| Server modules        | camelCase           | `ticketStore.js`            |
+| DB / API fields       | snake_case          | `created_date`, `full_name` |
+| Permission keys       | snake_case          | `can_view_tickets_page`     |
+| Environment variables | SCREAMING_SNAKE     | `JWT_SECRET`                |
+| Client imports        | `@/` alias → `src/` | `@/lib/errors`              |
 
 ## Database & SQL
 
@@ -82,7 +82,7 @@ Client imports via `@shared/...`; server re-exports from `server/utils/` or `ser
 - Plain language for end users and admins — no `.env`, SQL, or internal API paths in UI.
 - Consistent filter labels: **"All statuses"**, **"All priorities"**.
 - Use toasts (`sonner`) instead of `alert()` for feedback.
-- Empty states should be specific: *"No SIP ALG settings are configured for this domain"* not *"No records found"*.
+- Empty states should be specific: _"No SIP ALG settings are configured for this domain"_ not _"No records found"_.
 
 ## Linting & quality
 

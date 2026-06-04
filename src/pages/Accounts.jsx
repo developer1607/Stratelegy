@@ -6,7 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Plus, Search, Building2, MoreVertical, Download, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -87,34 +93,43 @@ export default function Accounts() {
   });
 
   const enrichedAccounts = useMemo(() => {
-    return accounts.map(account => {
-      const accountActivities = activities.filter(a => a.related_to_name === account.name);
-      const lastActivity = accountActivities.length > 0 
-        ? new Date(Math.max(...accountActivities.map(a => new Date(a.date))))
-        : null;
-      
+    return accounts.map((account) => {
+      const accountActivities = activities.filter((a) => a.related_to_name === account.name);
+      const lastActivity =
+        accountActivities.length > 0
+          ? new Date(Math.max(...accountActivities.map((a) => new Date(a.date))))
+          : null;
+
       const openDeals = opportunities.filter(
-        o => o.account_name === account.name && 
-        o.stage !== 'closed_won' && 
-        o.stage !== 'closed_lost'
+        (o) =>
+          o.account_name === account.name && o.stage !== 'closed_won' && o.stage !== 'closed_lost'
       ).length;
 
-      const overdueActivities = accountActivities.filter(a => 
-        new Date(a.date) < new Date() && !a.completed
+      const overdueActivities = accountActivities.filter(
+        (a) => new Date(a.date) < new Date() && !a.completed
       ).length;
 
       // Assign random tier for demo (in real app, this would be in the entity)
-      const tier = account.annual_revenue > 1000000 ? 'Key' : 
-                   account.annual_revenue > 500000 ? 'A' : 
-                   account.annual_revenue > 100000 ? 'B' : 'C';
+      const tier =
+        account.annual_revenue > 1000000
+          ? 'Key'
+          : account.annual_revenue > 500000
+            ? 'A'
+            : account.annual_revenue > 100000
+              ? 'B'
+              : 'C';
 
       // Calculate health status
-      const daysSinceLastActivity = lastActivity 
+      const daysSinceLastActivity = lastActivity
         ? Math.floor((Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24))
         : 999;
-      
-      const health = overdueActivities > 0 ? 'Needs Attention' :
-                     daysSinceLastActivity > 30 ? 'At Risk' : 'Healthy';
+
+      const health =
+        overdueActivities > 0
+          ? 'Needs Attention'
+          : daysSinceLastActivity > 30
+            ? 'At Risk'
+            : 'Healthy';
 
       return {
         ...account,
@@ -129,14 +144,19 @@ export default function Accounts() {
   }, [accounts, activities, opportunities]);
 
   const filteredAccounts = useMemo(() => {
-    return enrichedAccounts.filter(account => {
+    return enrichedAccounts.filter((account) => {
       const matchSearch = account.name?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchIndustry = filters.industry === 'all' || account.industry === filters.industry;
-      const matchTier = filters.tiers.length === 0 || filters.tiers.includes(account.tier) || 
-                        (filters.tiers.includes('Key Account') && account.tier === 'Key');
+      const matchTier =
+        filters.tiers.length === 0 ||
+        filters.tiers.includes(account.tier) ||
+        (filters.tiers.includes('Key Account') && account.tier === 'Key');
       const matchOwner =
         filters.owner === 'all' ||
-        (filters.owner === 'john' && String(account.owner || '').toLowerCase().includes('john')) ||
+        (filters.owner === 'john' &&
+          String(account.owner || '')
+            .toLowerCase()
+            .includes('john')) ||
         String(account.owner || '').toLowerCase() === String(filters.owner).toLowerCase();
       const matchRevenue = (() => {
         if (filters.revenue === 'all') return true;
@@ -146,19 +166,19 @@ export default function Accounts() {
         if (filters.revenue === '5m+') return rev > 5_000_000;
         return true;
       })();
-      
+
       return matchSearch && matchIndustry && matchTier && matchOwner && matchRevenue;
     });
   }, [enrichedAccounts, searchTerm, filters]);
 
   const kpis = useMemo(() => {
     const totalAccounts = enrichedAccounts.length;
-    const activeAccounts = enrichedAccounts.filter(a => a.status === 'active').length;
-    const keyAccounts = enrichedAccounts.filter(a => a.tier === 'Key').length;
+    const activeAccounts = enrichedAccounts.filter((a) => a.status === 'active').length;
+    const keyAccounts = enrichedAccounts.filter((a) => a.tier === 'Key').length;
     const totalRevenue = opportunities
-      .filter(o => o.stage === 'closed_won')
+      .filter((o) => o.stage === 'closed_won')
       .reduce((sum, o) => sum + (o.amount || 0), 0);
-    const overdueAccounts = enrichedAccounts.filter(a => a.overdueActivities > 0).length;
+    const overdueAccounts = enrichedAccounts.filter((a) => a.overdueActivities > 0).length;
 
     return {
       totalAccounts,
@@ -180,14 +200,25 @@ export default function Accounts() {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const exportToCSV = () => {
     if (accounts.length === 0) return;
-    
-    const headers = ['Name', 'Industry', 'Phone', 'Email', 'Website', 'Annual Revenue', 'Employees', 'Status', 'Tier', 'Health'];
-    const rows = filteredAccounts.map(account => [
+
+    const headers = [
+      'Name',
+      'Industry',
+      'Phone',
+      'Email',
+      'Website',
+      'Annual Revenue',
+      'Employees',
+      'Status',
+      'Tier',
+      'Health',
+    ];
+    const rows = filteredAccounts.map((account) => [
       account.name || '',
       account.industry || '',
       account.phone || '',
@@ -197,14 +228,14 @@ export default function Accounts() {
       account.employees || '',
       account.status || '',
       account.tier || '',
-      account.health || ''
+      account.health || '',
     ]);
-    
+
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -216,17 +247,17 @@ export default function Accounts() {
 
   const getTierBadge = (tier) => {
     const colors = {
-      'Key': 'bg-yellow-100 text-yellow-800',
-      'A': 'bg-green-100 text-green-800',
-      'B': 'bg-blue-100 text-blue-800',
-      'C': 'bg-gray-100 text-gray-800',
+      Key: 'bg-yellow-100 text-yellow-800',
+      A: 'bg-green-100 text-green-800',
+      B: 'bg-blue-100 text-blue-800',
+      C: 'bg-gray-100 text-gray-800',
     };
     return colors[tier] || 'bg-gray-100 text-gray-800';
   };
 
   const getHealthBadge = (health) => {
     const colors = {
-      'Healthy': 'bg-green-100 text-green-800',
+      Healthy: 'bg-green-100 text-green-800',
       'At Risk': 'bg-yellow-100 text-yellow-800',
       'Needs Attention': 'bg-red-100 text-red-800',
     };
@@ -241,13 +272,22 @@ export default function Accounts() {
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
           <PermissionGate permission="can_export_data">
-            <Button variant="outline" size="sm" onClick={exportToCSV} disabled={accounts.length === 0}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={exportToCSV}
+              disabled={accounts.length === 0}
+            >
               <Download className="w-4 h-4 mr-2" />
               <span className="hidden sm:inline">Export CSV</span>
             </Button>
           </PermissionGate>
           <PermissionGate entity="Account">
-            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setDialogOpen(true)}>
+            <Button
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setDialogOpen(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               New Account
             </Button>
@@ -322,7 +362,9 @@ export default function Accounts() {
                   </SelectContent>
                 </Select>
 
-                <Button variant="outline" size="sm">More</Button>
+                <Button variant="outline" size="sm">
+                  More
+                </Button>
 
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -369,8 +411,8 @@ export default function Accounts() {
                     </TableRow>
                   ) : (
                     filteredAccounts.map((account) => (
-                      <TableRow 
-                        key={account.id} 
+                      <TableRow
+                        key={account.id}
                         className={`cursor-pointer hover:bg-gray-50 ${
                           account.tier === 'Key' ? 'bg-yellow-50/30' : ''
                         } ${account.overdueActivities > 0 ? 'border-l-4 border-l-red-500' : ''}`}
@@ -384,7 +426,9 @@ export default function Accounts() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">{account.name}</p>
-                                {account.tier === 'Key' && <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />}
+                                {account.tier === 'Key' && (
+                                  <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                )}
                                 {account.overdueActivities > 0 && (
                                   <Badge variant="destructive" className="text-xs">
                                     {account.overdueActivities} Overdue
@@ -397,32 +441,33 @@ export default function Accounts() {
                         </TableCell>
                         <TableCell>{account.industry || '-'}</TableCell>
                         <TableCell>
-                          {account.annual_revenue ? `$${(account.annual_revenue / 1000000).toFixed(1)}M` : '-'}
+                          {account.annual_revenue
+                            ? `$${(account.annual_revenue / 1000000).toFixed(1)}M`
+                            : '-'}
                         </TableCell>
                         <TableCell>
-                          <Badge className={getTierBadge(account.tier)}>
-                            {account.tier}
-                          </Badge>
+                          <Badge className={getTierBadge(account.tier)}>{account.tier}</Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6 bg-blue-100 text-blue-600 text-xs font-semibold flex items-center justify-center">
-                              {account.owner?.split(' ').map(n => n[0]).join('') || 'A'}
+                              {account.owner
+                                ?.split(' ')
+                                .map((n) => n[0])
+                                .join('') || 'A'}
                             </Avatar>
                             <span className="text-sm">{account.owner}</span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <span className="text-sm text-gray-600">
-                            {account.lastActivity 
+                            {account.lastActivity
                               ? new Date(account.lastActivity).toLocaleDateString()
                               : 'No activity'}
                           </span>
                         </TableCell>
                         <TableCell>
-                          <Badge className={getHealthBadge(account.health)}>
-                            {account.health}
-                          </Badge>
+                          <Badge className={getHealthBadge(account.health)}>{account.health}</Badge>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -432,14 +477,22 @@ export default function Accounts() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(account);
-                              }}>Edit</DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewInsights(account);
-                              }}>View Insights</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(account);
+                                }}
+                              >
+                                Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewInsights(account);
+                                }}
+                              >
+                                View Insights
+                              </DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={(e) => {
@@ -463,10 +516,7 @@ export default function Accounts() {
 
         {/* Right Sidebar Filters */}
         <div className="hidden lg:block w-80">
-          <AccountFilters
-            filters={filters}
-            onFilterChange={handleFilterChange}
-          />
+          <AccountFilters filters={filters} onFilterChange={handleFilterChange} />
         </div>
       </div>
 

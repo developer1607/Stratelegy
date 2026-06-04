@@ -1,18 +1,36 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+} from 'recharts';
 import { format, parseISO } from 'date-fns';
 
 export default function SalesOverviewTab({ filteredOpportunities, filteredLeads }) {
-  const wonDeals = filteredOpportunities.filter(o => o.stage === 'closed_won');
-  const lostDeals = filteredOpportunities.filter(o => o.stage === 'closed_lost');
+  const wonDeals = filteredOpportunities.filter((o) => o.stage === 'closed_won');
+  const lostDeals = filteredOpportunities.filter((o) => o.stage === 'closed_lost');
 
   // Revenue Over Time
   const revenueOverTime = React.useMemo(() => {
     const monthlyData = {};
-    wonDeals.forEach(deal => {
+    wonDeals.forEach((deal) => {
       if (deal.close_date) {
         const month = format(parseISO(deal.close_date), 'MMM yyyy');
         monthlyData[month] = (monthlyData[month] || 0) + (deal.amount || 0);
@@ -24,7 +42,7 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
   // Won vs Lost Over Time
   const wonVsLostOverTime = React.useMemo(() => {
     const monthlyData = {};
-    [...wonDeals, ...lostDeals].forEach(deal => {
+    [...wonDeals, ...lostDeals].forEach((deal) => {
       if (deal.close_date) {
         const month = format(parseISO(deal.close_date), 'MMM yyyy');
         if (!monthlyData[month]) monthlyData[month] = { month, won: 0, lost: 0 };
@@ -38,27 +56,29 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
   // Pipeline by Stage
   const pipelineByStage = React.useMemo(() => {
     const stageData = {};
-    filteredOpportunities.filter(o => o.stage !== 'closed_won' && o.stage !== 'closed_lost').forEach(opp => {
-      const stage = opp.stage || 'unknown';
-      if (!stageData[stage]) stageData[stage] = { stage, count: 0, value: 0 };
-      stageData[stage].count++;
-      stageData[stage].value += opp.amount || 0;
-    });
+    filteredOpportunities
+      .filter((o) => o.stage !== 'closed_won' && o.stage !== 'closed_lost')
+      .forEach((opp) => {
+        const stage = opp.stage || 'unknown';
+        if (!stageData[stage]) stageData[stage] = { stage, count: 0, value: 0 };
+        stageData[stage].count++;
+        stageData[stage].value += opp.amount || 0;
+      });
     return Object.values(stageData);
   }, [filteredOpportunities]);
 
   // Conversion Funnel
   const conversionFunnel = React.useMemo(() => {
     const stages = ['new', 'contacted', 'qualified'];
-    const leadsByStage = stages.map(stage => ({
+    const leadsByStage = stages.map((stage) => ({
       stage,
-      count: filteredLeads.filter(l => l.status === stage).length
+      count: filteredLeads.filter((l) => l.status === stage).length,
     }));
-    
+
     const oppStages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won'];
-    const oppsByStage = oppStages.map(stage => ({
+    const oppsByStage = oppStages.map((stage) => ({
       stage,
-      count: filteredOpportunities.filter(o => o.stage === stage).length
+      count: filteredOpportunities.filter((o) => o.stage === stage).length,
     }));
 
     return [...leadsByStage, ...oppsByStage];
@@ -71,7 +91,6 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
   const topDeals = [...filteredOpportunities]
     .sort((a, b) => (b.amount || 0) - (a.amount || 0))
     .slice(0, 10);
-
 
   return (
     <div className="space-y-6">
@@ -169,14 +188,18 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
               <TableBody>
                 {recentWonDeals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No won deals</TableCell>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No won deals
+                    </TableCell>
                   </TableRow>
                 ) : (
                   recentWonDeals.map((deal) => (
                     <TableRow key={deal.id}>
                       <TableCell className="font-medium">{deal.name}</TableCell>
                       <TableCell>{deal.account_name}</TableCell>
-                      <TableCell className="text-right">${(deal.amount || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        ${(deal.amount || 0).toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}
@@ -201,7 +224,9 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
               <TableBody>
                 {topDeals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No deals</TableCell>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No deals
+                    </TableCell>
                   </TableRow>
                 ) : (
                   topDeals.map((deal) => (
@@ -210,7 +235,9 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
                       <TableCell>
                         <Badge variant="outline">{deal.stage}</Badge>
                       </TableCell>
-                      <TableCell className="text-right">${(deal.amount || 0).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">
+                        ${(deal.amount || 0).toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   ))
                 )}

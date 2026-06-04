@@ -12,7 +12,11 @@ export default function SIPTrunks() {
 }
 
 function TrunksContent() {
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-trunks'],
     queryFn: () => pbxApi.trunkGroups(),
   });

@@ -22,7 +22,11 @@ function RouteByAniContent({ domain }) {
   const [appFilter, setAppFilter] = useState('all');
   const [editRule, setEditRule] = useState(null);
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['pbx-route-by-ani', domain],
     queryFn: () => pbxApi.routeByAni(domain),
     enabled: !!domain,
@@ -73,7 +77,11 @@ function RouteByAniContent({ domain }) {
 
   return (
     <div className="space-y-4">
-      <PbxListToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search ANI, DNIS, or destination…">
+      <PbxListToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search ANI, DNIS, or destination…"
+      >
         <PbxFilterSelect
           value={appFilter}
           onValueChange={setAppFilter}
@@ -85,7 +93,11 @@ function RouteByAniContent({ domain }) {
           <RouteByAniDialog domain={domain} />
         </PermissionGate>
       </PbxListToolbar>
-      <PbxDataTable columns={columns} rows={rows} emptyMessage="No route-by-ANI rules for this domain." />
+      <PbxDataTable
+        columns={columns}
+        rows={rows}
+        emptyMessage="No route-by-ANI rules for this domain."
+      />
       <RouteByAniDialog
         domain={domain}
         initialData={editRule}

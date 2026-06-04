@@ -1,14 +1,32 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  Tooltip,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 export default function LeadSourcesTab({ filteredLeads, filteredOpportunities }) {
   // Leads by Source
   const leadsBySource = React.useMemo(() => {
     const sourceCounts = {};
-    filteredLeads.forEach(lead => {
+    filteredLeads.forEach((lead) => {
       const source = lead.source || 'Unknown';
       sourceCounts[source] = (sourceCounts[source] || 0) + 1;
     });
@@ -18,48 +36,51 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
   // Win Rate by Source
   const winRateBySource = React.useMemo(() => {
     const sourceData = {};
-    filteredOpportunities.forEach(opp => {
+    filteredOpportunities.forEach((opp) => {
       const source = opp.source || 'Unknown';
       if (!sourceData[source]) sourceData[source] = { won: 0, lost: 0 };
       if (opp.stage === 'closed_won') sourceData[source].won++;
       else if (opp.stage === 'closed_lost') sourceData[source].lost++;
     });
-    
+
     return Object.entries(sourceData).map(([source, data]) => ({
       source,
-      winRate: data.won + data.lost > 0 ? ((data.won / (data.won + data.lost)) * 100).toFixed(1) : 0
+      winRate:
+        data.won + data.lost > 0 ? ((data.won / (data.won + data.lost)) * 100).toFixed(1) : 0,
     }));
   }, [filteredOpportunities]);
 
   // Avg Deal Value by Source
   const avgDealValueBySource = React.useMemo(() => {
     const sourceData = {};
-    filteredOpportunities.forEach(opp => {
+    filteredOpportunities.forEach((opp) => {
       const source = opp.source || 'Unknown';
       if (!sourceData[source]) sourceData[source] = { total: 0, count: 0 };
       sourceData[source].total += opp.amount || 0;
       sourceData[source].count++;
     });
-    
+
     return Object.entries(sourceData).map(([source, data]) => ({
       source,
-      avgValue: data.count > 0 ? Math.round(data.total / data.count) : 0
+      avgValue: data.count > 0 ? Math.round(data.total / data.count) : 0,
     }));
   }, [filteredOpportunities]);
 
   // Source Performance Summary
   const sourcePerformance = React.useMemo(() => {
     const performance = {};
-    
-    filteredLeads.forEach(lead => {
+
+    filteredLeads.forEach((lead) => {
       const source = lead.source || 'Unknown';
-      if (!performance[source]) performance[source] = { source, leads: 0, won: 0, lost: 0, revenue: 0 };
+      if (!performance[source])
+        performance[source] = { source, leads: 0, won: 0, lost: 0, revenue: 0 };
       performance[source].leads++;
     });
-    
-    filteredOpportunities.forEach(opp => {
+
+    filteredOpportunities.forEach((opp) => {
       const source = opp.source || 'Unknown';
-      if (!performance[source]) performance[source] = { source, leads: 0, won: 0, lost: 0, revenue: 0 };
+      if (!performance[source])
+        performance[source] = { source, leads: 0, won: 0, lost: 0, revenue: 0 };
       if (opp.stage === 'closed_won') {
         performance[source].won++;
         performance[source].revenue += opp.amount || 0;
@@ -67,7 +88,7 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
         performance[source].lost++;
       }
     });
-    
+
     return Object.values(performance);
   }, [filteredLeads, filteredOpportunities]);
 
@@ -165,7 +186,9 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
                 ))}
                 {filteredLeads.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">No leads</TableCell>
+                    <TableCell colSpan={3} className="text-center text-gray-500">
+                      No leads
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -193,12 +216,16 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
                     <TableCell className="font-medium">{item.source}</TableCell>
                     <TableCell className="text-right">{item.leads}</TableCell>
                     <TableCell className="text-right">{item.won}</TableCell>
-                    <TableCell className="text-right">${(item.revenue / 1000).toFixed(0)}K</TableCell>
+                    <TableCell className="text-right">
+                      ${(item.revenue / 1000).toFixed(0)}K
+                    </TableCell>
                   </TableRow>
                 ))}
                 {sourcePerformance.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">No data</TableCell>
+                    <TableCell colSpan={4} className="text-center text-gray-500">
+                      No data
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>

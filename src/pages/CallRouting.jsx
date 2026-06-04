@@ -93,7 +93,11 @@ function RoutingContent({ domain }) {
 
   return (
     <div className="space-y-4">
-      <PbxListToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search phone or subscriber…">
+      <PbxListToolbar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Search phone or subscriber…"
+      >
         <PbxFilterSelect
           value={typeFilter}
           onValueChange={setTypeFilter}
@@ -118,7 +122,11 @@ function RoutingContent({ domain }) {
           Errors only
         </Button>
       </PbxListToolbar>
-      <PbxDataTable columns={columns} rows={filteredRows} emptyMessage="No routed phone numbers for this domain." />
+      <PbxDataTable
+        columns={columns}
+        rows={filteredRows}
+        emptyMessage="No routed phone numbers for this domain."
+      />
       <RoutePhoneSheet
         phoneNumber={editRow?.phone_number || ''}
         initialData={editRow?._raw || editRow}

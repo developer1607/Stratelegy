@@ -29,7 +29,9 @@ export default function ReportKPICard({
       <CardContent className="p-5">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-lg ${colorClass.bg} flex items-center justify-center`}>
+            <div
+              className={`w-10 h-10 rounded-lg ${colorClass.bg} flex items-center justify-center`}
+            >
               <Icon className={`w-5 h-5 ${colorClass.text}`} />
             </div>
             <div>
@@ -38,28 +40,34 @@ export default function ReportKPICard({
             </div>
           </div>
         </div>
-        
+
         <div className="flex items-end justify-between mt-2">
           {sparklineData.length > 0 && (
             <div className="flex-1 h-12 mr-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={sparklineData}>
-                  <Line 
-                    type="monotone" 
-                    dataKey="value" 
-                    stroke={colorClass.sparkline} 
-                    strokeWidth={2} 
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    stroke={colorClass.sparkline}
+                    strokeWidth={2}
                     dot={false}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           )}
-          
+
           <div className="flex flex-col items-end">
             {trend && (
-              <div className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}>
-                {trend === 'up' ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+              <div
+                className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+              >
+                {trend === 'up' ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : (
+                  <TrendingDown className="w-3 h-3" />
+                )}
                 <span>{trendValue}</span>
               </div>
             )}

@@ -15,7 +15,13 @@ import {
 import PbxFormField from '@/components/pbx/shared/PbxFormField';
 import { toast } from 'sonner';
 
-const DEFAULT_FORM = { user: '', domain: '', device_user: '', name: '', user_type: 'skyswitch-pbx' };
+const DEFAULT_FORM = {
+  user: '',
+  domain: '',
+  device_user: '',
+  name: '',
+  user_type: 'skyswitch-pbx',
+};
 
 export default function ProvisionHubUserDialog({ domain, onSuccess }) {
   const [open, setOpen] = useState(false);
@@ -55,10 +61,30 @@ export default function ProvisionHubUserDialog({ domain, onSuccess }) {
             <DialogDescription>Create a messaging endpoint for this PBX domain.</DialogDescription>
           </DialogHeader>
           <div className="grid sm:grid-cols-2 gap-3 py-4">
-            <PbxFormField label="Extension / user" value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} required />
-            <PbxFormField label="Domain" value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} required />
-            <PbxFormField label="Device user" value={form.device_user} onChange={(e) => setForm({ ...form, device_user: e.target.value })} placeholder="1000m" required />
-            <PbxFormField label="Display name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <PbxFormField
+              label="Extension / user"
+              value={form.user}
+              onChange={(e) => setForm({ ...form, user: e.target.value })}
+              required
+            />
+            <PbxFormField
+              label="Domain"
+              value={form.domain}
+              onChange={(e) => setForm({ ...form, domain: e.target.value })}
+              required
+            />
+            <PbxFormField
+              label="Device user"
+              value={form.device_user}
+              onChange={(e) => setForm({ ...form, device_user: e.target.value })}
+              placeholder="1000m"
+              required
+            />
+            <PbxFormField
+              label="Display name"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
           </div>
           <DialogFooter>
             <Button type="submit" disabled={mutation.isPending}>

@@ -14,7 +14,7 @@ test('looksLikeInternalLeak flags SQL messages', () => {
 });
 
 test('formatHttpError hides database errors in production-like 500s', () => {
-  const err = new Error("You have an error in your SQL syntax");
+  const err = new Error('You have an error in your SQL syntax');
   err.code = 'ER_PARSE_ERROR';
   const result = formatHttpError(err);
   assert.equal(result.status, 500);

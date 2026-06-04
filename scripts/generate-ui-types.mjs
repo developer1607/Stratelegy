@@ -19,17 +19,20 @@ function parseExports(content) {
   if (block) {
     return block[1]
       .split(',')
-      .map((part) => part.trim().split(/\s+as\s+/).pop().trim())
+      .map((part) =>
+        part
+          .trim()
+          .split(/\s+as\s+/)
+          .pop()
+          .trim()
+      )
       .filter(Boolean);
   }
   return [...content.matchAll(/export const (\w+)/g)].map((m) => m[1]);
 }
 
 function generateDts(baseName, exports) {
-  const lines = [
-    "import * as React from 'react';",
-    '',
-  ];
+  const lines = ["import * as React from 'react';", ''];
 
   if (baseName === 'badge') {
     lines.push(

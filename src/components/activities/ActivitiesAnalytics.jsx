@@ -6,18 +6,18 @@ import { Checkbox } from '@/components/ui/checkbox';
 export default function ActivitiesAnalytics({ activities }) {
   const activitiesByType = React.useMemo(() => {
     const types = ['Call', 'Email', 'Meeting', 'Task', 'Note'];
-    return types.map(type => ({
+    return types.map((type) => ({
       type,
-      count: activities.filter(a => a.type === type).length,
+      count: activities.filter((a) => a.type === type).length,
     }));
   }, [activities]);
 
   const colors = {
-    'Call': '#3b82f6',
-    'Email': '#8b5cf6',
-    'Meeting': '#f59e0b',
-    'Task': '#10b981',
-    'Note': '#14b8a6',
+    Call: '#3b82f6',
+    Email: '#8b5cf6',
+    Meeting: '#f59e0b',
+    Task: '#10b981',
+    Note: '#14b8a6',
   };
 
   return (
@@ -42,14 +42,18 @@ export default function ActivitiesAnalytics({ activities }) {
           {activitiesByType.map((item) => (
             <div key={item.type} className="flex items-center gap-2">
               <div className="w-3 h-3 rounded" style={{ backgroundColor: colors[item.type] }}></div>
-              <span className="text-xs text-gray-600">{item.type} {item.count}</span>
+              <span className="text-xs text-gray-600">
+                {item.type} {item.count}
+              </span>
             </div>
           ))}
         </div>
         <div className="mt-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             <Checkbox id="activities" defaultChecked />
-            <label htmlFor="activities" className="text-sm font-medium cursor-pointer">Activities</label>
+            <label htmlFor="activities" className="text-sm font-medium cursor-pointer">
+              Activities
+            </label>
             <button className="ml-auto text-gray-400 hover:text-gray-600">•••</button>
           </div>
         </div>

@@ -24,15 +24,15 @@ export default function ContactDetailsPanel({ contact, onClose }) {
   if (!contact) return null;
 
   const priorityColors = {
-    'Key': 'bg-amber-100 text-amber-800 border-amber-300',
-    'Standard': 'bg-blue-100 text-blue-800 border-blue-300',
-    'At Risk': 'bg-red-100 text-red-800 border-red-300'
+    Key: 'bg-amber-100 text-amber-800 border-amber-300',
+    Standard: 'bg-blue-100 text-blue-800 border-blue-300',
+    'At Risk': 'bg-red-100 text-red-800 border-red-300',
   };
 
   const engagementColors = {
-    'High': 'bg-green-600',
-    'Medium': 'bg-yellow-600',
-    'Low': 'bg-red-600'
+    High: 'bg-green-600',
+    Medium: 'bg-yellow-600',
+    Low: 'bg-red-600',
   };
 
   return (
@@ -54,14 +54,12 @@ export default function ContactDetailsPanel({ contact, onClose }) {
           </div>
           <h3 className="text-2xl font-bold mb-1">{contact.name}</h3>
           <p className="text-gray-600 mb-3">{contact.position || 'No position'}</p>
-          
+
           <div className="flex items-center justify-center gap-2 mb-4">
             <Badge className={priorityColors[contact.priority] || priorityColors['Standard']}>
               {contact.priority || 'Standard'}
             </Badge>
-            {contact.role && (
-              <Badge variant="outline">{contact.role}</Badge>
-            )}
+            {contact.role && <Badge variant="outline">{contact.role}</Badge>}
           </div>
 
           {contact.engagement_level && (
@@ -72,7 +70,12 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                   <div
                     key={i}
                     className={`w-2 h-6 rounded ${
-                      i < (contact.engagement_level === 'High' ? 3 : contact.engagement_level === 'Medium' ? 2 : 1)
+                      i <
+                      (contact.engagement_level === 'High'
+                        ? 3
+                        : contact.engagement_level === 'Medium'
+                          ? 2
+                          : 1)
                         ? engagementColors[contact.engagement_level]
                         : 'bg-gray-200'
                     }`}
@@ -138,7 +141,9 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                 <Calendar className="w-4 h-4 text-gray-400 mt-1" />
                 <div className="flex-1">
                   <p className="text-sm text-gray-600">Last Activity</p>
-                  <p className="font-medium">{moment(contact.last_activity_date).format('MMM D, YYYY')}</p>
+                  <p className="font-medium">
+                    {moment(contact.last_activity_date).format('MMM D, YYYY')}
+                  </p>
                 </div>
               </div>
             )}

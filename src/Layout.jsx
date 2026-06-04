@@ -6,12 +6,14 @@ import { usePermissions } from '@/hooks/usePermissions';
 import PbxNavGroup from '@/components/pbx/PbxNavGroup';
 import { PbxDomainProvider } from '@/hooks/usePbxDomain';
 import PbxDomainBar from '@/components/pbx/domain/PbxDomainBar';
+import { CRM_PAGES, SUPPORT_PAGES, PBX_PAGES } from '@/lib/permissions';
 import {
-  CRM_PAGES,
-  SUPPORT_PAGES,
-  PBX_PAGES,
-} from '@/lib/permissions';
-import { CRM_NAV, SUPPORT_NAV, PBX_NAV_GROUPS, getAdminBottomNav, PBX_PAGES_NO_DOMAIN_BAR } from '@/lib/navConfig';
+  CRM_NAV,
+  SUPPORT_NAV,
+  PBX_NAV_GROUPS,
+  getAdminBottomNav,
+  PBX_PAGES_NO_DOMAIN_BAR,
+} from '@/lib/navConfig';
 import { ChevronDown } from 'lucide-react';
 import HeaderQuickActions from '@/components/layout/HeaderQuickActions';
 import CommandPalette from '@/components/layout/CommandPalette';
@@ -56,7 +58,10 @@ export default function Layout({ children, currentPageName }) {
   const isActive = (itemPath) => currentPageName === itemPath;
 
   const navLinkClass = (path) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${isActive(path) ? 'bg-[#F07020] text-white' : 'hover:bg-white/10 text-white/80 hover:text-white'
+    `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
+      isActive(path)
+        ? 'bg-[#F07020] text-white'
+        : 'hover:bg-white/10 text-white/80 hover:text-white'
     }`;
 
   useEffect(() => {
@@ -113,10 +118,16 @@ export default function Layout({ children, currentPageName }) {
           {crmItems.length > 0 && (
             <>
               <div className="px-4 mb-2 mt-2">
-                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">Sales</span>
+                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">
+                  Sales
+                </span>
               </div>
               {crmItems.map((item) => (
-                <Link key={item.path} to={createPageUrl(item.path)} className={navLinkClass(item.path)}>
+                <Link
+                  key={item.path}
+                  to={createPageUrl(item.path)}
+                  className={navLinkClass(item.path)}
+                >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
                 </Link>
@@ -127,10 +138,16 @@ export default function Layout({ children, currentPageName }) {
           {supportItems.length > 0 && (
             <>
               <div className="px-4 mb-2 mt-4">
-                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">Support</span>
+                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">
+                  Support
+                </span>
               </div>
               {supportItems.map((item) => (
-                <Link key={item.path} to={createPageUrl(item.path)} className={navLinkClass(item.path)}>
+                <Link
+                  key={item.path}
+                  to={createPageUrl(item.path)}
+                  className={navLinkClass(item.path)}
+                >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
                 </Link>
@@ -141,7 +158,9 @@ export default function Layout({ children, currentPageName }) {
           {hasPbxNav && (
             <>
               <div className="px-4 mb-2 mt-4">
-                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">PBX</span>
+                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">
+                  PBX
+                </span>
               </div>
               {PBX_NAV_GROUPS.map((group) => (
                 <PbxNavGroup
@@ -160,7 +179,11 @@ export default function Layout({ children, currentPageName }) {
           {bottomMenuItems.length > 0 && (
             <div className="mt-auto pt-4 border-t border-white/10 space-y-1 pb-4">
               {bottomMenuItems.map((item) => (
-                <Link key={item.path} to={createPageUrl(item.path)} className={navLinkClass(item.path)}>
+                <Link
+                  key={item.path}
+                  to={createPageUrl(item.path)}
+                  className={navLinkClass(item.path)}
+                >
                   <item.icon className="w-5 h-5" />
                   <span className="font-medium">{item.name}</span>
                 </Link>
@@ -219,11 +242,7 @@ export default function Layout({ children, currentPageName }) {
   );
 
   if (hasPbxAccess) {
-    return (
-      <PbxDomainProvider currentPageName={currentPageName}>
-        {layoutBody}
-      </PbxDomainProvider>
-    );
+    return <PbxDomainProvider currentPageName={currentPageName}>{layoutBody}</PbxDomainProvider>;
   }
 
   return layoutBody;

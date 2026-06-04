@@ -11,7 +11,9 @@ const WINDOW_MS = 15 * 60 * 1000;
 const store = new Map();
 
 function keyFor(ip, email) {
-  return `${ip || 'unknown'}:${String(email || '').trim().toLowerCase()}`;
+  return `${ip || 'unknown'}:${String(email || '')
+    .trim()
+    .toLowerCase()}`;
 }
 
 export function isLoginLocked(ip, email) {
@@ -63,7 +65,9 @@ export function getClientIp(req) {
 }
 
 export function normalizeLoginEmail(email) {
-  return String(email || '').trim().toLowerCase();
+  return String(email || '')
+    .trim()
+    .toLowerCase();
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;

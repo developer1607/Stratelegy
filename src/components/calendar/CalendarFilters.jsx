@@ -45,7 +45,7 @@ export default function CalendarFilters({ filters, onFilterChange }) {
                   onCheckedChange={(checked) => {
                     const newTypes = checked
                       ? [...(filters.eventTypes || []), type.value]
-                      : (filters.eventTypes || []).filter(t => t !== type.value);
+                      : (filters.eventTypes || []).filter((t) => t !== type.value);
                     onFilterChange('eventTypes', newTypes);
                   }}
                 />

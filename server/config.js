@@ -66,14 +66,19 @@ export function assertProductionConfig() {
     console.warn('[config] EMAIL_WEBHOOK_SECRET is not set — inbound email webhooks are disabled');
   }
   if (!process.env.ADMIN_PASSWORD) {
-    console.warn('[config] ADMIN_PASSWORD is not set — first admin will not be created until you set it');
+    console.warn(
+      '[config] ADMIN_PASSWORD is not set — first admin will not be created until you set it'
+    );
   }
 }
 
 function parseCorsOrigins() {
   const raw = process.env.CORS_ORIGINS;
   if (raw) {
-    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return raw
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
   }
   if (config.isProduction) {
     return [config.appBaseUrl].filter(Boolean);

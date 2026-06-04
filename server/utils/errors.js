@@ -17,7 +17,10 @@ export function isDatabaseError(err) {
   if (!err) return false;
   if (err.code && String(err.code).startsWith('ER_')) return true;
   if (err.sqlState || err.sqlMessage) return true;
-  if (typeof err.message === 'string' && INTERNAL_LEAK_PATTERNS.some((re) => re.test(err.message))) {
+  if (
+    typeof err.message === 'string' &&
+    INTERNAL_LEAK_PATTERNS.some((re) => re.test(err.message))
+  ) {
     return /\bsql\b|\bmysql\b|ER_/i.test(err.message);
   }
   return false;

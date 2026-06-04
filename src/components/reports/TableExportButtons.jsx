@@ -6,19 +6,19 @@ import jsPDF from 'jspdf';
 export default function TableExportButtons({ data, headers, title, onExportCSV }) {
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    
+
     // Add title
     doc.setFontSize(16);
     doc.text(title, 14, 15);
-    
+
     // Add date
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 22);
-    
+
     // Add table manually
     doc.setFontSize(9);
     let yPosition = 32;
-    
+
     // Add headers
     doc.setFont(undefined, 'bold');
     let xPosition = 14;
@@ -26,7 +26,7 @@ export default function TableExportButtons({ data, headers, title, onExportCSV }
       doc.text(header, xPosition, yPosition);
       xPosition += 60;
     });
-    
+
     // Add data rows
     doc.setFont(undefined, 'normal');
     yPosition += 7;
@@ -42,8 +42,10 @@ export default function TableExportButtons({ data, headers, title, onExportCSV }
       });
       yPosition += 7;
     });
-    
-    doc.save(`${title.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`);
+
+    doc.save(
+      `${title.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`
+    );
   };
 
   return (

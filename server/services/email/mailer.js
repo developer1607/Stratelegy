@@ -117,13 +117,19 @@ export async function sendTestEmail({ to, sentBy }) {
       reason: 'mail_disabled',
       subject,
       preview: text,
-      message: 'MAIL_ENABLED is false or SMTP is not fully configured — email logged to server console only',
+      message:
+        'MAIL_ENABLED is false or SMTP is not fully configured — email logged to server console only',
     };
   }
 
   const transport = getTransporter();
   if (!transport) {
-    return { sent: false, skipped: true, reason: 'smtp_not_configured', message: 'SMTP host is missing' };
+    return {
+      sent: false,
+      skipped: true,
+      reason: 'smtp_not_configured',
+      message: 'SMTP host is missing',
+    };
   }
 
   try {

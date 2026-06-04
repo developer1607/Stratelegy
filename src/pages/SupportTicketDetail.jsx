@@ -8,7 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertDialog,
@@ -66,7 +72,10 @@ export default function SupportTicketDetail() {
   const [dirty, setDirty] = useState(false);
 
   useEffect(() => {
-    api.auth.me().then(setCurrentUser).catch(() => {});
+    api.auth
+      .me()
+      .then(setCurrentUser)
+      .catch(() => {});
   }, []);
 
   const { data: ticket, isLoading } = useQuery({
@@ -178,7 +187,10 @@ export default function SupportTicketDetail() {
   if (!ticketId) {
     return (
       <div className="p-6 text-muted-foreground">
-        No ticket selected. <Link to="/SupportTickets" className="text-primary underline">Back to tickets</Link>
+        No ticket selected.{' '}
+        <Link to="/SupportTickets" className="text-primary underline">
+          Back to tickets
+        </Link>
       </div>
     );
   }
@@ -193,7 +205,10 @@ export default function SupportTicketDetail() {
 
   return (
     <div className="p-4 sm:p-6 max-w-6xl mx-auto">
-      <Link to="/SupportTickets" className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm">
+      <Link
+        to="/SupportTickets"
+        className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-6 text-sm"
+      >
         <ArrowLeft className="w-4 h-4" /> Back to Tickets
       </Link>
 
@@ -203,17 +218,25 @@ export default function SupportTicketDetail() {
             <CardHeader className="pb-3">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm text-muted-foreground mb-1">Ticket #{ticket.ticket_number || '—'}</p>
+                  <p className="text-sm text-muted-foreground mb-1">
+                    Ticket #{ticket.ticket_number || '—'}
+                  </p>
                   <CardTitle className="text-xl">{editForm.title}</CardTitle>
                   <div className="flex gap-2 flex-wrap mt-2">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[editForm.status] || 'bg-gray-100 text-gray-600'}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${STATUS_COLORS[editForm.status] || 'bg-gray-100 text-gray-600'}`}
+                    >
                       {formatTicketLabel(editForm.status)}
                     </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[editForm.priority] || 'bg-gray-100 text-gray-600'}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${PRIORITY_COLORS[editForm.priority] || 'bg-gray-100 text-gray-600'}`}
+                    >
                       {editForm.priority}
                     </span>
                     {editForm.category && (
-                      <Badge variant="outline" className="text-xs capitalize">{formatTicketLabel(editForm.category)}</Badge>
+                      <Badge variant="outline" className="text-xs capitalize">
+                        {formatTicketLabel(editForm.category)}
+                      </Badge>
                     )}
                   </div>
                 </div>
@@ -227,7 +250,11 @@ export default function SupportTicketDetail() {
                   <PermissionGate ticketAction="delete">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 border-red-200 hover:bg-red-50"
+                        >
                           <Trash2 className="w-4 h-4 mr-1" /> Delete
                         </Button>
                       </AlertDialogTrigger>
@@ -283,14 +310,18 @@ export default function SupportTicketDetail() {
 
           <div className="space-y-3">
             <h2 className="font-semibold text-foreground">Conversation</h2>
-            {comments.length === 0 && <p className="text-muted-foreground text-sm">No messages yet.</p>}
+            {comments.length === 0 && (
+              <p className="text-muted-foreground text-sm">No messages yet.</p>
+            )}
             {comments.map((c) => (
               <div
                 key={c.id}
                 className={`rounded-xl p-4 border ${c.is_internal ? 'bg-yellow-50 border-yellow-200' : 'bg-white border-border'}`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground">{c.author || c.author_email || 'Agent'}</span>
+                  <span className="text-sm font-medium text-foreground">
+                    {c.author || c.author_email || 'Agent'}
+                  </span>
                   <div className="flex items-center gap-2">
                     {c.is_internal && (
                       <span className="text-xs text-yellow-600 flex items-center gap-1">
@@ -331,7 +362,10 @@ export default function SupportTicketDetail() {
                   ) : (
                     <span />
                   )}
-                  <Button onClick={handleSendComment} disabled={!message.trim() || addComment.isPending}>
+                  <Button
+                    onClick={handleSendComment}
+                    disabled={!message.trim() || addComment.isPending}
+                  >
                     <Send className="w-4 h-4 mr-2" /> Send
                   </Button>
                 </div>
@@ -352,13 +386,17 @@ export default function SupportTicketDetail() {
                   onValueChange={(v) => patchField('status', v)}
                   disabled={!canEdit && !canClose}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
-                    {TICKET_STATUSES.filter(
-                      (s) => !CLOSED_STATUSES.has(s.value) || canClose
-                    ).map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                    ))}
+                    {TICKET_STATUSES.filter((s) => !CLOSED_STATUSES.has(s.value) || canClose).map(
+                      (s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          {s.label}
+                        </SelectItem>
+                      )
+                    )}
                   </SelectContent>
                 </Select>
               </FieldRow>
@@ -369,10 +407,14 @@ export default function SupportTicketDetail() {
                   onValueChange={(v) => patchField('priority', v)}
                   disabled={!canEdit}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {TICKET_PRIORITIES.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -384,11 +426,15 @@ export default function SupportTicketDetail() {
                   onValueChange={patchCategory}
                   disabled={!canEdit}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">—</SelectItem>
                     {TICKET_CATEGORIES.map((c) => (
-                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                      <SelectItem key={c.value} value={c.value}>
+                        {c.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -400,11 +446,15 @@ export default function SupportTicketDetail() {
                   onValueChange={(v) => patchField('department', v === '_none' ? '' : v)}
                   disabled={!canEdit}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select department" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">—</SelectItem>
                     {TICKET_DEPARTMENTS.map((d) => (
-                      <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                      <SelectItem key={d.value} value={d.value}>
+                        {d.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -416,11 +466,15 @@ export default function SupportTicketDetail() {
                   onValueChange={(v) => patchField('source', v === '_none' ? '' : v)}
                   disabled={!canEdit}
                 >
-                  <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_none">—</SelectItem>
                     {TICKET_SOURCES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      <SelectItem key={s.value} value={s.value}>
+                        {s.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -432,11 +486,15 @@ export default function SupportTicketDetail() {
                   onValueChange={(v) => patchField('assigned_to', v === '_unassigned' ? '' : v)}
                   disabled={!canAssign}
                 >
-                  <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="_unassigned">Unassigned</SelectItem>
                     {assigneeOptions.map((a) => (
-                      <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                      <SelectItem key={a.value} value={a.value}>
+                        {a.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

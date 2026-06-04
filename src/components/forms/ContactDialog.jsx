@@ -35,7 +35,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
     engagement_level: 'Medium',
     company_size: '',
     last_activity_date: '',
-    photo_url: ''
+    photo_url: '',
   });
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
@@ -54,7 +54,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
         engagement_level: 'Medium',
         company_size: '',
         last_activity_date: '',
-        photo_url: initialData.photo_url || ''
+        photo_url: initialData.photo_url || '',
       });
     }
   }, [initialData]);
@@ -89,7 +89,12 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
   const getInitials = (name) => {
     if (!name) return '';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    return name
+      .split(' ')
+      .map((n) => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
   };
 
   const handleSubmit = (e) => {
@@ -108,7 +113,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
       engagement_level: 'Medium',
       company_size: '',
       last_activity_date: '',
-      photo_url: ''
+      photo_url: '',
     });
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -128,7 +133,11 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
               <div className="relative">
                 <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
                   {formData.photo_url ? (
-                    <img src={formData.photo_url} alt={formData.name} className="w-full h-full object-cover" />
+                    <img
+                      src={formData.photo_url}
+                      alt={formData.name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <span className="text-white font-bold text-3xl">
                       {getInitials(formData.name) || <User className="w-10 h-10 text-white/80" />}
@@ -160,9 +169,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
                   className="hidden"
                 />
               </div>
-              {uploadingPhoto && (
-                <p className="text-xs text-gray-500">Uploading photo...</p>
-              )}
+              {uploadingPhoto && <p className="text-xs text-gray-500">Uploading photo...</p>}
               <div className="w-full space-y-2">
                 <Label htmlFor="name">Name *</Label>
                 <Input
@@ -178,7 +185,9 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
             {/* Contact Details Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contact Details</h3>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Contact Details
+              </h3>
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
                 <Input
@@ -204,7 +213,9 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
             {/* Professional Details Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Professional Details</h3>
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                Professional Details
+              </h3>
               <div className="space-y-2">
                 <Label htmlFor="company">Company</Label>
                 <Input
@@ -228,7 +239,10 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
             {/* Source */}
             <div className="space-y-2">
               <Label htmlFor="source">How did you meet?</Label>
-              <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+              <Select
+                value={formData.source}
+                onValueChange={(value) => setFormData({ ...formData, source: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

@@ -8,21 +8,29 @@ export default function SalesFunnelChart({ opportunities = [] }) {
   const data = React.useMemo(() => {
     const monthlyData = {};
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-    
-    opportunities.forEach(opp => {
+
+    opportunities.forEach((opp) => {
       const date = new Date(opp.created_date || opp.close_date || new Date());
       const monthKey = months[date.getMonth()];
-      
+
       if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { month: monthKey, prospecting: 0, qualification: 0, negotiation: 0 };
+        monthlyData[monthKey] = {
+          month: monthKey,
+          prospecting: 0,
+          qualification: 0,
+          negotiation: 0,
+        };
       }
-      
+
       if (opp.stage === 'prospecting') monthlyData[monthKey].prospecting += opp.amount || 0;
-      else if (opp.stage === 'qualification') monthlyData[monthKey].qualification += opp.amount || 0;
+      else if (opp.stage === 'qualification')
+        monthlyData[monthKey].qualification += opp.amount || 0;
       else if (opp.stage === 'negotiation') monthlyData[monthKey].negotiation += opp.amount || 0;
     });
-    
-    return months.map(month => monthlyData[month] || { month, prospecting: 0, qualification: 0, negotiation: 0 });
+
+    return months.map(
+      (month) => monthlyData[month] || { month, prospecting: 0, qualification: 0, negotiation: 0 }
+    );
   }, [opportunities]);
   return (
     <Card className="col-span-2">

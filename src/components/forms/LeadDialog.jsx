@@ -100,7 +100,10 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -114,7 +117,10 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
               </div>
               <div className="space-y-2">
                 <Label htmlFor="source">Source</Label>
-                <Select value={formData.source} onValueChange={(value) => setFormData({ ...formData, source: value })}>
+                <Select
+                  value={formData.source}
+                  onValueChange={(value) => setFormData({ ...formData, source: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

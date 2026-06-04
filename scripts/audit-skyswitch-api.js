@@ -6,7 +6,10 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { SKYSWITCH_API_REGISTRY, SKYSWITCH_OUT_OF_SCOPE } from '../server/services/skyswitch/apiRegistry.js';
+import {
+  SKYSWITCH_API_REGISTRY,
+  SKYSWITCH_OUT_OF_SCOPE,
+} from '../server/services/skyswitch/apiRegistry.js';
 
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const doc = fs.readFileSync(path.join(root, 'apiDocumentation.md'), 'utf8');
@@ -18,7 +21,14 @@ const implementedSkyswitch = new Set(
   SKYSWITCH_API_REGISTRY.flatMap((r) =>
     r.skyswitch.includes('multiple') || r.skyswitch.includes('|')
       ? []
-      : [r.skyswitch.replace('GET ', '').replace('POST ', '').replace('PUT ', '').replace('DELETE ', '').replace('{id}', '{account_id}')]
+      : [
+          r.skyswitch
+            .replace('GET ', '')
+            .replace('POST ', '')
+            .replace('PUT ', '')
+            .replace('DELETE ', '')
+            .replace('{id}', '{account_id}'),
+        ]
   )
 );
 
@@ -39,5 +49,7 @@ for (const p of pbxDocPaths) {
 console.log('\nOut of portal scope (by design):');
 for (const area of SKYSWITCH_OUT_OF_SCOPE) console.log(`  - ${area}`);
 
-console.log('\nOAuth scopes referenced in doc: account, pbx, routing, e911, report, log, messaging, …');
+console.log(
+  '\nOAuth scopes referenced in doc: account, pbx, routing, e911, report, log, messaging, …'
+);
 console.log('Set SKYSWITCH_SCOPE=* or list required scopes in .env');

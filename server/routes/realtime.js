@@ -3,10 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import { attachPermissions } from '../middleware/permissions.js';
 import { canReadEntity } from '../services/permissions.js';
 import { canViewTickets } from '../services/ticketPermissions.js';
-import {
-  addEntitySubscriber,
-  removeEntitySubscriber,
-} from '../services/entityEvents.js';
+import { addEntitySubscriber, removeEntitySubscriber } from '../services/entityEvents.js';
 
 const router = Router();
 
@@ -22,7 +19,9 @@ function canSubscribeToEntity(user, permissions, entityName) {
 router.get('/entities/:entityName/subscribe', requireAuth, attachPermissions, (req, res) => {
   const { entityName } = req.params;
   if (!canSubscribeToEntity(req.user, req.permissions, entityName)) {
-    return res.status(403).json({ message: 'You do not have permission to subscribe to this data' });
+    return res
+      .status(403)
+      .json({ message: 'You do not have permission to subscribe to this data' });
   }
 
   res.setHeader('Content-Type', 'text/event-stream');

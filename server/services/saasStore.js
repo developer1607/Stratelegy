@@ -190,7 +190,9 @@ export async function listEntities(entityName, sort, limit) {
   const limitClause = limit != null && limit !== '' ? `LIMIT ${clampLimit(limit)}` : '';
 
   const rows = await query(
-    `SELECT * FROM \`${def.table}\` ORDER BY \`${field}\` ${dir} ${limitClause}`.replace(/\s+/g, ' ').trim()
+    `SELECT * FROM \`${def.table}\` ORDER BY \`${field}\` ${dir} ${limitClause}`
+      .replace(/\s+/g, ' ')
+      .trim()
   );
   return rows.map((row) => rowToEntity(entityName, row));
 }
@@ -254,10 +256,10 @@ export async function updateEntity(entityName, id, data) {
   if (keys.length === 0) return oldRecord;
 
   const setClause = keys.map((k) => `\`${k}\` = ?`).join(', ');
-  await execute(
-    `UPDATE \`${def.table}\` SET ${setClause}, updated_date = NOW() WHERE id = ?`,
-    [...Object.values(values), id]
-  );
+  await execute(`UPDATE \`${def.table}\` SET ${setClause}, updated_date = NOW() WHERE id = ?`, [
+    ...Object.values(values),
+    id,
+  ]);
 
   const record = await getEntity(entityName, id);
   notifyEntityChange(entityName, record, oldRecord);

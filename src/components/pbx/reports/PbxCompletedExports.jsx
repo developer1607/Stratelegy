@@ -15,8 +15,10 @@ import { toast } from 'sonner';
 
 function statusBadge(status) {
   const normalized = String(status || '').toLowerCase();
-  if (normalized === 'completed') return <Badge className="bg-green-600 hover:bg-green-600">Completed</Badge>;
-  if (normalized === 'queued' || normalized === 'pending') return <Badge variant="secondary">Queued</Badge>;
+  if (normalized === 'completed')
+    return <Badge className="bg-green-600 hover:bg-green-600">Completed</Badge>;
+  if (normalized === 'queued' || normalized === 'pending')
+    return <Badge variant="secondary">Queued</Badge>;
   if (normalized === 'failed') return <Badge variant="destructive">Failed</Badge>;
   return <Badge variant="outline">{status || '—'}</Badge>;
 }
@@ -155,7 +157,11 @@ export default function PbxCompletedExports({
         <PbxError error={error} />
       ) : (
         <>
-          <PbxListToolbar search={search} onSearchChange={setSearch} searchPlaceholder="Search ID, type, status, or user…">
+          <PbxListToolbar
+            search={search}
+            onSearchChange={setSearch}
+            searchPlaceholder="Search ID, type, status, or user…"
+          >
             <PbxFilterSelect
               value={statusFilter}
               onValueChange={setStatusFilter}
@@ -167,7 +173,9 @@ export default function PbxCompletedExports({
               Refresh
             </Button>
             {hasQueued && (
-              <span className="text-xs text-gray-500">Auto-refreshing queued reports every 15 seconds</span>
+              <span className="text-xs text-gray-500">
+                Auto-refreshing queued reports every 15 seconds
+              </span>
             )}
           </PbxListToolbar>
 

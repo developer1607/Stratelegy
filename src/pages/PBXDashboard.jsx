@@ -5,10 +5,7 @@ import PbxShell, { PbxError, PbxLoading, PbxStatGrid } from '@/components/pbx/Pb
 
 export default function PBXDashboard() {
   return (
-    <PbxShell
-      title="PBX Dashboard"
-      description="Live overview of your PBX environment"
-    >
+    <PbxShell title="PBX Dashboard" description="Live overview of your PBX environment">
       {({ domain }) => <DashboardContent domain={domain} />}
     </PbxShell>
   );

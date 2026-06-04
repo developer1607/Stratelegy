@@ -3,8 +3,32 @@ import { api } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, UserCircle, MoreVertical, Download, Scan, Phone, Mail, MessageCircle, Activity, Users, TrendingUp, AlertCircle, Award, Filter, ChevronDown, ChevronUp } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Plus,
+  Search,
+  UserCircle,
+  MoreVertical,
+  Download,
+  Scan,
+  Phone,
+  Mail,
+  MessageCircle,
+  Activity,
+  Users,
+  TrendingUp,
+  AlertCircle,
+  Award,
+  Filter,
+  ChevronDown,
+  ChevronUp,
+} from 'lucide-react';
 import ContactDialog from '../components/forms/ContactDialog';
 import EditContactDialog from '../components/forms/EditContactDialog';
 import BusinessCardScanner from '../components/forms/BusinessCardScanner';
@@ -51,7 +75,7 @@ export default function Contacts() {
     companySizes: [],
     sources: [],
     engagementLevels: [],
-    noRecentActivity: false
+    noRecentActivity: false,
   });
   const queryClient = useQueryClient();
 
@@ -111,7 +135,7 @@ export default function Contacts() {
     try {
       await updateMutation.mutateAsync({
         id: contactId,
-        data: { role: newRole }
+        data: { role: newRole },
       });
     } catch (error) {
       console.error('Failed to update role:', error);
@@ -126,19 +150,19 @@ export default function Contacts() {
         companySizes: [],
         sources: [],
         engagementLevels: [],
-        noRecentActivity: false
+        noRecentActivity: false,
       });
     } else if (category === 'noRecentActivity') {
-      setFilters(prev => ({ ...prev, noRecentActivity: value }));
+      setFilters((prev) => ({ ...prev, noRecentActivity: value }));
     } else {
-      setFilters(prev => ({ ...prev, [category]: value }));
+      setFilters((prev) => ({ ...prev, [category]: value }));
     }
   };
 
   const handleSort = (key) => {
-    setSortConfig(prev => ({
+    setSortConfig((prev) => ({
       key,
-      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+      direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc',
     }));
   };
 
@@ -149,23 +173,23 @@ export default function Contacts() {
 
   const exportToCSV = () => {
     if (contacts.length === 0) return;
-    
+
     const headers = ['Name', 'Email', 'Phone', 'Company', 'Position', 'Status', 'Source'];
-    const rows = contacts.map(contact => [
+    const rows = contacts.map((contact) => [
       contact.name || '',
       contact.email || '',
       contact.phone || '',
       contact.company || '',
       contact.position || '',
       contact.status || '',
-      contact.source || ''
+      contact.source || '',
     ]);
-    
+
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
-    
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -177,29 +201,36 @@ export default function Contacts() {
 
   // Filter and sort contacts
   const filteredAndSortedContacts = useMemo(() => {
-    let filtered = contacts.filter(contact => {
+    let filtered = contacts.filter((contact) => {
       // Search filter
-      const matchesSearch = contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      const matchesSearch =
+        contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       if (!matchesSearch) return false;
 
       // Role filter
       if (filters.roles.length > 0 && !filters.roles.includes(contact.role)) return false;
-      
+
       // Priority filter
-      if (filters.priorities.length > 0 && !filters.priorities.includes(contact.priority)) return false;
-      
+      if (filters.priorities.length > 0 && !filters.priorities.includes(contact.priority))
+        return false;
+
       // Company size filter
-      if (filters.companySizes.length > 0 && !filters.companySizes.includes(contact.company_size)) return false;
-      
+      if (filters.companySizes.length > 0 && !filters.companySizes.includes(contact.company_size))
+        return false;
+
       // Source filter
       if (filters.sources.length > 0 && !filters.sources.includes(contact.source)) return false;
-      
+
       // Engagement level filter
-      if (filters.engagementLevels.length > 0 && !filters.engagementLevels.includes(contact.engagement_level)) return false;
-      
+      if (
+        filters.engagementLevels.length > 0 &&
+        !filters.engagementLevels.includes(contact.engagement_level)
+      )
+        return false;
+
       // No recent activity filter
       if (filters.noRecentActivity) {
         if (!contact.last_activity_date) return true;
@@ -215,7 +246,7 @@ export default function Contacts() {
       filtered.sort((a, b) => {
         const aVal = a[sortConfig.key];
         const bVal = b[sortConfig.key];
-        
+
         if (sortConfig.key === 'last_activity_date') {
           const aDate = aVal ? new Date(aVal) : new Date(0);
           const bDate = bVal ? new Date(bVal) : new Date(0);
@@ -223,7 +254,7 @@ export default function Contacts() {
             ? aDate.getTime() - bDate.getTime()
             : bDate.getTime() - aDate.getTime();
         }
-        
+
         if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
         if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
         return 0;
@@ -236,13 +267,13 @@ export default function Contacts() {
   // Calculate KPIs
   const kpis = useMemo(() => {
     const total = contactsTotal;
-    const thisMonth = contacts.filter(c =>
+    const thisMonth = contacts.filter((c) =>
       moment(c.created_date).isAfter(moment().startOf('month'))
     ).length;
-    const decisionMakers = contacts.filter(c =>
-      c.role === 'Decision Maker' || c.role === 'Key Contact'
+    const decisionMakers = contacts.filter(
+      (c) => c.role === 'Decision Maker' || c.role === 'Key Contact'
     ).length;
-    const noActivity = contacts.filter(c => {
+    const noActivity = contacts.filter((c) => {
       if (!c.last_activity_date) return true;
       return moment().diff(moment(c.last_activity_date), 'days') >= 30;
     }).length;
@@ -251,9 +282,9 @@ export default function Contacts() {
   }, [contacts, contactsTotal]);
 
   const priorityColors = {
-    'Key': 'bg-amber-100 text-amber-800 border-amber-300',
-    'Standard': 'bg-blue-100 text-blue-800 border-blue-300',
-    'At Risk': 'bg-red-100 text-red-800 border-red-300'
+    Key: 'bg-amber-100 text-amber-800 border-amber-300',
+    Standard: 'bg-blue-100 text-blue-800 border-blue-300',
+    'At Risk': 'bg-red-100 text-red-800 border-red-300',
   };
 
   const getDaysSinceActivity = (contact) => {
@@ -290,7 +321,13 @@ export default function Contacts() {
                   <Download className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Import</span>
                 </Button>
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => { setScannedData(null); setDialogOpen(true); }}>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={() => {
+                    setScannedData(null);
+                    setDialogOpen(true);
+                  }}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   New Contact
                 </Button>
@@ -341,8 +378,8 @@ export default function Contacts() {
                     className="pl-10"
                   />
                 </div>
-                <Button 
-                  variant={showFilters ? "default" : "outline"}
+                <Button
+                  variant={showFilters ? 'default' : 'outline'}
                   onClick={() => setShowFilters(!showFilters)}
                 >
                   <Filter className="w-4 h-4 mr-2" />
@@ -358,22 +395,34 @@ export default function Contacts() {
               <Table>
                 <TableHeader className="bg-gradient-to-r from-gray-50 to-gray-100">
                   <TableRow className="border-b-2 border-gray-200">
-                    <TableHead className="cursor-pointer w-64 font-semibold text-gray-700" onClick={() => handleSort('name')}>
+                    <TableHead
+                      className="cursor-pointer w-64 font-semibold text-gray-700"
+                      onClick={() => handleSort('name')}
+                    >
                       <div className="flex items-center gap-1 hover:text-blue-600 transition-colors">
                         Name
-                        {sortConfig.key === 'name' && (
-                          sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                        )}
+                        {sortConfig.key === 'name' &&
+                          (sortConfig.direction === 'asc' ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          ))}
                       </div>
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700">Role</TableHead>
                     <TableHead className="font-semibold text-gray-700">Priority</TableHead>
-                    <TableHead className="cursor-pointer font-semibold text-gray-700" onClick={() => handleSort('last_activity_date')}>
+                    <TableHead
+                      className="cursor-pointer font-semibold text-gray-700"
+                      onClick={() => handleSort('last_activity_date')}
+                    >
                       <div className="flex items-center gap-1 hover:text-blue-600 transition-colors">
                         Last Activity
-                        {sortConfig.key === 'last_activity_date' && (
-                          sortConfig.direction === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
-                        )}
+                        {sortConfig.key === 'last_activity_date' &&
+                          (sortConfig.direction === 'asc' ? (
+                            <ChevronUp className="w-4 h-4" />
+                          ) : (
+                            <ChevronDown className="w-4 h-4" />
+                          ))}
                       </div>
                     </TableHead>
                     <TableHead className="font-semibold text-gray-700">Engagement</TableHead>
@@ -404,14 +453,14 @@ export default function Contacts() {
                     </TableRow>
                   ) : (
                     filteredAndSortedContacts.map((contact) => {
-                      const daysSinceActivity = contact.last_activity_date 
+                      const daysSinceActivity = contact.last_activity_date
                         ? moment().diff(moment(contact.last_activity_date), 'days')
                         : 999;
                       const isKeyContact = contact.priority === 'Key';
                       const hasNoRecentActivity = daysSinceActivity >= 30;
 
                       return (
-                        <TableRow 
+                        <TableRow
                           key={contact.id}
                           className={`
                             cursor-pointer transition-all border-b border-gray-100
@@ -426,7 +475,11 @@ export default function Contacts() {
                               <div className="relative">
                                 <div className="w-11 h-11 bg-gradient-to-br from-blue-500 via-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-md ring-2 ring-blue-100 overflow-hidden">
                                   {contact.photo_url ? (
-                                    <img src={contact.photo_url} alt={contact.name} className="w-full h-full object-cover" />
+                                    <img
+                                      src={contact.photo_url}
+                                      alt={contact.name}
+                                      className="w-full h-full object-cover"
+                                    />
                                   ) : (
                                     <span className="text-white font-semibold text-base">
                                       {contact.name?.charAt(0)?.toUpperCase()}
@@ -443,13 +496,15 @@ export default function Contacts() {
                                 <p className="font-semibold text-gray-900 flex items-center gap-2">
                                   {contact.name}
                                 </p>
-                                <p className="text-sm text-gray-600">{contact.position || 'No position'}</p>
+                                <p className="text-sm text-gray-600">
+                                  {contact.position || 'No position'}
+                                </p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Select 
-                              value={contact.role || ''} 
+                            <Select
+                              value={contact.role || ''}
                               onValueChange={(value) => handleInlineRoleChange(contact.id, value)}
                             >
                               <SelectTrigger className="h-9 w-[140px] border-gray-300 hover:border-blue-400 transition-colors">
@@ -465,14 +520,20 @@ export default function Contacts() {
                             </Select>
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            <Badge className={`${priorityColors[contact.priority || 'Standard']} border font-medium px-3 py-1`}>
+                            <Badge
+                              className={`${priorityColors[contact.priority || 'Standard']} border font-medium px-3 py-1`}
+                            >
                               {contact.priority || 'Standard'}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <Activity className={`w-4 h-4 ${hasNoRecentActivity ? 'text-red-500' : 'text-green-500'}`} />
-                              <span className={`text-sm font-medium ${hasNoRecentActivity ? 'text-red-600' : 'text-gray-700'}`}>
+                              <Activity
+                                className={`w-4 h-4 ${hasNoRecentActivity ? 'text-red-500' : 'text-green-500'}`}
+                              />
+                              <span
+                                className={`text-sm font-medium ${hasNoRecentActivity ? 'text-red-600' : 'text-gray-700'}`}
+                              >
                                 {getDaysSinceActivity(contact)}
                               </span>
                             </div>
@@ -484,8 +545,17 @@ export default function Contacts() {
                                   <div
                                     key={i}
                                     className={`w-2 h-6 rounded-full transition-all ${
-                                      i < (contact.engagement_level === 'High' ? 3 : contact.engagement_level === 'Medium' ? 2 : 1)
-                                        ? contact.engagement_level === 'High' ? 'bg-green-500 shadow-sm' : contact.engagement_level === 'Medium' ? 'bg-yellow-500 shadow-sm' : 'bg-red-500 shadow-sm'
+                                      i <
+                                      (contact.engagement_level === 'High'
+                                        ? 3
+                                        : contact.engagement_level === 'Medium'
+                                          ? 2
+                                          : 1)
+                                        ? contact.engagement_level === 'High'
+                                          ? 'bg-green-500 shadow-sm'
+                                          : contact.engagement_level === 'Medium'
+                                            ? 'bg-yellow-500 shadow-sm'
+                                            : 'bg-red-500 shadow-sm'
                                         : 'bg-gray-200'
                                     }`}
                                   />
@@ -495,38 +565,63 @@ export default function Contacts() {
                           </TableCell>
                           <TableCell>
                             <div>
-                              <p className="font-semibold text-sm text-gray-900">{contact.company || '-'}</p>
+                              <p className="font-semibold text-sm text-gray-900">
+                                {contact.company || '-'}
+                              </p>
                               {contact.company_size && (
-                                <p className="text-xs text-gray-500 mt-0.5">{contact.company_size}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">
+                                  {contact.company_size}
+                                </p>
                               )}
                             </div>
                           </TableCell>
                           <TableCell>
                             {contact.source && (
-                              <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 font-medium">
+                              <Badge
+                                variant="outline"
+                                className="bg-blue-50 text-blue-700 border-blue-200 font-medium"
+                              >
                                 {contact.source}
                               </Badge>
                             )}
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1">
-                              <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-green-100 hover:text-green-700 transition-colors">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 hover:bg-green-100 hover:text-green-700 transition-colors"
+                              >
                                 <Phone className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-purple-100 hover:text-purple-700 transition-colors">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                              >
                                 <Mail className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-blue-100 hover:text-blue-700 transition-colors">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-9 w-9 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                              >
                                 <MessageCircle className="w-4 h-4" />
                               </Button>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-gray-100">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-9 w-9 hover:bg-gray-100"
+                                  >
                                     <MoreVertical className="w-4 h-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEdit(contact)}>Edit</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEdit(contact)}>
+                                    Edit
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem>Log Activity</DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-red-600"
@@ -557,13 +652,21 @@ export default function Contacts() {
           {/* Mobile View - Contact Cards */}
           <div className="lg:hidden mt-6 space-y-4">
             {filteredAndSortedContacts.map((contact) => (
-              <Card key={contact.id} className="cursor-pointer" onClick={() => handleViewDetails(contact)}>
+              <Card
+                key={contact.id}
+                className="cursor-pointer"
+                onClick={() => handleViewDetails(contact)}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
                       <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center overflow-hidden">
                         {contact.photo_url ? (
-                          <img src={contact.photo_url} alt={contact.name} className="w-full h-full object-cover" />
+                          <img
+                            src={contact.photo_url}
+                            alt={contact.name}
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <span className="text-white font-semibold text-lg">
                             {contact.name?.charAt(0)?.toUpperCase()}
@@ -575,7 +678,9 @@ export default function Contacts() {
                         <p className="text-sm text-gray-600">{contact.position}</p>
                       </div>
                     </div>
-                    <Badge className={priorityColors[contact.priority] || priorityColors['Standard']}>
+                    <Badge
+                      className={priorityColors[contact.priority] || priorityColors['Standard']}
+                    >
                       {contact.priority || 'Standard'}
                     </Badge>
                   </div>
@@ -583,7 +688,9 @@ export default function Contacts() {
                     <p className="text-gray-600">{contact.company}</p>
                     <p className="text-gray-600">{contact.email}</p>
                     {contact.last_activity_date && (
-                      <p className="text-gray-500">Last activity: {getDaysSinceActivity(contact)}</p>
+                      <p className="text-gray-500">
+                        Last activity: {getDaysSinceActivity(contact)}
+                      </p>
                     )}
                   </div>
                   <div className="flex gap-2 mt-3">
@@ -606,7 +713,7 @@ export default function Contacts() {
       {/* Filter Panel */}
       {showFilters && (
         <div className="fixed right-0 top-16 bottom-0 w-80 bg-white shadow-2xl z-40 lg:static lg:shadow-none">
-          <ContactFiltersPanel 
+          <ContactFiltersPanel
             filters={filters}
             onFilterChange={handleFilterChange}
             onClose={() => setShowFilters(false)}

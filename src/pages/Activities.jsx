@@ -57,23 +57,26 @@ export default function Activities() {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const filteredActivities = useMemo(() => {
-    return activities.filter(activity => {
-      const matchSearch = activity.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    return activities.filter((activity) => {
+      const matchSearch =
+        activity.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         activity.related_to_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         activity.type?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchType = filters.types.length === 0 || filters.types.includes(activity.type);
 
       const matchOwner =
         filters.owner === 'all' ||
-        String(activity.created_by || activity.owner || '').toLowerCase().includes(filters.owner.toLowerCase());
+        String(activity.created_by || activity.owner || '')
+          .toLowerCase()
+          .includes(filters.owner.toLowerCase());
 
       const matchStatus = filterByDateRange(activity.date, filters.status);
-      
+
       return matchSearch && matchType && matchOwner && matchStatus;
     });
   }, [activities, searchTerm, filters]);
@@ -84,19 +87,19 @@ export default function Activities() {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const activitiesToday = filteredActivities.filter(a => {
+    const activitiesToday = filteredActivities.filter((a) => {
       const activityDate = new Date(a.date);
       return activityDate >= today && activityDate < tomorrow;
     }).length;
 
-    const overdueActivities = filteredActivities.filter(a => 
-      new Date(a.date) < today && !a.completed
+    const overdueActivities = filteredActivities.filter(
+      (a) => new Date(a.date) < today && !a.completed
     ).length;
 
-    const emailsSent = filteredActivities.filter(a => a.type === 'Email').length;
-    const callsLogged = filteredActivities.filter(a => a.type === 'Call').length;
-    const meetingsScheduled = filteredActivities.filter(a => a.type === 'Meeting').length;
-    const notesLogged = filteredActivities.filter(a => a.type === 'Note').length;
+    const emailsSent = filteredActivities.filter((a) => a.type === 'Email').length;
+    const callsLogged = filteredActivities.filter((a) => a.type === 'Call').length;
+    const meetingsScheduled = filteredActivities.filter((a) => a.type === 'Meeting').length;
+    const notesLogged = filteredActivities.filter((a) => a.type === 'Note').length;
 
     return {
       activitiesToday,
@@ -115,13 +118,13 @@ export default function Activities() {
     tomorrow.setDate(tomorrow.getDate() + 1);
 
     return {
-      overdue: filteredActivities.filter(a => new Date(a.date) < today && !a.completed),
-      dueToday: filteredActivities.filter(a => {
+      overdue: filteredActivities.filter((a) => new Date(a.date) < today && !a.completed),
+      dueToday: filteredActivities.filter((a) => {
         const activityDate = new Date(a.date);
         return activityDate >= today && activityDate < tomorrow && !a.completed;
       }),
-      upcoming: filteredActivities.filter(a => new Date(a.date) >= tomorrow && !a.completed),
-      completed: filteredActivities.filter(a => a.completed),
+      upcoming: filteredActivities.filter((a) => new Date(a.date) >= tomorrow && !a.completed),
+      completed: filteredActivities.filter((a) => a.completed),
     };
   }, [filteredActivities]);
 
@@ -142,22 +145,26 @@ export default function Activities() {
             />
           </div>
           <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => handleQuickLog('Call')}>
-            <Phone className="w-4 h-4 mr-2" />
-            Log Call
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleQuickLog('Email')}>
-            <Mail className="w-4 h-4 mr-2" />
-            Log Email
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => handleQuickLog('Meeting')}>
-            <CalendarIcon className="w-4 h-4 mr-2" />
-            Log Meeting
-          </Button>
-          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleQuickLog('Note')}>
-            <ClipboardCheck className="w-4 h-4 mr-2" />
-            Log Task/Note
-          </Button>
+            <Button size="sm" variant="outline" onClick={() => handleQuickLog('Call')}>
+              <Phone className="w-4 h-4 mr-2" />
+              Log Call
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleQuickLog('Email')}>
+              <Mail className="w-4 h-4 mr-2" />
+              Log Email
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => handleQuickLog('Meeting')}>
+              <CalendarIcon className="w-4 h-4 mr-2" />
+              Log Meeting
+            </Button>
+            <Button
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-700"
+              onClick={() => handleQuickLog('Note')}
+            >
+              <ClipboardCheck className="w-4 h-4 mr-2" />
+              Log Task/Note
+            </Button>
           </div>
         </div>
       </div>
@@ -217,7 +224,9 @@ export default function Activities() {
             <div className="p-4 border-b">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Priority Activities</h2>
-                <Button variant="ghost" size="sm">More</Button>
+                <Button variant="ghost" size="sm">
+                  More
+                </Button>
               </div>
               <Tabs value={priorityTab} onValueChange={setPriorityTab}>
                 <TabsList className="grid w-full grid-cols-4">
@@ -237,8 +246,8 @@ export default function Activities() {
                   {priorityActivities.overdue.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">No overdue activities</p>
                   ) : (
-                    priorityActivities.overdue.map(activity => (
-                      <PriorityActivityItem 
+                    priorityActivities.overdue.map((activity) => (
+                      <PriorityActivityItem
                         key={activity.id}
                         activity={activity}
                         onMarkComplete={handleMarkComplete}
@@ -250,8 +259,8 @@ export default function Activities() {
                   {priorityActivities.dueToday.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">No activities due today</p>
                   ) : (
-                    priorityActivities.dueToday.map(activity => (
-                      <PriorityActivityItem 
+                    priorityActivities.dueToday.map((activity) => (
+                      <PriorityActivityItem
                         key={activity.id}
                         activity={activity}
                         onMarkComplete={handleMarkComplete}
@@ -263,26 +272,30 @@ export default function Activities() {
                   {priorityActivities.upcoming.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">No upcoming activities</p>
                   ) : (
-                    priorityActivities.upcoming.slice(0, 5).map(activity => (
-                      <PriorityActivityItem 
-                        key={activity.id}
-                        activity={activity}
-                        onMarkComplete={handleMarkComplete}
-                      />
-                    ))
+                    priorityActivities.upcoming
+                      .slice(0, 5)
+                      .map((activity) => (
+                        <PriorityActivityItem
+                          key={activity.id}
+                          activity={activity}
+                          onMarkComplete={handleMarkComplete}
+                        />
+                      ))
                   )}
                 </TabsContent>
                 <TabsContent value="completed" className="mt-4 space-y-2">
                   {priorityActivities.completed.length === 0 ? (
                     <p className="text-center text-gray-500 py-8">No completed activities</p>
                   ) : (
-                    priorityActivities.completed.slice(0, 5).map(activity => (
-                      <PriorityActivityItem 
-                        key={activity.id}
-                        activity={activity}
-                        onMarkComplete={handleMarkComplete}
-                      />
-                    ))
+                    priorityActivities.completed
+                      .slice(0, 5)
+                      .map((activity) => (
+                        <PriorityActivityItem
+                          key={activity.id}
+                          activity={activity}
+                          onMarkComplete={handleMarkComplete}
+                        />
+                      ))
                   )}
                 </TabsContent>
               </Tabs>
@@ -293,9 +306,11 @@ export default function Activities() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Activity Timeline</h2>
-              <Button variant="ghost" size="sm">•••</Button>
+              <Button variant="ghost" size="sm">
+                •••
+              </Button>
             </div>
-            
+
             {isLoading ? (
               <div className="text-center py-12 text-gray-500">Loading activities...</div>
             ) : filteredActivities.length === 0 ? (
@@ -313,7 +328,7 @@ export default function Activities() {
             onFilterChange={handleFilterChange}
             onSaveView={() => {}}
           />
-          
+
           <ActivitiesAnalytics activities={filteredActivities} />
         </div>
       </div>

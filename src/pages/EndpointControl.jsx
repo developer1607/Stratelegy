@@ -51,10 +51,7 @@ function EndpointContent({ domain }) {
   const subscribers = data?.subscribers || [];
   const messagingUsers = data?.messagingUsers || [];
 
-  const serviceOptions = useMemo(
-    () => uniqueFieldValues(subscribers, 'srv_code'),
-    [subscribers]
-  );
+  const serviceOptions = useMemo(() => uniqueFieldValues(subscribers, 'srv_code'), [subscribers]);
   const typeOptions = useMemo(
     () => uniqueFieldValues(messagingUsers, 'user_type'),
     [messagingUsers]
@@ -69,7 +66,8 @@ function EndpointContent({ domain }) {
 
   const filteredMessaging = useMemo(() => {
     return messagingUsers.filter((row) => {
-      if (!matchSearch(row, search, ['user', 'name', 'userid', 'device_user', 'domain'])) return false;
+      if (!matchSearch(row, search, ['user', 'name', 'userid', 'device_user', 'domain']))
+        return false;
       return matchSelect(row.user_type, typeFilter);
     });
   }, [messagingUsers, search, typeFilter]);
@@ -116,11 +114,19 @@ function EndpointContent({ domain }) {
       </PbxListToolbar>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">PBX subscribers</h2>
-        <PbxDataTable columns={subscriberColumns} rows={filteredSubscribers} emptyMessage="No subscribers match your filters." />
+        <PbxDataTable
+          columns={subscriberColumns}
+          rows={filteredSubscribers}
+          emptyMessage="No subscribers match your filters."
+        />
       </section>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">Messaging hub users</h2>
-        <PbxDataTable columns={msgColumns} rows={filteredMessaging} emptyMessage="No messaging hub users match your filters." />
+        <PbxDataTable
+          columns={msgColumns}
+          rows={filteredMessaging}
+          emptyMessage="No messaging hub users match your filters."
+        />
       </section>
     </div>
   );

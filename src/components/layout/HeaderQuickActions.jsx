@@ -3,12 +3,7 @@ import { Link } from 'react-router-dom';
 import { Mail } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import NotificationBell from '@/components/layout/NotificationBell';
 
 export default function HeaderQuickActions({ user, canViewSupportTickets }) {

@@ -32,7 +32,11 @@ export default function E911ProvisionSheet({
   const [form, setForm] = useState(EMPTY_E911_FORM);
   const [validationSummary, setValidationSummary] = useState(null);
 
-  const { data: detail, isLoading, isFetching } = useQuery({
+  const {
+    data: detail,
+    isLoading,
+    isFetching,
+  } = useQuery({
     queryKey: ['pbx-e911-detail', phoneNumber],
     queryFn: () => pbxApi.e911Detail(phoneNumber),
     enabled: open && isEdit,

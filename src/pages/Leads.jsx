@@ -3,7 +3,15 @@ import { api } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Target, MoreVertical, Download, ArrowUpDown, AlertCircle } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  Target,
+  MoreVertical,
+  Download,
+  ArrowUpDown,
+  AlertCircle,
+} from 'lucide-react';
 import LeadDialog from '../components/forms/LeadDialog';
 import EditLeadDialog from '../components/forms/EditLeadDialog';
 import KPICard from '../components/leads/KPICard';
@@ -113,7 +121,7 @@ export default function Leads() {
   };
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleClearFilters = () => {
@@ -126,18 +134,20 @@ export default function Leads() {
   };
 
   const handleSaveView = (name) => {
-    setSavedViews(prev => [...prev, { name, filters: { ...filters } }]);
+    setSavedViews((prev) => [...prev, { name, filters: { ...filters } }]);
   };
 
   const filteredAndSortedLeads = useMemo(() => {
-    let result = leads.filter(lead => {
-      const matchSearch = lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    let result = leads.filter((lead) => {
+      const matchSearch =
+        lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         lead.company?.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const matchStatus = filters.status === 'all' || lead.status === filters.status;
       const matchSource = filters.source === 'all' || lead.source === filters.source;
-      const matchValue = !filters.minValue || (lead.value && lead.value >= parseFloat(filters.minValue));
+      const matchValue =
+        !filters.minValue || (lead.value && lead.value >= parseFloat(filters.minValue));
       const matchFollowUp = !filters.followUpDate || lead.next_follow_up === filters.followUpDate;
 
       return matchSearch && matchStatus && matchSource && matchValue && matchFollowUp;
@@ -162,26 +172,31 @@ export default function Leads() {
 
   const kpis = useMemo(() => {
     const totalLeads = leadsTotal;
-    const openLeads = filteredAndSortedLeads.filter(l => ['new', 'contacted', 'qualified'].includes(l.status)).length;
-    const wonDeals = filteredAndSortedLeads.filter(l => l.status === 'won');
-    const lostDeals = filteredAndSortedLeads.filter(l => l.status === 'lost');
-    
+    const openLeads = filteredAndSortedLeads.filter((l) =>
+      ['new', 'contacted', 'qualified'].includes(l.status)
+    ).length;
+    const wonDeals = filteredAndSortedLeads.filter((l) => l.status === 'won');
+    const lostDeals = filteredAndSortedLeads.filter((l) => l.status === 'lost');
+
     const wonCount = wonDeals.length;
     const wonValue = wonDeals.reduce((sum, l) => sum + (l.value || 0), 0);
     const lostCount = lostDeals.length;
     const lostValue = lostDeals.reduce((sum, l) => sum + (l.value || 0), 0);
-    
+
     const conversionRate = totalLeads > 0 ? ((wonCount / totalLeads) * 100).toFixed(1) : 0;
-    
+
     // Average sales cycle (simplified - days from creation to won)
-    const avgCycle = wonDeals.length > 0
-      ? Math.round(wonDeals.reduce((sum, l) => {
-          const days = Math.floor(
-            (Date.now() - new Date(l.created_date).getTime()) / (1000 * 60 * 60 * 24)
-          );
-          return sum + days;
-        }, 0) / wonDeals.length)
-      : 0;
+    const avgCycle =
+      wonDeals.length > 0
+        ? Math.round(
+            wonDeals.reduce((sum, l) => {
+              const days = Math.floor(
+                (Date.now() - new Date(l.created_date).getTime()) / (1000 * 60 * 60 * 24)
+              );
+              return sum + days;
+            }, 0) / wonDeals.length
+          )
+        : 0;
 
     return {
       totalLeads,
@@ -196,8 +211,17 @@ export default function Leads() {
   }, [filteredAndSortedLeads, leadsTotal]);
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Email', 'Phone', 'Company', 'Value', 'Status', 'Source', 'Next Follow-up'];
-    const rows = filteredAndSortedLeads.map(lead => [
+    const headers = [
+      'Name',
+      'Email',
+      'Phone',
+      'Company',
+      'Value',
+      'Status',
+      'Source',
+      'Next Follow-up',
+    ];
+    const rows = filteredAndSortedLeads.map((lead) => [
       lead.name,
       lead.email || '',
       lead.phone || '',
@@ -210,7 +234,7 @@ export default function Leads() {
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map((row) => row.map((cell) => `"${cell}"`).join(',')),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -241,7 +265,10 @@ export default function Leads() {
             </Button>
           </PermissionGate>
           <PermissionGate entity="Lead">
-            <Button className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto" onClick={() => setDialogOpen(true)}>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+              onClick={() => setDialogOpen(true)}
+            >
               <Plus className="w-4 h-4 mr-2" />
               New Lead
             </Button>
@@ -251,18 +278,8 @@ export default function Leads() {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <KPICard
-          title="Total Leads"
-          value={kpis.totalLeads}
-          Icon={TrendingUp}
-          color="blue"
-        />
-        <KPICard
-          title="Open Leads"
-          value={kpis.openLeads}
-          Icon={Target}
-          color="orange"
-        />
+        <KPICard title="Total Leads" value={kpis.totalLeads} Icon={TrendingUp} color="blue" />
+        <KPICard title="Open Leads" value={kpis.openLeads} Icon={Target} color="orange" />
         <KPICard
           title="Won Deals"
           value={kpis.wonCount}
@@ -304,7 +321,7 @@ export default function Leads() {
               />
             </div>
           </div>
-          
+
           <LeadFilters
             filters={filters}
             onFilterChange={handleFilterChange}
@@ -369,13 +386,19 @@ export default function Leads() {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm">{lead.email || '-'}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">{lead.phone || '-'}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm">{lead.company || '-'}</TableCell>
+                    <TableCell className="hidden md:table-cell text-sm">
+                      {lead.phone || '-'}
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-sm">
+                      {lead.company || '-'}
+                    </TableCell>
                     <TableCell>
                       <Input
                         type="number"
                         value={lead.value || ''}
-                        onChange={(e) => handleQuickUpdate(lead.id, 'value', parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleQuickUpdate(lead.id, 'value', parseFloat(e.target.value) || 0)
+                        }
                         className="w-24 h-8 text-sm"
                         placeholder="$0"
                       />
@@ -399,15 +422,21 @@ export default function Leads() {
                     </TableCell>
                     <TableCell className="hidden xl:table-cell">
                       {lead.source ? (
-                        <Badge variant="outline" className="text-xs">{lead.source}</Badge>
-                      ) : '-'}
+                        <Badge variant="outline" className="text-xs">
+                          {lead.source}
+                        </Badge>
+                      ) : (
+                        '-'
+                      )}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Input
                           type="date"
                           value={lead.next_follow_up || ''}
-                          onChange={(e) => handleQuickUpdate(lead.id, 'next_follow_up', e.target.value)}
+                          onChange={(e) =>
+                            handleQuickUpdate(lead.id, 'next_follow_up', e.target.value)
+                          }
                           className={`w-36 h-8 text-sm ${isOverdue(lead.next_follow_up) ? 'border-red-500' : ''}`}
                         />
                         {isOverdue(lead.next_follow_up) && (

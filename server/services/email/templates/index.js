@@ -70,8 +70,7 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_created_requester: {
-    subject: ({ ticketNumber, title }) =>
-      `Ticket #${ticketNumber || 'new'} received: ${title}`,
+    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber || 'new'} received: ${title}`,
     render: ({ ticket, requesterName }) => ({
       subject: `Ticket #${ticket.ticket_number || 'new'} received: ${ticket.title}`,
       text: [
@@ -101,8 +100,7 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_assigned: {
-    subject: ({ ticketNumber, title }) =>
-      `Ticket #${ticketNumber} assigned to you: ${title}`,
+    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber} assigned to you: ${title}`,
     render: ({ ticket, assigneeName }) => ({
       subject: `Ticket #${ticket.ticket_number} assigned: ${ticket.title}`,
       text: [
@@ -131,8 +129,7 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_updated: {
-    subject: ({ ticketNumber, title }) =>
-      `Ticket #${ticketNumber} updated: ${title}`,
+    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber} updated: ${title}`,
     render: ({ ticket, requesterName, changesSummary }) => ({
       subject: `Ticket #${ticket.ticket_number} updated: ${ticket.title}`,
       text: [
@@ -160,13 +157,14 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_comment: {
-    subject: ({ ticketNumber, title }) =>
-      `New reply on ticket #${ticketNumber}: ${title}`,
+    subject: ({ ticketNumber, title }) => `New reply on ticket #${ticketNumber}: ${title}`,
     render: ({ ticket, comment, recipientName, isInternalNote }) => ({
       subject: `New reply on ticket #${ticket.ticket_number}: ${ticket.title}`,
       text: [
         `Hello ${recipientName || 'there'},`,
-        isInternalNote ? 'An internal note was added to a ticket you follow.' : 'There is a new reply on your support ticket.',
+        isInternalNote
+          ? 'An internal note was added to a ticket you follow.'
+          : 'There is a new reply on your support ticket.',
         `Ticket: #${ticket.ticket_number} — ${ticket.title}`,
         `From: ${comment.author || comment.author_email || 'Support team'}`,
         comment.message,
