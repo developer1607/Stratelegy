@@ -18,7 +18,6 @@ import {
   Hash,
   Radio,
   Globe,
-  FileArchive,
   PhoneForwarded,
   Settings,
   Mail,
@@ -70,15 +69,7 @@ export const PBX_NAV_GROUPS = [
     label: 'E911',
     items: [
       { name: 'E911 Review', icon: Mail, path: 'E911Review' },
-      { name: 'Settings', icon: Settings, path: 'E911Settings' },
-    ],
-  },
-  {
-    label: 'Reports',
-    items: [
-      { name: 'Generated Reports', icon: FileArchive, path: 'PBXGeneratedReports' },
       { name: 'E911 Reports', icon: BarChart3, path: 'E911Reports' },
-      { name: 'MOS Scores', icon: Activity, path: 'MOSScores' },
     ],
   },
   {
@@ -101,11 +92,8 @@ export const PBX_NAV_GROUPS = [
 /** Account-wide PBX screens — no global domain selector (domain is picked on-page or not needed). */
 export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   'PBXDomains',
-  'PBXGeneratedReports',
-  'MOSScores',
   'E911Review',
   'E911Reports',
-  'E911Settings',
   'CallLogs',
   'SIPTrunks',
   'PBXMakeCall',

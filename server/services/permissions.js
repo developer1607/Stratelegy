@@ -257,7 +257,7 @@ function moduleForPage(pageName) {
   if (['SupportDashboard', 'SupportTickets', 'SupportTicketDetail', 'KnowledgeBase'].includes(pageName)) {
     return 'support';
   }
-  if (pageName.startsWith('PBX') || ['Extensions', 'CallLogs', 'CallRouting', 'Voicemail', 'EndpointControl', 'OfflineEndpoints', 'SIPALG', 'E911Review', 'E911Reports', 'MOSScores', 'Troubleshooting', 'SIPTrunks', 'E911Settings'].includes(pageName)) {
+  if (pageName.startsWith('PBX') || ['Extensions', 'CallLogs', 'CallRouting', 'Voicemail', 'EndpointControl', 'OfflineEndpoints', 'SIPALG', 'E911Review', 'E911Reports', 'Troubleshooting', 'SIPTrunks'].includes(pageName)) {
     return 'pbx';
   }
   return null;

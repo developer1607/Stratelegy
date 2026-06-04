@@ -11,17 +11,14 @@ import Contacts from './pages/Contacts';
 import Dashboard from './pages/Dashboard';
 import E911Reports from './pages/E911Reports';
 import E911Review from './pages/E911Review';
-import E911Settings from './pages/E911Settings';
 import EndpointControl from './pages/EndpointControl';
 import Extensions from './pages/Extensions';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Leads from './pages/Leads';
-import MOSScores from './pages/MOSScores';
 import OfflineEndpoints from './pages/OfflineEndpoints';
 import PBXDashboard from './pages/PBXDashboard';
 import PBXDomains from './pages/PBXDomains';
 import PBXPhoneNumbers from './pages/PBXPhoneNumbers';
-import PBXGeneratedReports from './pages/PBXGeneratedReports';
 import PBXMakeCall from './pages/PBXMakeCall';
 import PBXRouteByAni from './pages/PBXRouteByAni';
 import Profile from './pages/Profile';
@@ -48,17 +45,14 @@ export const PAGES = {
   Dashboard,
   E911Reports,
   E911Review,
-  E911Settings,
   EndpointControl,
   Extensions,
   KnowledgeBase,
   Leads,
-  MOSScores,
   OfflineEndpoints,
   PBXDashboard,
   PBXDomains,
   PBXPhoneNumbers,
-  PBXGeneratedReports,
   PBXMakeCall,
   PBXRouteByAni,
   Profile,

@@ -1,9 +1,8 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { createPageUrl } from '@/utils';
 import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
+import PbxCompletedExports from '@/components/pbx/reports/PbxCompletedExports';
 import { flattenReportTypes } from '@/lib/reportTypes';
 
 export default function E911Reports() {
@@ -40,13 +39,6 @@ function ReportsContent() {
 
   return (
     <div className="space-y-8">
-      <p className="text-sm text-gray-600">
-        E911 endpoints and available emergency reports. Download completed exports from{' '}
-        <Link to={createPageUrl('PBXGeneratedReports')} className="text-[#F07020] hover:underline">
-          Generated Reports
-        </Link>
-        .
-      </p>
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">E911 endpoint summary ({e911Rows.length})</h2>
         <PbxDataTable
@@ -72,6 +64,7 @@ function ReportsContent() {
           emptyMessage="No E911 reports are available for this account."
         />
       </section>
+      <PbxCompletedExports title="Completed report exports" />
     </div>
   );
 }

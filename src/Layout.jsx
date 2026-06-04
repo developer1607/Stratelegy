@@ -12,10 +12,10 @@ import {
   PBX_PAGES,
 } from '@/lib/permissions';
 import { CRM_NAV, SUPPORT_NAV, PBX_NAV_GROUPS, getAdminBottomNav, PBX_PAGES_NO_DOMAIN_BAR } from '@/lib/navConfig';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import HeaderQuickActions from '@/components/layout/HeaderQuickActions';
+import CommandPalette from '@/components/layout/CommandPalette';
 import { Avatar } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -56,8 +56,7 @@ export default function Layout({ children, currentPageName }) {
   const isActive = (itemPath) => currentPageName === itemPath;
 
   const navLinkClass = (path) =>
-    `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${
-      isActive(path) ? 'bg-[#F07020] text-white' : 'hover:bg-white/10 text-white/80 hover:text-white'
+    `flex items-center gap-3 px-4 py-2.5 rounded-lg transition-colors text-sm ${isActive(path) ? 'bg-[#F07020] text-white' : 'hover:bg-white/10 text-white/80 hover:text-white'
     }`;
 
   useEffect(() => {
@@ -174,12 +173,7 @@ export default function Layout({ children, currentPageName }) {
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-100 px-4 sm:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
-            <div className="hidden sm:flex flex-1 max-w-xl">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input placeholder="Search Anything..." className="pl-10 bg-gray-50 border-gray-200" />
-              </div>
-            </div>
+            <CommandPalette canAccessPage={canAccessPage} isAdmin={isAdmin} />
 
             <div className="flex items-center gap-2 sm:gap-4">
               <HeaderQuickActions

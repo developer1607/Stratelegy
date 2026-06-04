@@ -113,8 +113,9 @@ export async function listE911Countries() {
   return skyswitchRequest('GET', accountPath('/e911/countries'));
 }
 
-export async function listE911States(country = 'US') {
-  return skyswitchRequest('GET', accountPath('/e911/states'), { query: { country } });
+/** Returns `{ US: { AL: "Alabama", ... }, CA: { AB: "Alberta", ... } }` — do not pass a country filter. */
+export async function listE911States() {
+  return skyswitchRequest('GET', accountPath('/e911/states'));
 }
 
 export async function listTrunkGroups() {
@@ -291,22 +292,6 @@ export async function getVoicemailOverview(domain) {
   };
 }
 
-export async function getMosReportTypes() {
-  const types = await listReportTypes();
-  const flat = [];
-  for (const [category, items] of Object.entries(types || {})) {
-    if (!Array.isArray(items)) continue;
-    for (const item of items) {
-      flat.push({ category, ...item });
-    }
-  }
-  const mosRelated = flat.filter(
-    (item) =>
-      /mos|quality|voice/i.test(item.label || '') || /mos|quality|voice/i.test(item.value || '')
-  );
-  return { all: flat, mosRelated, raw: types };
-}
-
 // ── Write operations ──
 
 export async function setPhoneRoute(phoneNumber, body) {
@@ -326,7 +311,12 @@ export async function unprovisionE911(phoneNumber) {
 }
 
 export async function validateE911Address(query) {
-  return skyswitchRequest('GET', accountPath('/e911/address'), { query });
+  const params = {
+    ...query,
+    force: query.force ?? 0,
+    name: query.name?.trim() || 'E911 Location',
+  };
+  return skyswitchRequest('GET', accountPath('/e911/address'), { query: params });
 }
 
 export async function makeCall(body) {

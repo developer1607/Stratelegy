@@ -14,10 +14,8 @@ router.use(requireAuth, attachPermissions, requireAnyPbxPermission(
   'can_view_sip_alg',
   'can_view_e911_review',
   'can_view_e911_reports',
-  'can_view_mos_scores',
   'can_view_troubleshooting',
   'can_view_sip_trunks',
-  'can_view_e911_settings',
   'can_view_extensions_page',
   'can_view_call_logs_page',
   'can_view_call_routing_page',
@@ -26,7 +24,6 @@ router.use(requireAuth, attachPermissions, requireAnyPbxPermission(
   'can_view_make_call_page',
   'can_view_route_by_ani_page',
   'can_view_pbx_domains_page',
-  'can_view_pbx_generated_reports_page',
   'can_manage_pbx_reports',
   'can_access_pbx',
   'can_manage_pbx_routing',
@@ -128,7 +125,7 @@ router.get('/offline-endpoints', requirePbxPermission('can_view_offline_endpoint
   }
 });
 
-router.get('/e911', requireAnyPbxPermission('can_view_e911_review', 'can_view_e911_reports', 'can_view_e911_settings'), async (_req, res, next) => {
+router.get('/e911', requireAnyPbxPermission('can_view_e911_review', 'can_view_e911_reports'), async (_req, res, next) => {
   try {
     res.json(await pbx.listE911Endpoints());
   } catch (err) {
@@ -136,7 +133,7 @@ router.get('/e911', requireAnyPbxPermission('can_view_e911_review', 'can_view_e9
   }
 });
 
-router.get('/e911/countries', requirePbxPermission('can_view_e911_settings'), async (_req, res, next) => {
+router.get('/e911/countries', requirePbxPermission('can_manage_e911'), async (_req, res, next) => {
   try {
     res.json(await pbx.listE911Countries());
   } catch (err) {
@@ -144,9 +141,9 @@ router.get('/e911/countries', requirePbxPermission('can_view_e911_settings'), as
   }
 });
 
-router.get('/e911/states', requirePbxPermission('can_view_e911_settings'), async (req, res, next) => {
+router.get('/e911/states', requirePbxPermission('can_manage_e911'), async (_req, res, next) => {
   try {
-    res.json(await pbx.listE911States(req.query.country || 'US'));
+    res.json(await pbx.listE911States());
   } catch (err) {
     next(err);
   }
@@ -160,7 +157,7 @@ router.get('/e911/validate/address', requirePbxPermission('can_manage_e911'), as
   }
 });
 
-router.get('/e911/:phoneNumber', requireAnyPbxPermission('can_view_e911_review', 'can_view_e911_settings'), async (req, res, next) => {
+router.get('/e911/:phoneNumber(\\d{11})', requirePbxPermission('can_view_e911_review'), async (req, res, next) => {
   try {
     res.json(await pbx.getE911ForPhone(req.params.phoneNumber));
   } catch (err) {
@@ -272,11 +269,7 @@ router.get('/audit-logs', requirePbxPermission('can_view_call_logs_page'), async
   }
 });
 
-router.get('/reports/types', requireAnyPbxPermission(
-  'can_view_mos_scores',
-  'can_view_e911_reports',
-  'can_view_pbx_generated_reports_page'
-), async (_req, res, next) => {
+router.get('/reports/types', requirePbxPermission('can_view_e911_reports'), async (_req, res, next) => {
   try {
     res.json(await pbx.listReportTypes());
   } catch (err) {
@@ -284,7 +277,7 @@ router.get('/reports/types', requireAnyPbxPermission(
   }
 });
 
-router.get('/reports', requirePbxPermission('can_view_pbx_generated_reports_page'), async (req, res, next) => {
+router.get('/reports', requirePbxPermission('can_view_e911_reports'), async (req, res, next) => {
   try {
     res.json(await pbx.listReports({
       page: Number(req.query.page) || 1,
@@ -301,7 +294,7 @@ router.get('/reports', requirePbxPermission('can_view_pbx_generated_reports_page
   }
 });
 
-router.get('/reports/files/:fileId/download', requirePbxPermission('can_view_pbx_generated_reports_page'), async (req, res, next) => {
+router.get('/reports/files/:fileId/download', requirePbxPermission('can_view_e911_reports'), async (req, res, next) => {
   try {
     res.json(await pbx.getReportFileDownload(req.params.fileId));
   } catch (err) {
@@ -309,7 +302,7 @@ router.get('/reports/files/:fileId/download', requirePbxPermission('can_view_pbx
   }
 });
 
-router.get('/reports/:reportId', requirePbxPermission('can_view_pbx_generated_reports_page'), async (req, res, next) => {
+router.get('/reports/:reportId', requirePbxPermission('can_view_e911_reports'), async (req, res, next) => {
   try {
     res.json(await pbx.getReport(req.params.reportId));
   } catch (err) {
@@ -326,14 +319,6 @@ router.delete('/reports/:reportId', requirePbxPermission('can_manage_pbx_reports
   }
 });
 
-router.get('/mos-reports', requirePbxPermission('can_view_mos_scores'), async (_req, res, next) => {
-  try {
-    res.json(await pbx.getMosReportTypes());
-  } catch (err) {
-    next(err);
-  }
-});
-
 router.get('/troubleshooting', requirePbxPermission('can_view_troubleshooting'), async (req, res, next) => {
   try {
     res.json(await pbx.getTroubleshootingSnapshot(req.query.domain));
@@ -342,7 +327,7 @@ router.get('/troubleshooting', requirePbxPermission('can_view_troubleshooting'),
   }
 });
 
-router.get('/ui-config', requireAnyPbxPermission('can_view_sip_alg', 'can_view_e911_settings', 'can_view_troubleshooting'), async (req, res, next) => {
+router.get('/ui-config', requireAnyPbxPermission('can_view_sip_alg', 'can_view_troubleshooting'), async (req, res, next) => {
   try {
     const { domain, config_name: configName } = req.query;
     if (!configName) return res.status(400).json({ message: 'config_name is required' });
@@ -370,7 +355,7 @@ router.delete('/routes/:phoneNumber', requirePbxPermission('can_manage_pbx_routi
   }
 });
 
-router.put('/e911/:phoneNumber', requirePbxPermission('can_manage_e911'), async (req, res, next) => {
+router.put('/e911/:phoneNumber(\\d{11})', requirePbxPermission('can_manage_e911'), async (req, res, next) => {
   try {
     res.json(await pbx.provisionE911(req.params.phoneNumber, req.body));
   } catch (err) {
@@ -378,7 +363,7 @@ router.put('/e911/:phoneNumber', requirePbxPermission('can_manage_e911'), async 
   }
 });
 
-router.delete('/e911/:phoneNumber', requirePbxPermission('can_manage_e911'), async (req, res, next) => {
+router.delete('/e911/:phoneNumber(\\d{11})', requirePbxPermission('can_manage_e911'), async (req, res, next) => {
   try {
     res.json(await pbx.unprovisionE911(req.params.phoneNumber));
   } catch (err) {

@@ -19,6 +19,16 @@ export default function PbxNavGroup({
 
   if (!visible.length) return null;
 
+  if (visible.length === 1) {
+    const item = visible[0];
+    return (
+      <Link to={createPageUrl(item.path)} className={navLinkClass(item.path)}>
+        <item.icon className="w-5 h-5" />
+        <span className="font-medium">{item.name}</span>
+      </Link>
+    );
+  }
+
   const isActive = visible.some((item) => item.path === currentPageName);
 
   return (

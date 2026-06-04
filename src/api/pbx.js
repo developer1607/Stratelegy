@@ -30,7 +30,7 @@ export const pbxApi = {
   offlineEndpoints: (domain) => pbxGet('/offline-endpoints', { domain }),
   e911: () => pbxGet('/e911'),
   e911Countries: () => pbxGet('/e911/countries'),
-  e911States: (country) => pbxGet('/e911/states', { country }),
+  e911States: () => pbxGet('/e911/states'),
   e911Detail: (phoneNumber) => pbxGet(`/e911/${encodeURIComponent(phoneNumber)}`),
   validateE911Address: (query) => pbxGet('/e911/validate/address', query),
   provisionE911: (phoneNumber, body) => pbxRequest('PUT', `/e911/${encodeURIComponent(phoneNumber)}`, body),
@@ -57,7 +57,6 @@ export const pbxApi = {
   getReport: (reportId) => pbxGet(`/reports/${encodeURIComponent(reportId)}`),
   cancelReport: (reportId) => pbxRequest('DELETE', `/reports/${encodeURIComponent(reportId)}`),
   downloadReportFile: (fileId) => pbxGet(`/reports/files/${encodeURIComponent(fileId)}/download`),
-  mosReports: () => pbxGet('/mos-reports'),
   troubleshooting: (domain) => pbxGet('/troubleshooting', { domain }),
   uiConfig: (domain, config_name) => pbxGet('/ui-config', { domain, config_name }),
 };

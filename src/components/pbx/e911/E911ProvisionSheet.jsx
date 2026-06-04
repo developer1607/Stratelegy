@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 import { pbxApi } from '@/api/pbx';
@@ -12,7 +12,13 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import { EMPTY_E911_FORM, mapE911ToForm } from '@/components/pbx/shared/pbxFormMappers';
+import PbxFormSelect, { mapCodeLabelOptions } from '@/components/pbx/shared/PbxFormSelect';
+import {
+  EMPTY_E911_FORM,
+  buildE911ValidateQuery,
+  e911AddressFieldsComplete,
+  mapE911ToForm,
+} from '@/components/pbx/shared/pbxFormMappers';
 import { toast } from 'sonner';
 
 export default function E911ProvisionSheet({
@@ -24,15 +30,46 @@ export default function E911ProvisionSheet({
 }) {
   const isEdit = !!phoneNumber;
   const [form, setForm] = useState(EMPTY_E911_FORM);
+  const [validationSummary, setValidationSummary] = useState(null);
 
   const { data: detail, isLoading, isFetching } = useQuery({
     queryKey: ['pbx-e911-detail', phoneNumber],
     queryFn: () => pbxApi.e911Detail(phoneNumber),
     enabled: open && isEdit,
+    retry: 1,
   });
 
+  const countriesQuery = useQuery({
+    queryKey: ['pbx-e911-countries'],
+    queryFn: () => pbxApi.e911Countries(),
+    enabled: open,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+
+  const statesQuery = useQuery({
+    queryKey: ['pbx-e911-states'],
+    queryFn: () => pbxApi.e911States(),
+    enabled: open,
+    staleTime: 30 * 60 * 1000,
+    retry: 1,
+  });
+
+  const countryOptions = useMemo(
+    () => mapCodeLabelOptions(countriesQuery.data),
+    [countriesQuery.data]
+  );
+
+  const stateOptions = useMemo(() => {
+    const byCountry = statesQuery.data?.[form.country];
+    return mapCodeLabelOptions(byCountry);
+  }, [statesQuery.data, form.country]);
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setValidationSummary(null);
+      return;
+    }
     if (isEdit) {
       const source = detail || initialData;
       setForm(mapE911ToForm(source));
@@ -52,20 +89,47 @@ export default function E911ProvisionSheet({
   });
 
   const validateMutation = useMutation({
-    mutationFn: () =>
-      pbxApi.validateE911Address({
-        street_number: form.street_number,
-        street_name: form.street_name,
-        city: form.city,
-        state: form.state,
-        zip_code: form.zip_code,
-        country: form.country,
-      }),
-    onSuccess: () => toast.success('Address validated'),
-    onError: (err) => toast.error(err.message || 'Address validation failed'),
+    mutationFn: () => pbxApi.validateE911Address(buildE911ValidateQuery(form)),
+    onSuccess: (data) => {
+      const routing = data?.level_of_service?.routing_status;
+      const msag = data?.level_of_service?.msag_status;
+      setValidationSummary({
+        ok: true,
+        routing,
+        msag,
+        corrected: data?.address_corrected || null,
+      });
+      toast.success(
+        routing ? `Address validated (${routing}${msag ? `, ${msag}` : ''})` : 'Address validated'
+      );
+    },
+    onError: (err) => {
+      setValidationSummary({ ok: false, message: err.message || 'Address validation failed' });
+      toast.error(err.message || 'Address validation failed');
+    },
   });
 
   const loadingExisting = open && isEdit && (isLoading || isFetching) && !detail && !initialData;
+  const loadingGeo = countriesQuery.isLoading || statesQuery.isLoading;
+  const canValidate = e911AddressFieldsComplete(form) && !loadingExisting;
+
+  const handleCountryChange = (country) => {
+    setValidationSummary(null);
+    setForm((prev) => {
+      const nextStates = statesQuery.data?.[country] || {};
+      const stateStillValid = prev.state && nextStates[prev.state];
+      return { ...prev, country, state: stateStillValid ? prev.state : '' };
+    });
+  };
+
+  const handleValidate = () => {
+    if (!canValidate) {
+      toast.error('Fill in street, city, state, ZIP, and country before validating.');
+      return;
+    }
+    setValidationSummary(null);
+    validateMutation.mutate();
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -93,14 +157,134 @@ export default function E911ProvisionSheet({
           ) : (
             <div className="grid gap-3 py-6">
               <PbxFormField label="Phone number" value={phoneNumber} readOnly required />
-              <PbxFormField label="Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-              <PbxFormField label="Street number" value={form.street_number} onChange={(e) => setForm({ ...form, street_number: e.target.value })} required />
-              <PbxFormField label="Street name" value={form.street_name} onChange={(e) => setForm({ ...form, street_name: e.target.value })} required />
-              <PbxFormField label="Suite / location" value={form.location} onChange={(e) => setForm({ ...form, location: e.target.value })} />
-              <PbxFormField label="City" value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} required />
-              <PbxFormField label="State" value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} required />
-              <PbxFormField label="ZIP" value={form.zip_code} onChange={(e) => setForm({ ...form, zip_code: e.target.value })} required />
-              <PbxFormField label="Country" value={form.country} onChange={(e) => setForm({ ...form, country: e.target.value })} required />
+              <PbxFormField
+                label="Name"
+                value={form.name}
+                onChange={(e) => {
+                  setValidationSummary(null);
+                  setForm({ ...form, name: e.target.value });
+                }}
+                disabled={loadingExisting}
+              />
+              <PbxFormField
+                label="Street number"
+                value={form.street_number}
+                onChange={(e) => {
+                  setValidationSummary(null);
+                  setForm({ ...form, street_number: e.target.value });
+                }}
+                required
+                disabled={loadingExisting}
+              />
+              <PbxFormField
+                label="Street name"
+                value={form.street_name}
+                onChange={(e) => {
+                  setValidationSummary(null);
+                  setForm({ ...form, street_name: e.target.value });
+                }}
+                required
+                disabled={loadingExisting}
+              />
+              <PbxFormField
+                label="Suite / location"
+                value={form.location}
+                onChange={(e) => {
+                  setValidationSummary(null);
+                  setForm({ ...form, location: e.target.value });
+                }}
+                disabled={loadingExisting}
+              />
+              <PbxFormField
+                label="City"
+                value={form.city}
+                onChange={(e) => {
+                  setValidationSummary(null);
+                  setForm({ ...form, city: e.target.value });
+                }}
+                required
+                disabled={loadingExisting}
+              />
+              {loadingGeo ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500 py-2">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Loading countries and states…
+                </div>
+              ) : countriesQuery.error || statesQuery.error ? (
+                <p className="text-sm text-amber-700">
+                  Country/state lists unavailable — you can still enter codes manually.
+                </p>
+              ) : null}
+              {countryOptions.length > 0 ? (
+                <PbxFormSelect
+                  label="Country"
+                  value={form.country}
+                  onValueChange={handleCountryChange}
+                  options={countryOptions}
+                  placeholder="Select country"
+                  required
+                  disabled={loadingExisting || loadingGeo}
+                />
+              ) : (
+                <PbxFormField
+                  label="Country"
+                  value={form.country}
+                  onChange={(e) => {
+                    setValidationSummary(null);
+                    setForm({ ...form, country: e.target.value });
+                  }}
+                  required
+                  disabled={loadingExisting}
+                />
+              )}
+              {stateOptions.length > 0 ? (
+                <PbxFormSelect
+                  label="State / province"
+                  value={form.state}
+                  onValueChange={(state) => {
+                    setValidationSummary(null);
+                    setForm({ ...form, state });
+                  }}
+                  options={stateOptions}
+                  placeholder="Select state"
+                  required
+                  disabled={loadingExisting || loadingGeo || !form.country}
+                />
+              ) : (
+                <PbxFormField
+                  label="State / province"
+                  value={form.state}
+                  onChange={(e) => {
+                    setValidationSummary(null);
+                    setForm({ ...form, state: e.target.value });
+                  }}
+                  required
+                  disabled={loadingExisting}
+                />
+              )}
+              <PbxFormField
+                label="ZIP / postal code"
+                value={form.zip_code}
+                onChange={(e) => {
+                  setValidationSummary(null);
+                  setForm({ ...form, zip_code: e.target.value });
+                }}
+                required
+                disabled={loadingExisting}
+              />
+
+              {validationSummary?.ok ? (
+                <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
+                  Address validated
+                  {validationSummary.routing ? ` — ${validationSummary.routing}` : ''}
+                  {validationSummary.msag ? ` (${validationSummary.msag})` : ''}
+                </div>
+              ) : null}
+              {validationSummary && !validationSummary.ok ? (
+                <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900">
+                  {validationSummary.message}
+                </div>
+              ) : null}
             </div>
           )}
 
@@ -108,8 +292,8 @@ export default function E911ProvisionSheet({
             <Button
               type="button"
               variant="outline"
-              disabled={validateMutation.isPending || loadingExisting}
-              onClick={() => validateMutation.mutate()}
+              disabled={validateMutation.isPending || !canValidate}
+              onClick={handleValidate}
             >
               {validateMutation.isPending ? 'Validating…' : 'Validate address'}
             </Button>
