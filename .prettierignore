@@ -1,9 +1,0 @@
-node_modules
-dist
-dist-ssr
-coverage
-data
-.cursor
-*.local
-package-lock.json
-apiDocumentation.md
