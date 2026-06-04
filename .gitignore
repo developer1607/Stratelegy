@@ -1,7 +1,6 @@
-#env — keep .env local; commit .env.example as a template only
+# env — keep .env local; commit .env.example as a template only
 .env
-.env.local
-.env.*.local
+.env.*
 !.env.example
 
 # Logs
@@ -29,5 +28,14 @@ dist-ssr
 *.sln
 *.sw?
 
+# Tooling
+.eslintcache
+coverage/
+
+# Archives / backups
+*.tar.gz
+
 # Self-hosted data
 data/
+
+# Cursor — local IDE/agent config (not shared)
