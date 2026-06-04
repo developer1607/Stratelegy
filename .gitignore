@@ -39,3 +39,4 @@ coverage/
 data/
 
 # Cursor — local IDE/agent config (not shared)
+.cursor/
