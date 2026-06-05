@@ -6,6 +6,8 @@ export default function PbxListToolbar({
   search,
   onSearchChange,
   searchPlaceholder = 'Search…',
+  searchFieldId = 'pbx-list-search',
+  searchFieldName = 'pbx-list-search',
   children,
 }) {
   return (
@@ -14,6 +16,8 @@ export default function PbxListToolbar({
         <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
+            id={searchFieldId}
+            name={searchFieldName}
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder={searchPlaceholder}

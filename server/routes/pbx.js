@@ -7,8 +7,20 @@ import {
   SKYSWITCH_API_REGISTRY,
   SKYSWITCH_OUT_OF_SCOPE,
 } from '../services/skyswitch/apiRegistry.js';
+import {
+  getSkySwitchScopeStatus,
+  mapSkySwitchScopeError,
+} from '../services/skyswitch/scopes.js';
+import { config } from '../config.js';
+import { requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
+
+function handleSkySwitchScopeError(err, feature, res, next) {
+  const mapped = mapSkySwitchScopeError(err, feature);
+  if (mapped) return res.status(mapped.status).json(mapped.body);
+  return next(err);
+}
 
 router.use(
   requireAuth,
@@ -354,13 +366,7 @@ router.get(
         })
       );
     } catch (err) {
-      if (err.status === 403) {
-        return res.status(403).json({
-          message: 'Audit log access requires the log scope on your SkySwitch API credentials.',
-          code: 'skyswitch_log_scope_required',
-        });
-      }
-      next(err);
+      return handleSkySwitchScopeError(err, 'log', res, next);
     }
   }
 );
@@ -372,7 +378,7 @@ router.get(
     try {
       res.json(await pbx.listReportTypes());
     } catch (err) {
-      next(err);
+      return handleSkySwitchScopeError(err, 'report', res, next);
     }
   }
 );
@@ -386,14 +392,12 @@ router.get('/reports', requirePbxPermission('can_view_e911_reports'), async (req
       })
     );
   } catch (err) {
-    if (err.status === 403) {
-      return res.status(403).json({
-        message: 'Report access requires the report scope on your SkySwitch API credentials.',
-        code: 'skyswitch_report_scope_required',
-      });
-    }
-    next(err);
+    return handleSkySwitchScopeError(err, 'report', res, next);
   }
+});
+
+router.get('/scope-status', requireAdmin, (_req, res) => {
+  res.json(getSkySwitchScopeStatus(config.skyswitch.scope));
 });
 
 router.get(
@@ -403,7 +407,7 @@ router.get(
     try {
       res.json(await pbx.getReportFileDownload(req.params.fileId));
     } catch (err) {
-      next(err);
+      return handleSkySwitchScopeError(err, 'report', res, next);
     }
   }
 );
@@ -415,7 +419,7 @@ router.get(
     try {
       res.json(await pbx.getReport(req.params.reportId));
     } catch (err) {
-      next(err);
+      return handleSkySwitchScopeError(err, 'report', res, next);
     }
   }
 );
@@ -428,7 +432,7 @@ router.delete(
       await pbx.cancelReport(req.params.reportId);
       res.status(204).send();
     } catch (err) {
-      next(err);
+      return handleSkySwitchScopeError(err, 'report', res, next);
     }
   }
 );

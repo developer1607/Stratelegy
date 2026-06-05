@@ -31,3 +31,19 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Production smoke test
+        env:
+          NODE_ENV: production
+          JWT_SECRET: ci-smoke-test-secret-min-32-characters-long
+          APP_BASE_URL: https://ci.example.com
+          MYSQL_PASSWORD: ''
+        run: |
+          node server/index.js &
+          SERVER_PID=$!
+          sleep 3
+          curl -fsS http://127.0.0.1:3000/api/health
+          curl -fsS http://127.0.0.1:3000/logo.svg -o /dev/null
+          curl -fsS http://127.0.0.1:3000/ -o /dev/null
+          kill $SERVER_PID
+          wait $SERVER_PID 2>/dev/null || true

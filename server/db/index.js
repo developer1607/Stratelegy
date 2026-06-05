@@ -1,10 +1,10 @@
-import fs from 'fs';
-import { config } from '../config.js';
-import { createPoolConnection } from './query.js';
-import { initSchema } from './schema/index.js';
-import { syncSchema } from './schemaSync.js';
-import { runMigrations } from './migrations/index.js';
-import { runSeeds } from './seed/index.js';
+import fs from "fs";
+import { config } from "../config.js";
+import { createPoolConnection } from "./query.js";
+import { initSchema } from "./schema/index.js";
+import { syncSchema } from "./schemaSync.js";
+import { runMigrations } from "./migrations/index.js";
+import { runSeeds } from "./seed/index.js";
 
 /**
  * Database bootstrap (runs on every server start):
@@ -21,6 +21,6 @@ export async function initDatabase() {
   await runSeeds();
   await runMigrations();
   console.log(
-    `[db] MySQL ready: ${config.mysql.user}@${config.mysql.host}:${config.mysql.port}/${config.mysql.database}`
+    `[db] MySQL ready: ${config.mysql.user}@${config.mysql.host}:${config.mysql.port}/${config.mysql.database}`,
   );
 }

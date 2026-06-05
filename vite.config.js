@@ -9,6 +9,18 @@ const useDevProxy = process.env.VITE_STANDALONE === 'true';
 export default defineConfig({
   logLevel: 'error',
   plugins: [react()],
+  build: {
+    sourcemap: false,
+    target: 'es2020',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          query: ['@tanstack/react-query'],
+        },
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

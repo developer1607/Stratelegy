@@ -13,7 +13,10 @@ router.post('/email', async (req, res, next) => {
     if (!config.emailWebhookSecret) {
       return res.status(503).json({ error: 'Email webhook is not configured' });
     }
-    const secret = req.query.secret;
+    const secret =
+      req.get('x-webhook-secret') ||
+      (req.get('authorization') || '').replace(/^Bearer\s+/i, '') ||
+      req.query.secret;
     if (secret !== config.emailWebhookSecret) {
       return res.status(401).json({ error: 'Unauthorized' });
     }

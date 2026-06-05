@@ -26,39 +26,39 @@ Contact the Skyswitch Control Tower to get the client ID and client secret.
 
 ## Authorization
 
-The first step of OAuth 2 is to get authorization from the user. While the OAuth 2 specification  provides several "grant types" for different use cases, the Telco API supports the password grant type.
+The first step of OAuth 2 is to get authorization from the user. While the OAuth 2 specification provides several "grant types" for different use cases, the Telco API supports the password grant type.
 
 ### Resource Owner Password Credentials
 
-The resource owner's credentials (i.e., username and password) can be used directly to obtain an access token.  The credentials should only be used when there is a high degree of trust between the resource owner and the client.
+The resource owner's credentials (i.e., username and password) can be used directly to obtain an access token. The credentials should only be used when there is a high degree of trust between the resource owner and the client.
 
-Even though this grant type requires direct client access to the resource owner credentials, the resource owner credentials are used for a single request and are exchanged for an access token.  This grant type eliminates the need for the client to store the resource owner credentials for future use, by exchanging the credentials with a long-lived access token or refresh token.
+Even though this grant type requires direct client access to the resource owner credentials, the resource owner credentials are used for a single request and are exchanged for an access token. This grant type eliminates the need for the client to store the resource owner credentials for future use, by exchanging the credentials with a long-lived access token or refresh token.
 
 ## Scopes
 
 Scopes let the client specify exactly what type of access it needs to the resource owner's account. Scopes limit the access of OAuth tokens. They do not grant any additional permission beyond that which the resource owner already has.
 
-| Scope         | Description                                                                                                                                                                                        |
-| :------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| account       | Allows client to interact with the resource owner's accounts. This includes the account associated with the resource owner and any child accounts.                                                 |
-| user          | Allows application to manage users.                                                                                                                                                                |
-| catalog       | Allows client to view catalog of purchasable phone numbers.                                                                                                                                        |
-| phone\_number | Allows client to manage the resource owner's inventory. This includes purchasing phone numbers from the catalog, adding BYOT phone numbers and disconnecting phone numbers.                        |
-| routing       | Allows client to manage the routing of the resource owner's phone numbers. This includes routing and unrouting phone numbers.                                                                      |
-| e911          | Allows client to manage the e911 services of the resource owner. This includes adding, creating, updating and deleting e911 services for phone numbers.                                            |
-| billing       | Allows client to manage the billing information for the resource owner's account(s).                                                                                                               |
-| lnp           | Allows client to manage local number portability requests belonging to the resource owner. This includes creating new requests, as well as reading, supplementing and canceling existing requests. |
-| back\_office  | Allows client to perform back office functionality on behalf of the resource owner. This functionality is reserved for SkySwitch staff.                                                            |
-| carrier       | Allows application to manage carriers.                                                                                                                                                             |
-| pbx           | Allows application to manage pbx.                                                                                                                                                                  |
-| entitlement   | Allows application to manage entitlements services.                                                                                                                                                |
-| uc\_config    | Allows application to manage uc config services.                                                                                                                                                   |
-| messaging     | Allows application to manage messaging services.                                                                                                                                                   |
-| report        | Allows application to manage reports services.                                                                                                                                                     |
-| branding      | Allows application to manage branding services.                                                                                                                                                    |
-| port-in       | Allows application to manage port-in services.                                                                                                                                                     |
-| ten\_dlc      | Allows application to manage 10-dlc services.                                                                                                                                                      |
-| tollfree\_a2p | Allows application to manage toll-free A2P services.                                                                                                                                               |
+| Scope        | Description                                                                                                                                                                                        |
+| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| account      | Allows client to interact with the resource owner's accounts. This includes the account associated with the resource owner and any child accounts.                                                 |
+| user         | Allows application to manage users.                                                                                                                                                                |
+| catalog      | Allows client to view catalog of purchasable phone numbers.                                                                                                                                        |
+| phone_number | Allows client to manage the resource owner's inventory. This includes purchasing phone numbers from the catalog, adding BYOT phone numbers and disconnecting phone numbers.                        |
+| routing      | Allows client to manage the routing of the resource owner's phone numbers. This includes routing and unrouting phone numbers.                                                                      |
+| e911         | Allows client to manage the e911 services of the resource owner. This includes adding, creating, updating and deleting e911 services for phone numbers.                                            |
+| billing      | Allows client to manage the billing information for the resource owner's account(s).                                                                                                               |
+| lnp          | Allows client to manage local number portability requests belonging to the resource owner. This includes creating new requests, as well as reading, supplementing and canceling existing requests. |
+| back_office  | Allows client to perform back office functionality on behalf of the resource owner. This functionality is reserved for SkySwitch staff.                                                            |
+| carrier      | Allows application to manage carriers.                                                                                                                                                             |
+| pbx          | Allows application to manage pbx.                                                                                                                                                                  |
+| entitlement  | Allows application to manage entitlements services.                                                                                                                                                |
+| uc_config    | Allows application to manage uc config services.                                                                                                                                                   |
+| messaging    | Allows application to manage messaging services.                                                                                                                                                   |
+| report       | Allows application to manage reports services.                                                                                                                                                     |
+| branding     | Allows application to manage branding services.                                                                                                                                                    |
+| port-in      | Allows application to manage port-in services.                                                                                                                                                     |
+| ten_dlc      | Allows application to manage 10-dlc services.                                                                                                                                                      |
+| tollfree_a2p | Allows application to manage toll-free A2P services.                                                                                                                                               |
 
 ## Authorization Header
 
@@ -78,9 +78,9 @@ Allows a registered application to obtain an OAuth 2 Bearer Token, which can be 
 
 [block:callout]
 {
-  "type": "warning",
-  "title": "Special Characters",
-  "body": "In retrieving for an access token, make sure to use --data-urlencode (instead of -d) if your credentials contain special characters."
+"type": "warning",
+"title": "Special Characters",
+"body": "In retrieving for an access token, make sure to use --data-urlencode (instead of -d) if your credentials contain special characters."
 }
 [/block]
 
@@ -98,9 +98,7 @@ Allows a registered application to obtain an OAuth 2 Bearer Token, which can be 
       "url": "https://api.skyswitch.com"
     }
   ],
-  "security": [
-    {}
-  ],
+  "security": [{}],
   "paths": {
     "/oauth/token": {
       "post": {
@@ -112,11 +110,7 @@ Allows a registered application to obtain an OAuth 2 Bearer Token, which can be 
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "grant_type",
-                  "client_id",
-                  "client_secret"
-                ],
+                "required": ["grant_type", "client_id", "client_secret"],
                 "properties": {
                   "grant_type": {
                     "type": "string",
@@ -238,9 +232,7 @@ Allows a registered application to obtain an OAuth 2 Bearer Token, which can be 
               "name": "Refresh Token"
             }
           ],
-          "samples-languages": [
-            "shell"
-          ]
+          "samples-languages": ["shell"]
         }
       }
     }
@@ -275,9 +267,7 @@ Determine information about the token the client possess.
       "url": "https://api.skyswitch.com"
     }
   ],
-  "security": [
-    {}
-  ],
+  "security": [{}],
   "paths": {
     "/oauth/token": {
       "get": {
@@ -354,9 +344,7 @@ Determine information about the token the client possess.
               "code": "curl --get 'https://telco-api.skyswitch.com/oauth/token' \\\n  -H 'Authorization: Bearer t1IGdXc9IZBzkX1lgRNA07pMbzStPWCn9texz8V4' "
             }
           ],
-          "samples-languages": [
-            "shell"
-          ]
+          "samples-languages": ["shell"]
         }
       }
     }
@@ -391,9 +379,7 @@ Determine information about the token the client possess.
       "url": "https://api.skyswitch.com"
     }
   ],
-  "security": [
-    {}
-  ],
+  "security": [{}],
   "paths": {
     "/oauth/token": {
       "get": {
@@ -470,9 +456,7 @@ Determine information about the token the client possess.
               "code": "curl --get 'https://telco-api.skyswitch.com/oauth/token' \\\n  -H 'Authorization: Bearer t1IGdXc9IZBzkX1lgRNA07pMbzStPWCn9texz8V4' "
             }
           ],
-          "samples-languages": [
-            "shell"
-          ]
+          "samples-languages": ["shell"]
         }
       }
     }
@@ -507,9 +491,7 @@ Determine information about the token the client possess.
       "url": "https://api.skyswitch.com"
     }
   ],
-  "security": [
-    {}
-  ],
+  "security": [{}],
   "paths": {
     "/oauth/token": {
       "get": {
@@ -586,9 +568,7 @@ Determine information about the token the client possess.
               "code": "curl --get 'https://telco-api.skyswitch.com/oauth/token' \\\n  -H 'Authorization: Bearer t1IGdXc9IZBzkX1lgRNA07pMbzStPWCn9texz8V4' "
             }
           ],
-          "samples-languages": [
-            "shell"
-          ]
+          "samples-languages": ["shell"]
         }
       }
     }
@@ -626,14 +606,10 @@ Retrieve sub-account information.
         "description": "Retrieve sub-account information.",
         "security": [
           {
-            "api_auth": [
-              "account"
-            ]
+            "api_auth": ["account"]
           }
         ],
-        "tags": [
-          "Accounts"
-        ],
+        "tags": ["Accounts"],
         "parameters": [
           {
             "in": "path",
@@ -827,14 +803,10 @@ List users
         "description": "List users",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1041,14 +1013,10 @@ List users for the Sync Tool. This endpoint is used to retrieve a list of users 
         "description": "List users for the Sync Tool. This endpoint is used to retrieve a list of users without filtering by account.",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1231,14 +1199,10 @@ Create a new user
         "description": "Create a new user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1255,9 +1219,7 @@ Create a new user
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -1287,10 +1249,7 @@ Create a new user
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "system",
-                        "fields"
-                      ],
+                      "required": ["system", "fields"],
                       "properties": {
                         "system": {
                           "type": "string",
@@ -1298,10 +1257,7 @@ Create a new user
                         },
                         "fields": {
                           "type": "object",
-                          "required": [
-                            "name",
-                            "value"
-                          ],
+                          "required": ["name", "value"],
                           "properties": {
                             "name": {
                               "type": "string",
@@ -1400,14 +1356,10 @@ Get a user
         "description": "Get a user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1538,14 +1490,10 @@ Create a new user
         "description": "Create a new user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1673,14 +1621,10 @@ Delete a user
         "description": "Delete a user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1780,14 +1724,10 @@ Updates FusionAuth user.data and registrations for the user.
         "description": "Updates FusionAuth user.data and registrations for the user.",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -1902,14 +1842,10 @@ Restore a user
         "description": "Restore a user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "parameters": [
           {
             "in": "path",
@@ -2009,14 +1945,10 @@ Add a multiple byot phone number
         "description": "Add a multiple byot phone number",
         "security": [
           {
-            "api_auth": [
-              "back_office"
-            ]
+            "api_auth": ["back_office"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2033,9 +1965,7 @@ Add a multiple byot phone number
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone_numbers"
-                ],
+                "required": ["phone_numbers"],
                 "properties": {
                   "phone_numbers": {
                     "type": "array",
@@ -2047,10 +1977,7 @@ Add a multiple byot phone number
                 }
               },
               "example": {
-                "phone_numbers": [
-                  "12345678803",
-                  "12345678901"
-                ]
+                "phone_numbers": ["12345678803", "12345678901"]
               }
             }
           }
@@ -2134,14 +2061,10 @@ Add a byot phone number
         "description": "Add a byot phone number",
         "security": [
           {
-            "api_auth": [
-              "back_office"
-            ]
+            "api_auth": ["back_office"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2241,14 +2164,10 @@ Add a multiple offnet phone number
         "description": "Add a multiple offnet phone number",
         "security": [
           {
-            "api_auth": [
-              "back_office"
-            ]
+            "api_auth": ["back_office"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2339,14 +2258,10 @@ Add an off-net phone number
         "description": "Add an off-net phone number",
         "security": [
           {
-            "api_auth": [
-              "back_office"
-            ]
+            "api_auth": ["back_office"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2446,14 +2361,10 @@ Retrieve a list of phone numbers owned by the account.
         "description": "Retrieve a list of phone numbers owned by the account.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2751,14 +2662,10 @@ Unroute and suspends the phone number.
         "description": "Unroute and suspends the phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2859,14 +2766,10 @@ Detach an assigned company from a phone number.
         "description": "Detach an assigned company from a phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -2966,14 +2869,10 @@ Attach a company to a phone number.
         "description": "Attach a company to a phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -3082,14 +2981,10 @@ Retrieves a phone number owned by the account.
         "description": "Retrieves a phone number owned by the account.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Inventory"
-        ],
+        "tags": ["Inventory"],
         "parameters": [
           {
             "in": "path",
@@ -3231,14 +3126,10 @@ Purchase multiple phone numbers from the catalog.
         "description": "Purchase multiple phone numbers from the catalog.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -3255,10 +3146,7 @@ Purchase multiple phone numbers from the catalog.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone_numbers",
-                  "carrier_id"
-                ],
+                "required": ["phone_numbers", "carrier_id"],
                 "properties": {
                   "phone_numbers": {
                     "type": "array",
@@ -3270,10 +3158,7 @@ Purchase multiple phone numbers from the catalog.
                 }
               },
               "example": {
-                "phone_numbers": [
-                  12345678901,
-                  12345678902
-                ],
+                "phone_numbers": [12345678901, 12345678902],
                 "carrier_id": 30
               }
             }
@@ -3358,14 +3243,10 @@ Purchase a specific number from the catalog.
         "description": "Purchase a specific number from the catalog.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -3396,9 +3277,7 @@ Purchase a specific number from the catalog.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "carrier_id"
-                ],
+                "required": ["carrier_id"],
                 "properties": {
                   "carrier_id": {
                     "type": "string",
@@ -3483,14 +3362,10 @@ Retrieve exchanges with purchasable phone numbers.
         "description": "Retrieve exchanges with purchasable phone numbers.",
         "security": [
           {
-            "api_auth": [
-              "catalog"
-            ]
+            "api_auth": ["catalog"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -3701,14 +3576,10 @@ Retrieve local phone numbers that are available for purchase from the catalog.
         "description": "Retrieve local phone numbers that are available for purchase from the catalog.",
         "security": [
           {
-            "api_auth": [
-              "catalog"
-            ]
+            "api_auth": ["catalog"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -3948,14 +3819,10 @@ Retrieve toll-free phone numbers that are available for purchase from the catalo
         "description": "Retrieve toll-free phone numbers that are available for purchase from the catalog.",
         "security": [
           {
-            "api_auth": [
-              "catalog"
-            ]
+            "api_auth": ["catalog"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -4156,14 +4023,10 @@ List reservations
         "description": "List reservations",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -4368,14 +4231,10 @@ Set some details to the phone number.
         "description": "Set some details to the phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -4491,14 +4350,10 @@ Retrieve a phone number under reservation
         "description": "Retrieve a phone number under reservation",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -4653,14 +4508,10 @@ This method reserves the phone number to your account for 30 days. Your account 
         "description": "This method reserves the phone number to your account for 30 days. Your account can reserve up to 100 phone numbers at a time. Skyswitch may charge a reservation fee in the near future.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -4691,9 +4542,7 @@ This method reserves the phone number to your account for 30 days. Your account 
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "carrier_id"
-                ],
+                "required": ["carrier_id"],
                 "properties": {
                   "carrier_id": {
                     "type": "integer",
@@ -4782,14 +4631,10 @@ This method unreserves the phone number from your account
         "description": "This method unreserves the phone number from your account",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "path",
@@ -4820,9 +4665,7 @@ This method unreserves the phone number from your account
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "carrier_id"
-                ],
+                "required": ["carrier_id"],
                 "properties": {
                   "carrier_id": {
                     "type": "integer",
@@ -4907,14 +4750,10 @@ List supported toll-free prefixes.
         "description": "List supported toll-free prefixes.",
         "security": [
           {
-            "api_auth": [
-              "catalog"
-            ]
+            "api_auth": ["catalog"]
           }
         ],
-        "tags": [
-          "Catalog, Reservations & Purchase"
-        ],
+        "tags": ["Catalog, Reservations & Purchase"],
         "parameters": [
           {
             "in": "query",
@@ -5022,14 +4861,10 @@ Retrieve the auto-attendants
         "description": "Retrieve the auto-attendants",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -5173,14 +5008,10 @@ Retrieve the call-queues
         "description": "Retrieve the call-queues",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -5324,14 +5155,10 @@ Retrieve the conferences
         "description": "Retrieve the conferences",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -5464,14 +5291,10 @@ Retrieve the contact centers
         "description": "Retrieve the contact centers",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -5590,14 +5413,10 @@ Retrieve the phone number's route
         "description": "Retrieve the phone number's route",
         "security": [
           {
-            "api_auth": [
-              "routing"
-            ]
+            "api_auth": ["routing"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -5878,14 +5697,10 @@ Route a phone number
         "description": "Route a phone number",
         "security": [
           {
-            "api_auth": [
-              "routing"
-            ]
+            "api_auth": ["routing"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -6176,14 +5991,10 @@ Delete routing for a number.
         "description": "Delete routing for a number.",
         "security": [
           {
-            "api_auth": [
-              "routing"
-            ]
+            "api_auth": ["routing"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -6283,14 +6094,10 @@ Retrieve the list of trunk groups.
         "description": "Retrieve the list of trunk groups.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Voice Route"
-        ],
+        "tags": ["Voice Route"],
         "parameters": [
           {
             "in": "path",
@@ -6409,14 +6216,10 @@ Provision user
         "description": "Provision user",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging User Provisioning"
-        ],
+        "tags": ["Messaging User Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -6433,11 +6236,7 @@ Provision user
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "user",
-                  "domain",
-                  "device_user"
-                ],
+                "required": ["user", "domain", "device_user"],
                 "properties": {
                   "user": {
                     "type": "string",
@@ -6558,14 +6357,10 @@ Retrieve details of a provisioned user
         "description": "Retrieve details of a provisioned user",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging User Provisioning"
-        ],
+        "tags": ["Messaging User Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -6708,14 +6503,10 @@ Unprovision user
         "description": "Unprovision user",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging User Provisioning"
-        ],
+        "tags": ["Messaging User Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -6815,14 +6606,10 @@ Retrieve a list of users from the messaging service.
         "description": "Retrieve a list of users from the messaging service.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging User Provisioning"
-        ],
+        "tags": ["Messaging User Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7066,14 +6853,10 @@ Create or update a user for the messaging service.
         "description": "Create or update a user for the messaging service.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging User Provisioning"
-        ],
+        "tags": ["Messaging User Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7199,14 +6982,10 @@ Remove a user from the messaging service.
         "description": "Remove a user from the messaging service.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging User Provisioning"
-        ],
+        "tags": ["Messaging User Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7306,14 +7085,10 @@ Retrieve mms of a phone number
         "description": "Retrieve mms of a phone number",
         "security": [
           {
-            "api_auth": [
-              "mms"
-            ]
+            "api_auth": ["mms"]
           }
         ],
-        "tags": [
-          "SMS/MMS Provisioning"
-        ],
+        "tags": ["SMS/MMS Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7439,14 +7214,10 @@ Enable mms to a phone number
         "description": "Enable mms to a phone number",
         "security": [
           {
-            "api_auth": [
-              "mms"
-            ]
+            "api_auth": ["mms"]
           }
         ],
-        "tags": [
-          "SMS/MMS Provisioning"
-        ],
+        "tags": ["SMS/MMS Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7554,14 +7325,10 @@ Disable mms to a phone number
         "description": "Disable mms to a phone number",
         "security": [
           {
-            "api_auth": [
-              "mms"
-            ]
+            "api_auth": ["mms"]
           }
         ],
-        "tags": [
-          "SMS/MMS Provisioning"
-        ],
+        "tags": ["SMS/MMS Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7661,14 +7428,10 @@ Retrieve sms of a phone number
         "description": "Retrieve sms of a phone number",
         "security": [
           {
-            "api_auth": [
-              "sms"
-            ]
+            "api_auth": ["sms"]
           }
         ],
-        "tags": [
-          "SMS/MMS Provisioning"
-        ],
+        "tags": ["SMS/MMS Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7794,14 +7557,10 @@ Enable sms to a phone number
         "description": "Enable sms to a phone number",
         "security": [
           {
-            "api_auth": [
-              "sms"
-            ]
+            "api_auth": ["sms"]
           }
         ],
-        "tags": [
-          "SMS/MMS Provisioning"
-        ],
+        "tags": ["SMS/MMS Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -7909,14 +7668,10 @@ Disable sms to a phone number
         "description": "Disable sms to a phone number",
         "security": [
           {
-            "api_auth": [
-              "sms"
-            ]
+            "api_auth": ["sms"]
           }
         ],
-        "tags": [
-          "SMS/MMS Provisioning"
-        ],
+        "tags": ["SMS/MMS Provisioning"],
         "parameters": [
           {
             "in": "path",
@@ -8016,14 +7771,10 @@ Retrieves the user of the phone number
         "description": "Retrieves the user of the phone number",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -8205,14 +7956,10 @@ Retrieve a list of SMS-enabled phone numbers given a domain
         "description": "Retrieve a list of SMS-enabled phone numbers given a domain",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -8348,14 +8095,10 @@ Retrieve a list of phone numbers given a pbx user.
         "description": "Retrieve a list of phone numbers given a pbx user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -8411,9 +8154,7 @@ Retrieve a list of phone numbers given a pbx user.
                   "items": {
                     "type": "string"
                   },
-                  "example": [
-                    "12345678901"
-                  ]
+                  "example": ["12345678901"]
                 }
               }
             }
@@ -8493,14 +8234,10 @@ Retrieve a list of assignments given a particular domain and user. A list of pho
         "description": "Retrieve a list of assignments given a particular domain and user. A list of phone numbers are first taken from the pbx portal based on the provided domain and user, which are then checked from the uri in the messaging server.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -8804,14 +8541,10 @@ Retrieve a list of sms-enabled assignments.
         "description": "Retrieve a list of sms-enabled assignments.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -9096,14 +8829,10 @@ List assignment details
         "summary": "List assignment details",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -9358,14 +9087,10 @@ Retrieve a list of phone numbers given a particular filters. A list of phone num
         "description": "Retrieve a list of phone numbers given a particular filters. A list of phone numbers are first taken from the pbx portal based on the provided domain, and optionally the user, which are then filtered out from the messaging server with the type, service and uri provided.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -9428,9 +9153,7 @@ Retrieve a list of phone numbers given a particular filters. A list of phone num
                   "items": {
                     "type": "string"
                   },
-                  "example": [
-                    "12345678901"
-                  ]
+                  "example": ["12345678901"]
                 }
               }
             }
@@ -9510,14 +9233,10 @@ Retrieves the assignment of the phone number user
         "description": "Retrieves the assignment of the phone number user",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -9756,14 +9475,10 @@ Saves the assignment of the phone number user.
         "description": "Saves the assignment of the phone number user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -9789,11 +9504,7 @@ Saves the assignment of the phone number user.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "user",
-                  "domain",
-                  "assignment_type"
-                ],
+                "required": ["user", "domain", "assignment_type"],
                 "properties": {
                   "user": {
                     "type": "string",
@@ -9973,14 +9684,10 @@ Delete the assignment of the phone number user.
         "description": "Delete the assignment of the phone number user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Messaging Assignments"
-        ],
+        "tags": ["Messaging Assignments"],
         "parameters": [
           {
             "in": "path",
@@ -10080,14 +9787,10 @@ Retrieve a list of shared addresses
         "description": "Retrieve a list of shared addresses",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Sharing"
-        ],
+        "tags": ["Message Sharing"],
         "parameters": [
           {
             "in": "path",
@@ -10330,14 +10033,10 @@ Create or update a group for the messaging service.
         "description": "Create or update a group for the messaging service.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Sharing"
-        ],
+        "tags": ["Message Sharing"],
         "parameters": [
           {
             "in": "path",
@@ -10359,10 +10058,7 @@ Create or update a group for the messaging service.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "service",
-                  "addressid"
-                ],
+                "required": ["service", "addressid"],
                 "properties": {
                   "userid": {
                     "type": "string",
@@ -10484,14 +10180,10 @@ Delete shared address
         "summary": "Delete shared address",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Sharing"
-        ],
+        "tags": ["Message Sharing"],
         "parameters": [
           {
             "in": "path",
@@ -10591,14 +10283,10 @@ Retrieve a list of addresses forwarded
         "description": "Retrieve a list of addresses forwarded",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -10906,14 +10594,10 @@ Retrieve a list of addresses associated with a particular group and user.
         "description": "Retrieve a list of addresses associated with a particular group and user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -11110,14 +10794,10 @@ Add or update an alias to the recipient user.
         "description": "Add or update an alias to the recipient user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -11157,10 +10837,7 @@ Add or update an alias to the recipient user.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "service",
-                  "uri"
-                ],
+                "required": ["service", "uri"],
                 "properties": {
                   "service": {
                     "type": "string",
@@ -11265,14 +10942,10 @@ Remove an alias from the recipient user.
         "description": "Remove an alias from the recipient user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -11390,14 +11063,10 @@ Retrieve a list of forwards associated to a particular group and user.
         "description": "Retrieve a list of forwards associated to a particular group and user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -11606,14 +11275,10 @@ Add or update entities that will receive the messages. If a client application w
         "description": "Add or update entities that will receive the messages. If a client application wants an entity to get copies of inbound and outbound messages, add both an \"inbound\" record and an \"outbound\" record.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -11648,10 +11313,7 @@ Add or update entities that will receive the messages. If a client application w
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "service",
-                  "uri"
-                ],
+                "required": ["service", "uri"],
                 "properties": {
                   "service": {
                     "type": "string",
@@ -11804,14 +11466,10 @@ Delete forward
         "summary": "Delete forward",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -11929,14 +11587,10 @@ Retrieve a list of endpoints associated to a particular group and user.
         "description": "Retrieve a list of endpoints associated to a particular group and user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -12133,14 +11787,10 @@ Add or update an allowed message sender on behalf of the user.
         "description": "Add or update an allowed message sender on behalf of the user.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -12180,10 +11830,7 @@ Add or update an allowed message sender on behalf of the user.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "service",
-                  "uri"
-                ],
+                "required": ["service", "uri"],
                 "properties": {
                   "service": {
                     "type": "string",
@@ -12285,14 +11932,10 @@ Delete endpoint
         "summary": "Delete endpoint",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -12410,14 +12053,10 @@ Add or delete an alias to multiple recipient users.
         "description": "Add or delete an alias to multiple recipient users.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -12445,9 +12084,7 @@ Add or delete an alias to multiple recipient users.
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "user"
-                  ],
+                  "required": ["user"],
                   "properties": {
                     "user": {
                       "type": "string"
@@ -12565,14 +12202,10 @@ Store an address by phone number and user id.
         "description": "Store an address by phone number and user id.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -12681,14 +12314,10 @@ Delete an address by phone number and user id.
         "description": "Delete an address by phone number and user id.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "path",
@@ -12797,14 +12426,10 @@ Retrieve a list of endpoints.
         "description": "Retrieve a list of endpoints.",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Forwarding"
-        ],
+        "tags": ["Message Forwarding"],
         "parameters": [
           {
             "in": "query",
@@ -12998,14 +12623,10 @@ Send message
         "description": "Send message",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Sending"
-        ],
+        "tags": ["Message Sending"],
         "parameters": [
           {
             "in": "path",
@@ -13022,9 +12643,7 @@ Send message
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "destination"
-                ],
+                "required": ["destination"],
                 "properties": {
                   "source_domain": {
                     "type": "string"
@@ -13206,14 +12825,10 @@ Send message
         "description": "Send message",
         "security": [
           {
-            "api_auth": [
-              "messaging"
-            ]
+            "api_auth": ["messaging"]
           }
         ],
-        "tags": [
-          "Message Sending"
-        ],
+        "tags": ["Message Sending"],
         "parameters": [
           {
             "in": "path",
@@ -13230,9 +12845,7 @@ Send message
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "destination"
-                ],
+                "required": ["destination"],
                 "properties": {
                   "source_domain": {
                     "type": "string"
@@ -13414,14 +13027,10 @@ List message data records
         "description": "List message data records",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "SMS Reports"
-        ],
+        "tags": ["SMS Reports"],
         "parameters": [
           {
             "in": "path",
@@ -13739,14 +13348,10 @@ Get the status CNAM delivery for a phone number.
         "description": "Get the status CNAM delivery for a phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "CNAM Deliveries - Inbound"
-        ],
+        "tags": ["CNAM Deliveries - Inbound"],
         "parameters": [
           {
             "in": "path",
@@ -13849,14 +13454,10 @@ Enable CNAM Delivery on a phone number.
         "description": "Enable CNAM Delivery on a phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "CNAM Deliveries - Inbound"
-        ],
+        "tags": ["CNAM Deliveries - Inbound"],
         "parameters": [
           {
             "in": "path",
@@ -13956,14 +13557,10 @@ Disable CNAM Delivery on a phone number.
         "description": "Disable CNAM Delivery on a phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "CNAM Deliveries - Inbound"
-        ],
+        "tags": ["CNAM Deliveries - Inbound"],
         "parameters": [
           {
             "in": "path",
@@ -14063,14 +13660,10 @@ Get the outbound cnam delivery data of a stock phone number.
         "description": "Get the outbound cnam delivery data of a stock phone number.",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "CNAM Storage - Outbound"
-        ],
+        "tags": ["CNAM Storage - Outbound"],
         "parameters": [
           {
             "in": "path",
@@ -14182,14 +13775,10 @@ Set the outbound CNAM of a phone number
         "description": "Set the outbound CNAM of a phone number",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "CNAM Storage - Outbound"
-        ],
+        "tags": ["CNAM Storage - Outbound"],
         "parameters": [
           {
             "in": "path",
@@ -14220,9 +13809,7 @@ Set the outbound CNAM of a phone number
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "calling_name"
-                ],
+                "required": ["calling_name"],
                 "properties": {
                   "calling_name": {
                     "type": "string",
@@ -14307,14 +13894,10 @@ Remove the outbound CNAM of a phone number
         "description": "Remove the outbound CNAM of a phone number",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "CNAM Storage - Outbound"
-        ],
+        "tags": ["CNAM Storage - Outbound"],
         "parameters": [
           {
             "in": "path",
@@ -14414,14 +13997,10 @@ Get anti-spam delivery
         "description": "Get anti-spam delivery",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Anti-spam Deliveries"
-        ],
+        "tags": ["Anti-spam Deliveries"],
         "parameters": [
           {
             "in": "path",
@@ -14542,14 +14121,10 @@ Set anti-spam delivery
         "description": "Set anti-spam delivery",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Anti-spam Deliveries"
-        ],
+        "tags": ["Anti-spam Deliveries"],
         "parameters": [
           {
             "in": "path",
@@ -14682,14 +14257,10 @@ Get the list of PBX domains accessible by the account.
         "description": "Get the list of PBX domains accessible by the account.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -14824,14 +14395,10 @@ Get the list of companies accessible by the account.
         "description": "Get the list of companies accessible by the account.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -14954,14 +14521,10 @@ Make a new call
         "description": "Make a new call",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -14998,10 +14561,7 @@ Make a new call
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "uid",
-                  "destination"
-                ],
+                "required": ["uid", "destination"],
                 "properties": {
                   "uid": {
                     "type": "string",
@@ -15120,14 +14680,10 @@ Get the list of phone numbers by PBX domains accessible by the account.
         "description": "Get the list of phone numbers by PBX domains accessible by the account.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -15168,10 +14724,7 @@ Get the list of phone numbers by PBX domains accessible by the account.
                     "type": "string"
                   }
                 },
-                "example": [
-                  "12033045272",
-                  "12089177013"
-                ]
+                "example": ["12033045272", "12089177013"]
               }
             }
           }
@@ -15250,14 +14803,10 @@ Get the list of PBX resellers accessible by the account.
         "description": "Get the list of PBX resellers accessible by the account.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -15372,14 +14921,10 @@ Get the list of PBX subscribers for a domain.
         "description": "Get the list of PBX subscribers for a domain.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -15560,14 +15105,10 @@ Get the PBX UI domain configuration.
         "description": "Get the PBX UI domain configuration.",
         "security": [
           {
-            "api_auth": [
-              "pbx"
-            ]
+            "api_auth": ["pbx"]
           }
         ],
-        "tags": [
-          "Pbx"
-        ],
+        "tags": ["Pbx"],
         "parameters": [
           {
             "in": "path",
@@ -15707,14 +15248,10 @@ Validate an E911 endpoint address.
         "description": "Validate an E911 endpoint address.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -15902,14 +15439,10 @@ List countries.
         "description": "List countries.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -16011,14 +15544,10 @@ List E911 endpoints.
         "description": "List E911 endpoints.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -16164,14 +15693,10 @@ List states.
         "description": "List states.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -16346,14 +15871,10 @@ Retrieve an E911 endpoint.
         "description": "Retrieve an E911 endpoint.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -16561,14 +16082,10 @@ Provision an E911 endpoint.
         "description": "Provision an E911 endpoint.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -16827,14 +16344,10 @@ Deletes an e911 endpoint.
         "description": "Deletes an e911 endpoint.",
         "security": [
           {
-            "api_auth": [
-              "e911"
-            ]
+            "api_auth": ["e911"]
           }
         ],
-        "tags": [
-          "E911"
-        ],
+        "tags": ["E911"],
         "parameters": [
           {
             "in": "path",
@@ -16934,14 +16447,10 @@ List carriers.
         "description": "List carriers.",
         "security": [
           {
-            "api_auth": [
-              "carrier"
-            ]
+            "api_auth": ["carrier"]
           }
         ],
-        "tags": [
-          "Carrier"
-        ],
+        "tags": ["Carrier"],
         "parameters": [
           {
             "in": "path",
@@ -17090,14 +16599,10 @@ List roles
         "description": "List roles",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "parameters": [
           {
             "in": "path",
@@ -17228,14 +16733,10 @@ List roles of a user
         "description": "List roles of a user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "parameters": [
           {
             "in": "path",
@@ -17375,14 +16876,10 @@ Assign user to a role
         "description": "Assign user to a role",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "parameters": [
           {
             "in": "path",
@@ -17491,14 +16988,10 @@ Revoke a role from a user
         "description": "Revoke a role from a user",
         "security": [
           {
-            "api_auth": [
-              "user"
-            ]
+            "api_auth": ["user"]
           }
         ],
-        "tags": [
-          "Permissions"
-        ],
+        "tags": ["Permissions"],
         "parameters": [
           {
             "in": "path",
@@ -17607,14 +17100,10 @@ List phone number details
         "description": "List phone number details",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Phone Number Attributes"
-        ],
+        "tags": ["Phone Number Attributes"],
         "parameters": [
           {
             "in": "path",
@@ -17753,14 +17242,10 @@ Retrieve phone number details
         "description": "Retrieve phone number details",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Phone Number Attributes"
-        ],
+        "tags": ["Phone Number Attributes"],
         "parameters": [
           {
             "in": "path",
@@ -17887,14 +17372,10 @@ Apply phone number details
         "description": "Apply phone number details",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Phone Number Attributes"
-        ],
+        "tags": ["Phone Number Attributes"],
         "parameters": [
           {
             "in": "path",
@@ -18012,14 +17493,10 @@ Delete phone number details
         "description": "Delete phone number details",
         "security": [
           {
-            "api_auth": [
-              "phone_number"
-            ]
+            "api_auth": ["phone_number"]
           }
         ],
-        "tags": [
-          "Phone Number Attributes"
-        ],
+        "tags": ["Phone Number Attributes"],
         "parameters": [
           {
             "in": "path",
@@ -18128,14 +17605,10 @@ List fax atas
         "description": "List fax atas",
         "security": [
           {
-            "api_auth": [
-              "routing"
-            ]
+            "api_auth": ["routing"]
           }
         ],
-        "tags": [
-          "Fax ATA"
-        ],
+        "tags": ["Fax ATA"],
         "parameters": [
           {
             "in": "path",
@@ -18254,14 +17727,10 @@ Reboot a fax ata
         "description": "Reboot a fax ata",
         "security": [
           {
-            "api_auth": [
-              "routing"
-            ]
+            "api_auth": ["routing"]
           }
         ],
-        "tags": [
-          "Fax ATA"
-        ],
+        "tags": ["Fax ATA"],
         "parameters": [
           {
             "in": "path",
@@ -18361,14 +17830,10 @@ Retrieve the fax-ata status
         "description": "Retrieve the fax-ata status",
         "security": [
           {
-            "api_auth": [
-              "routing"
-            ]
+            "api_auth": ["routing"]
           }
         ],
-        "tags": [
-          "Fax ATA"
-        ],
+        "tags": ["Fax ATA"],
         "parameters": [
           {
             "in": "path",
@@ -18483,14 +17948,10 @@ Get config rules by offering
         "description": "Get config rules by offering",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -18840,14 +18301,10 @@ List setting offer-options
         "description": "List setting offer-options",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -19020,14 +18477,10 @@ Create a setting offer-option
         "description": "Create a setting offer-option",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -19049,11 +18502,7 @@ Create a setting offer-option
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "setting_id",
-                  "offering_id",
-                  "offer_option_id"
-                ],
+                "required": ["setting_id", "offering_id", "offer_option_id"],
                 "properties": {
                   "setting_id": {
                     "type": "integer"
@@ -19149,14 +18598,10 @@ Update a setting offer-option
         "description": "Update a setting offer-option",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -19282,14 +18727,10 @@ Delete a setting offer-option
         "description": "Delete a setting offer-option",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -19389,14 +18830,10 @@ List UC config rules by entitlement. Retrieve a list of all settings and its cor
         "description": "List UC config rules by entitlement. Retrieve a list of all settings and its corresponding config rules. The ReachUC plan must be defined in the entitlements so as to be able to retrieve the list of UC config rules.",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -19710,14 +19147,10 @@ Persist a Reach UC config rule to the database
         "description": "Persist a Reach UC config rule to the database",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -19734,10 +19167,7 @@ Persist a Reach UC config rule to the database
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "domain",
-                  "subscriber"
-                ],
+                "required": ["domain", "subscriber"],
                 "properties": {
                   "domain": {
                     "type": "string"
@@ -19860,14 +19290,10 @@ Retrieve the config rule of a specific id
         "description": "Retrieve the config rule of a specific id",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -20017,14 +19443,10 @@ Delete a uc config rule
         "description": "Delete a uc config rule",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "path",
@@ -20124,14 +19546,10 @@ List settings
         "description": "List settings",
         "security": [
           {
-            "api_auth": [
-              "uc_config"
-            ]
+            "api_auth": ["uc_config"]
           }
         ],
-        "tags": [
-          "UC Settings"
-        ],
+        "tags": ["UC Settings"],
         "parameters": [
           {
             "in": "query",
@@ -20327,9 +19745,7 @@ Retrieve route by ani
       "get": {
         "summary": "List routes by ani",
         "description": "Retrieve route by ani",
-        "tags": [
-          "Route by Ani"
-        ],
+        "tags": ["Route by Ani"],
         "parameters": [
           {
             "in": "path",
@@ -20424,9 +19840,7 @@ Provision a route by ani
       "put": {
         "summary": "Provision route by ani",
         "description": "Provision a route by ani",
-        "tags": [
-          "Route by Ani"
-        ],
+        "tags": ["Route by Ani"],
         "parameters": [
           {
             "in": "path",
@@ -20539,9 +19953,7 @@ Delete route by ani
       "delete": {
         "summary": "Delete route by ani",
         "description": "Delete route by ani",
-        "tags": [
-          "Route by Ani"
-        ],
+        "tags": ["Route by Ani"],
         "parameters": [
           {
             "in": "path",
@@ -20640,14 +20052,10 @@ Retrieve a list of entitlements and its corresponding offerings and offer option
         "description": "Retrieve a list of entitlements and its corresponding offerings and offer options.",
         "security": [
           {
-            "api_auth": [
-              "entitlement"
-            ]
+            "api_auth": ["entitlement"]
           }
         ],
-        "tags": [
-          "Entitlements"
-        ],
+        "tags": ["Entitlements"],
         "parameters": [
           {
             "in": "path",
@@ -20809,14 +20217,10 @@ Create or update an entitlement
         "description": "Create or update an entitlement",
         "security": [
           {
-            "api_auth": [
-              "entitlement"
-            ]
+            "api_auth": ["entitlement"]
           }
         ],
-        "tags": [
-          "Entitlements"
-        ],
+        "tags": ["Entitlements"],
         "parameters": [
           {
             "in": "path",
@@ -20942,14 +20346,10 @@ List the offerings for entitlements
         "description": "List the offerings for entitlements",
         "security": [
           {
-            "api_auth": [
-              "entitlement"
-            ]
+            "api_auth": ["entitlement"]
           }
         ],
-        "tags": [
-          "Entitlements"
-        ],
+        "tags": ["Entitlements"],
         "parameters": [
           {
             "in": "path",
@@ -21068,14 +20468,10 @@ Retrieve an entitlement offer options
         "description": "Retrieve an entitlement offer options",
         "security": [
           {
-            "api_auth": [
-              "entitlement"
-            ]
+            "api_auth": ["entitlement"]
           }
         ],
-        "tags": [
-          "Entitlements"
-        ],
+        "tags": ["Entitlements"],
         "parameters": [
           {
             "in": "path",
@@ -21213,14 +20609,10 @@ Retrieve an entitlement offer value
         "description": "Retrieve an entitlement offer value",
         "security": [
           {
-            "api_auth": [
-              "entitlement"
-            ]
+            "api_auth": ["entitlement"]
           }
         ],
-        "tags": [
-          "Entitlements"
-        ],
+        "tags": ["Entitlements"],
         "parameters": [
           {
             "in": "path",
@@ -21422,14 +20814,10 @@ Delete an existing entitlement
         "description": "Delete an existing entitlement",
         "security": [
           {
-            "api_auth": [
-              "entitlement"
-            ]
+            "api_auth": ["entitlement"]
           }
         ],
-        "tags": [
-          "Entitlements"
-        ],
+        "tags": ["Entitlements"],
         "parameters": [
           {
             "in": "path",
@@ -21529,14 +20917,10 @@ List reports
         "description": "List reports",
         "security": [
           {
-            "api_auth": [
-              "report"
-            ]
+            "api_auth": ["report"]
           }
         ],
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [
           {
             "in": "path",
@@ -21667,14 +21051,10 @@ List report types
         "description": "List report types",
         "security": [
           {
-            "api_auth": [
-              "report"
-            ]
+            "api_auth": ["report"]
           }
         ],
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [
           {
             "in": "path",
@@ -21811,14 +21191,10 @@ Get the status of the report whether it is still queued, completed, or failed. O
         "description": "Get the status of the report whether it is still queued, completed, or failed. Once completed, the file ID of the report will be returned.",
         "security": [
           {
-            "api_auth": [
-              "report"
-            ]
+            "api_auth": ["report"]
           }
         ],
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [
           {
             "in": "path",
@@ -21942,14 +21318,10 @@ Cancel a queued report.
         "description": "Cancel a queued report.",
         "security": [
           {
-            "api_auth": [
-              "report"
-            ]
+            "api_auth": ["report"]
           }
         ],
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [
           {
             "in": "path",
@@ -22049,14 +21421,10 @@ Download a report.
         "description": "Download a report.",
         "security": [
           {
-            "api_auth": [
-              "report"
-            ]
+            "api_auth": ["report"]
           }
         ],
-        "tags": [
-          "Reports"
-        ],
+        "tags": ["Reports"],
         "parameters": [
           {
             "in": "path",
@@ -22157,14 +21525,10 @@ List the audit logs.
         "description": "List the audit logs.",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "path",
@@ -22380,14 +21744,10 @@ List the audit logs supported resource and actions
         "description": "List the audit logs supported resource and actions",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "path",
@@ -22502,14 +21862,10 @@ List the journal logs.
         "description": "List the journal logs.",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "path",
@@ -22717,14 +22073,10 @@ List the journals-supported module, type, and actions
         "description": "List the journals-supported module, type, and actions",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "path",
@@ -22843,14 +22195,10 @@ List the logs.
         "description": "List the logs.",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "path",
@@ -22968,14 +22316,10 @@ List the audit logs.
         "description": "List the audit logs.",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "query",
@@ -23190,14 +22534,10 @@ List the journal logs without account restrictions
         "description": "List the journal logs without account restrictions",
         "security": [
           {
-            "api_auth": [
-              "log"
-            ]
+            "api_auth": ["log"]
           }
         ],
-        "tags": [
-          "Audit Logs and Logs"
-        ],
+        "tags": ["Audit Logs and Logs"],
         "parameters": [
           {
             "in": "query",
@@ -23404,14 +22744,10 @@ List order-phone number associations.
         "description": "List order-phone number associations.",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -23758,14 +23094,10 @@ Validate if phone numbers can be ordered for porting into Skyswitch API. Some re
         "description": "Validate if phone numbers can be ordered for porting into Skyswitch API. Some reasons that a phone number may not be allowed for port order are the phone number is in a pending order; and the phone number is already in Skyswitch.",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -23782,9 +23114,7 @@ Validate if phone numbers can be ordered for porting into Skyswitch API. Some re
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone_numbers"
-                ],
+                "required": ["phone_numbers"],
                 "properties": {
                   "phone_numbers": {
                     "type": "array",
@@ -23804,11 +23134,7 @@ Validate if phone numbers can be ordered for porting into Skyswitch API. Some re
                 }
               },
               "example": {
-                "phone_numbers": [
-                  "11122233345",
-                  "18008248832",
-                  "18008783540"
-                ],
+                "phone_numbers": ["11122233345", "18008248832", "18008783540"],
                 "include_details": 0
               }
             }
@@ -23933,14 +23259,10 @@ Check portability of phone numbers
         "description": "Check portability of phone numbers",
         "security": [
           {
-            "api_auth": [
-              "port_out"
-            ]
+            "api_auth": ["port_out"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -23975,11 +23297,7 @@ Check portability of phone numbers
                 }
               },
               "example": {
-                "phone_numbers": [
-                  "12017217546",
-                  "12295848535",
-                  "12814022771"
-                ]
+                "phone_numbers": ["12017217546", "12295848535", "12814022771"]
               }
             }
           }
@@ -24099,14 +23417,10 @@ Retrieve list of port request order
         "description": "Retrieve list of port request order",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -24225,13 +23539,8 @@ Retrieve list of port request order
                       "18884445556",
                       "18884445557"
                     ],
-                    "thirdparty_enabled_sms": [
-                      "18884445555"
-                    ],
-                    "to_enable_sms": [
-                      "18884445556",
-                      "18884445557"
-                    ],
+                    "thirdparty_enabled_sms": ["18884445555"],
+                    "to_enable_sms": ["18884445556", "18884445557"],
                     "csr": [
                       {
                         "csr_id": "2",
@@ -24286,27 +23595,19 @@ Retrieve list of port request order
                         "state": "PA",
                         "zip_code": "29101",
                         "country": "USA",
-                        "phone_numbers": [
-                          "18884445555",
-                          "18884445556"
-                        ]
+                        "phone_numbers": ["18884445555", "18884445556"]
                       }
                     ],
                     "cnam": [
                       {
                         "cnam_id": "491",
                         "calling_name": "Batman",
-                        "phone_numbers": [
-                          "18884445555",
-                          "18884445556"
-                        ]
+                        "phone_numbers": ["18884445555", "18884445556"]
                       },
                       {
                         "cnam_id": "492",
                         "calling_name": "Robin",
-                        "phone_numbers": [
-                          "18884445557"
-                        ]
+                        "phone_numbers": ["18884445557"]
                       }
                     ],
                     "fax": [
@@ -24400,14 +23701,10 @@ Create an order and corresponding RT ticket.
         "description": "Create an order and corresponding RT ticket.",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -24424,10 +23721,7 @@ Create an order and corresponding RT ticket.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "status",
-                  "phone_numbers"
-                ],
+                "required": ["status", "phone_numbers"],
                 "properties": {
                   "requested_at": {
                     "type": "string",
@@ -24489,9 +23783,7 @@ Create an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "auth_name": {
                           "type": "string",
@@ -24538,10 +23830,7 @@ Create an order and corresponding RT ticket.
                         },
                         "end_user": {
                           "type": "object",
-                          "required": [
-                            "name",
-                            "phone_numbers"
-                          ],
+                          "required": ["name", "phone_numbers"],
                           "properties": {
                             "service_type": {
                               "type": "string",
@@ -24613,10 +23902,7 @@ Create an order and corresponding RT ticket.
                             },
                             "megalink_circuit": {
                               "type": "object",
-                              "required": [
-                                "enabled",
-                                "other_number_exists"
-                              ],
+                              "required": ["enabled", "other_number_exists"],
                               "properties": {
                                 "enabled": {
                                   "type": "boolean",
@@ -24657,9 +23943,7 @@ Create an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "calling_name": {
                           "type": "string",
@@ -24679,9 +23963,7 @@ Create an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "last_name": {
                           "type": "string",
@@ -24745,9 +24027,7 @@ Create an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "delivery_type": {
                           "type": "string",
@@ -24801,16 +24081,11 @@ Create an order and corresponding RT ticket.
                             "main_tn": "12345678901",
                             "after_port_action": "Left Active",
                             "other_number_exists": "1",
-                            "other_numbers": [
-                              "22233344412"
-                            ],
+                            "other_numbers": ["22233344412"],
                             "other_number_action": "Left Active"
                           }
                         },
-                        "phone_numbers": [
-                          "12345678901",
-                          "12345678902"
-                        ],
+                        "phone_numbers": ["12345678901", "12345678902"],
                         "notes": "This is a test number."
                       }
                     ],
@@ -24822,40 +24097,27 @@ Create an order and corresponding RT ticket.
                         "state": "PA",
                         "zip_code": "29101",
                         "country": "USA",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       }
                     ],
                     "cnam": [
                       {
                         "calling_name": "Batman",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       }
                     ],
                     "fax": [
                       {
                         "delivery_type": "Instant Fax Portal",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       },
                       {
                         "delivery_type": "Instant Fax ATA",
-                        "phone_numbers": [
-                          "12345678902"
-                        ]
+                        "phone_numbers": ["12345678902"]
                       }
                     ],
-                    "thirdparty_enabled_sms": [
-                      "12345678901"
-                    ],
-                    "to_enable_sms": [
-                      "12345678902",
-                      "12345678903"
-                    ]
+                    "thirdparty_enabled_sms": ["12345678901"],
+                    "to_enable_sms": ["12345678902", "12345678903"]
                   }
                 }
               }
@@ -24887,13 +24149,8 @@ Create an order and corresponding RT ticket.
                       "12345678902",
                       "12345678903"
                     ],
-                    "thirdparty_enabled_sms": [
-                      "12345678901"
-                    ],
-                    "to_enable_sms": [
-                      "12345678902",
-                      "12345678903"
-                    ],
+                    "thirdparty_enabled_sms": ["12345678901"],
+                    "to_enable_sms": ["12345678902", "12345678903"],
                     "csr": [
                       {
                         "csr_id": "17265",
@@ -24935,10 +24192,7 @@ Create an order and corresponding RT ticket.
                         },
                         "notes": "This is a test number.",
                         "attachment": null,
-                        "phone_numbers": [
-                          "12345678901",
-                          "12345678902"
-                        ]
+                        "phone_numbers": ["12345678901", "12345678902"]
                       }
                     ],
                     "directory_listing": [
@@ -24956,34 +24210,26 @@ Create an order and corresponding RT ticket.
                         "state": "PA",
                         "zip_code": "29101",
                         "country": "USA",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       }
                     ],
                     "cnam": [
                       {
                         "cnam_id": "112",
                         "calling_name": "Batman",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       }
                     ],
                     "fax": [
                       {
                         "fax_id": "42",
                         "delivery_type": "Instant Fax Portal",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       },
                       {
                         "fax_id": "43",
                         "delivery_type": "Instant Fax ATA",
-                        "phone_numbers": [
-                          "12345678902"
-                        ]
+                        "phone_numbers": ["12345678902"]
                       }
                     ]
                   }
@@ -25066,14 +24312,10 @@ Retrieve a port request order
         "description": "Retrieve a port request order",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -25118,13 +24360,8 @@ Retrieve a port request order
                       "18884445556",
                       "18884445557"
                     ],
-                    "thirdparty_enabled_sms": [
-                      "18884445555"
-                    ],
-                    "to_enable_sms": [
-                      "18884445556",
-                      "18884445557"
-                    ],
+                    "thirdparty_enabled_sms": ["18884445555"],
+                    "to_enable_sms": ["18884445556", "18884445557"],
                     "csr": [
                       {
                         "csr_id": "2",
@@ -25179,27 +24416,19 @@ Retrieve a port request order
                         "state": "PA",
                         "zip_code": "29101",
                         "country": "USA",
-                        "phone_numbers": [
-                          "18884445555",
-                          "18884445556"
-                        ]
+                        "phone_numbers": ["18884445555", "18884445556"]
                       }
                     ],
                     "cnam": [
                       {
                         "cnam_id": "491",
                         "calling_name": "Batman",
-                        "phone_numbers": [
-                          "18884445555",
-                          "18884445556"
-                        ]
+                        "phone_numbers": ["18884445555", "18884445556"]
                       },
                       {
                         "cnam_id": "492",
                         "calling_name": "Robin",
-                        "phone_numbers": [
-                          "18884445557"
-                        ]
+                        "phone_numbers": ["18884445557"]
                       }
                     ],
                     "fax": [
@@ -25293,14 +24522,10 @@ Update an order and corresponding RT ticket.
         "description": "Update an order and corresponding RT ticket.",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -25391,9 +24616,7 @@ Update an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "csr_id": {
                           "type": "integer",
@@ -25447,10 +24670,7 @@ Update an order and corresponding RT ticket.
                         },
                         "end_user": {
                           "type": "object",
-                          "required": [
-                            "name",
-                            "phone_numbers"
-                          ],
+                          "required": ["name", "phone_numbers"],
                           "properties": {
                             "service_type": {
                               "type": "string",
@@ -25522,10 +24742,7 @@ Update an order and corresponding RT ticket.
                             },
                             "megalink_circuit": {
                               "type": "object",
-                              "required": [
-                                "enabled",
-                                "other_number_exists"
-                              ],
+                              "required": ["enabled", "other_number_exists"],
                               "properties": {
                                 "enabled": {
                                   "type": "boolean",
@@ -25566,9 +24783,7 @@ Update an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "cnam_id": {
                           "type": "integer",
@@ -25592,9 +24807,7 @@ Update an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "directory_listing_id": {
                           "type": "integer",
@@ -25662,9 +24875,7 @@ Update an order and corresponding RT ticket.
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": [
-                        "phone_numbers"
-                      ],
+                      "required": ["phone_numbers"],
                       "properties": {
                         "fax_id": {
                           "type": "integer",
@@ -25696,18 +24907,9 @@ Update an order and corresponding RT ticket.
                 "rdd_tz": "US/Eastern",
                 "status": "New",
                 "notes": null,
-                "phone_numbers": [
-                  "12345678901",
-                  "12345678902",
-                  "12345678903"
-                ],
-                "thirdparty_enabled_sms": [
-                  "12345678901"
-                ],
-                "to_enable_sms": [
-                  "12345678902",
-                  "12345678903"
-                ],
+                "phone_numbers": ["12345678901", "12345678902", "12345678903"],
+                "thirdparty_enabled_sms": ["12345678901"],
+                "to_enable_sms": ["12345678902", "12345678903"],
                 "csr": [
                   {
                     "csr_id": "17265",
@@ -25740,10 +24942,7 @@ Update an order and corresponding RT ticket.
                     },
                     "notes": "This is a test number.",
                     "attachment": null,
-                    "phone_numbers": [
-                      "12345678901",
-                      "12345678902"
-                    ]
+                    "phone_numbers": ["12345678901", "12345678902"]
                   }
                 ],
                 "directory_listing": [
@@ -25761,34 +24960,26 @@ Update an order and corresponding RT ticket.
                     "state": "PA",
                     "zip_code": "29101",
                     "country": "USA",
-                    "phone_numbers": [
-                      "12345678901"
-                    ]
+                    "phone_numbers": ["12345678901"]
                   }
                 ],
                 "cnam": [
                   {
                     "cnam_id": "112",
                     "calling_name": "Batman",
-                    "phone_numbers": [
-                      "12345678901"
-                    ]
+                    "phone_numbers": ["12345678901"]
                   }
                 ],
                 "fax": [
                   {
                     "fax_id": "42",
                     "delivery_type": "Instant Fax Portal",
-                    "phone_numbers": [
-                      "12345678901"
-                    ]
+                    "phone_numbers": ["12345678901"]
                   },
                   {
                     "fax_id": "43",
                     "delivery_type": "Instant Fax ATA",
-                    "phone_numbers": [
-                      "12345678902"
-                    ]
+                    "phone_numbers": ["12345678902"]
                   }
                 ]
               }
@@ -25820,13 +25011,8 @@ Update an order and corresponding RT ticket.
                       "12345678902",
                       "12345678903"
                     ],
-                    "thirdparty_enabled_sms": [
-                      "12345678901"
-                    ],
-                    "to_enable_sms": [
-                      "12345678902",
-                      "12345678903"
-                    ],
+                    "thirdparty_enabled_sms": ["12345678901"],
+                    "to_enable_sms": ["12345678902", "12345678903"],
                     "csr": [
                       {
                         "csr_id": "17265",
@@ -25868,10 +25054,7 @@ Update an order and corresponding RT ticket.
                         },
                         "notes": "This is a test number.",
                         "attachment": null,
-                        "phone_numbers": [
-                          "12345678901",
-                          "12345678902"
-                        ]
+                        "phone_numbers": ["12345678901", "12345678902"]
                       }
                     ],
                     "directory_listing": [
@@ -25889,34 +25072,26 @@ Update an order and corresponding RT ticket.
                         "state": "PA",
                         "zip_code": "29101",
                         "country": "USA",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       }
                     ],
                     "cnam": [
                       {
                         "cnam_id": "112",
                         "calling_name": "Batman",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       }
                     ],
                     "fax": [
                       {
                         "fax_id": "42",
                         "delivery_type": "Instant Fax Portal",
-                        "phone_numbers": [
-                          "12345678901"
-                        ]
+                        "phone_numbers": ["12345678901"]
                       },
                       {
                         "fax_id": "43",
                         "delivery_type": "Instant Fax ATA",
-                        "phone_numbers": [
-                          "12345678902"
-                        ]
+                        "phone_numbers": ["12345678902"]
                       }
                     ]
                   }
@@ -25999,14 +25174,10 @@ Delete a draft port request
         "description": "Delete a draft port request",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "parameters": [
           {
             "in": "path",
@@ -26106,14 +25277,10 @@ List the supported order status
         "description": "List the supported order status",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -26220,14 +25387,10 @@ List the supported order phone number status
         "description": "List the supported order phone number status",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -26327,14 +25490,10 @@ List the supported pon status
         "description": "List the supported pon status",
         "security": [
           {
-            "api_auth": [
-              "port-in"
-            ]
+            "api_auth": ["port-in"]
           }
         ],
-        "tags": [
-          "LNP Management"
-        ],
+        "tags": ["LNP Management"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -26429,14 +25588,10 @@ List branding seting
         "summary": "List branding seting",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -26582,14 +25737,10 @@ Create or update a setting for a brandable application instance
         "description": "Create or update a setting for a brandable application instance",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -26620,10 +25771,7 @@ Create or update a setting for a brandable application instance
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "field_id",
-                  "field_value"
-                ],
+                "required": ["field_id", "field_value"],
                 "properties": {
                   "field_id": {
                     "type": "string",
@@ -26712,14 +25860,10 @@ Delete settings of a brandable application
         "description": "Delete settings of a brandable application",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -26873,14 +26017,10 @@ List the available artifacts and their respective public urls.
         "description": "List the available artifacts and their respective public urls.",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -26979,7 +26119,7 @@ Store branding artifact
 
 # Store branding artifact
 
-Stores a new artifact (for files such logos, icons, recordings or reports)  and returns a URL upon success.
+Stores a new artifact (for files such logos, icons, recordings or reports) and returns a URL upon success.
 
 # OpenAPI definition
 
@@ -26998,14 +26138,10 @@ Stores a new artifact (for files such logos, icons, recordings or reports)  and 
         "description": "Stores a new artifact (for files such logos, icons, recordings or reports)  and returns a URL upon success.",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -27027,10 +26163,7 @@ Stores a new artifact (for files such logos, icons, recordings or reports)  and 
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "artifact",
-                  "type"
-                ],
+                "required": ["artifact", "type"],
                 "properties": {
                   "artifact": {
                     "type": "string",
@@ -27119,14 +26252,10 @@ List settings for a branding application instance
         "description": "List settings for a branding application instance",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -27267,14 +26396,10 @@ List all the brandable applications.
         "description": "List all the brandable applications.",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "responses": {
           "200": {
             "description": "Success.",
@@ -27386,14 +26511,10 @@ Create new brandable application.
         "description": "Create new brandable application.",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [],
         "responses": {
           "200": {
@@ -27405,9 +26526,7 @@ Create new brandable application.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "name"
-                ],
+                "required": ["name"],
                 "properties": {
                   "name": {
                     "type": "string",
@@ -27492,14 +26611,10 @@ Create or update a brandable application instance
         "description": "Create or update a brandable application instance",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "query",
@@ -27608,14 +26723,10 @@ List all the brandable applications instances by application id
         "description": "List all the brandable applications instances by application id",
         "security": [
           {
-            "api_auth": [
-              "branding"
-            ]
+            "api_auth": ["branding"]
           }
         ],
-        "tags": [
-          "Reseller Branding"
-        ],
+        "tags": ["Reseller Branding"],
         "parameters": [
           {
             "in": "path",
@@ -27744,9 +26855,7 @@ Get a list of Releasenotes.io subscribers.
       "get": {
         "summary": "List Releasenotes.io subscribers.",
         "description": "Get a list of Releasenotes.io subscribers.",
-        "tags": [
-          "Releasenotes Subscribers"
-        ],
+        "tags": ["Releasenotes Subscribers"],
         "parameters": [
           {
             "in": "path",
@@ -27841,9 +26950,7 @@ Create Releasenotes.io subscribers.
       "post": {
         "summary": "Add Releasenotes.io subscribers.",
         "description": "Create Releasenotes.io subscribers.",
-        "tags": [
-          "Releasenotes Subscribers"
-        ],
+        "tags": ["Releasenotes Subscribers"],
         "parameters": [
           {
             "in": "path",
@@ -27942,9 +27049,7 @@ Delete Releasenotes.io subscribers.
       "delete": {
         "summary": "Delete Releasenotes.io subscribers.",
         "description": "Delete Releasenotes.io subscribers.",
-        "tags": [
-          "Releasenotes Subscribers"
-        ],
+        "tags": ["Releasenotes Subscribers"],
         "parameters": [
           {
             "in": "path",
@@ -28045,14 +27150,10 @@ List brand-campaigns registered within the reseller account
         "description": "List brand-campaigns registered within the reseller account",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -28264,14 +27365,10 @@ Create a draft brand
         "description": "Create a draft brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -28463,14 +27560,10 @@ Update a draft brand
         "description": "Update a draft brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -28671,14 +27764,10 @@ Delete a draft brand
         "description": "Delete a draft brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -28778,14 +27867,10 @@ Submit a draft brand
         "description": "Submit a draft brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -28885,14 +27970,10 @@ Get a brand
         "description": "Get a brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29054,14 +28135,10 @@ Update a brand
         "description": "Update a brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29258,14 +28335,10 @@ Delete a brand
         "description": "Delete a brand",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29365,14 +28438,10 @@ Retrieve the brand feedback
         "description": "Retrieve the brand feedback",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29490,14 +28559,10 @@ Set a brand identity status
         "description": "Set a brand identity status",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29612,14 +28677,10 @@ List campaigns
         "description": "List campaigns",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29743,14 +28804,10 @@ Create a draft campaign
         "description": "Create a draft campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -29913,19 +28970,13 @@ Create a draft campaign
                 "age_gated": false,
                 "direct_lending": false,
                 "subscriber_optin": true,
-                "subscriber_optin_keywords": [
-                  "START"
-                ],
+                "subscriber_optin_keywords": ["START"],
                 "subscriber_optin_message": "Opt In message string",
                 "subscriber_optout": true,
-                "subscriber_optout_keywords": [
-                  "STOP"
-                ],
+                "subscriber_optout_keywords": ["STOP"],
                 "subscriber_optout_message": "Opt Out message string",
                 "subscriber_help": true,
-                "subscriber_help_keywords": [
-                  "HELP"
-                ],
+                "subscriber_help_keywords": ["HELP"],
                 "subscriber_help_message": "Help message string",
                 "message_flow": "Some string",
                 "help_message_include_email": false,
@@ -30026,14 +29077,10 @@ Update a draft campaign
         "description": "Update a draft campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -30193,19 +29240,13 @@ Update a draft campaign
                 "age_gated": false,
                 "direct_lending": false,
                 "subscriber_optin": true,
-                "subscriber_optin_keywords": [
-                  "START"
-                ],
+                "subscriber_optin_keywords": ["START"],
                 "subscriber_optin_message": "Opt In message string",
                 "subscriber_optout": true,
-                "subscriber_optout_keywords": [
-                  "STOP"
-                ],
+                "subscriber_optout_keywords": ["STOP"],
                 "subscriber_optout_message": "Opt Out message string",
                 "subscriber_help": true,
-                "subscriber_help_keywords": [
-                  "HELP"
-                ],
+                "subscriber_help_keywords": ["HELP"],
                 "subscriber_help_message": "Help message string",
                 "message_flow": "Some string",
                 "help_message_include_email": false,
@@ -30305,14 +29346,10 @@ Delete a draft campaign
         "description": "Delete a draft campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -30412,14 +29449,10 @@ Submit a draft campaign
         "description": "Submit a draft campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -30519,14 +29552,10 @@ List campaign content attribute value
         "description": "List campaign content attribute value",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -30646,14 +29675,10 @@ Apply campaign content attributes
         "description": "Apply campaign content attributes",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -30689,9 +29714,7 @@ Apply campaign content attributes
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "attribute_name"
-                  ],
+                  "required": ["attribute_name"],
                   "properties": {
                     "attribute_name": {
                       "type": "string"
@@ -30816,14 +29839,10 @@ List opt phone numbers
         "description": "List opt phone numbers",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -31006,14 +30025,10 @@ Apply opt phone numbers
         "description": "Apply opt phone numbers",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -31049,9 +30064,7 @@ Apply opt phone numbers
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "phone_number"
-                  ],
+                  "required": ["phone_number"],
                   "properties": {
                     "phone_number": {
                       "type": "string"
@@ -31211,14 +30224,10 @@ Get details of a specific campaign.
         "description": "Get details of a specific campaign.",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -31405,14 +30414,10 @@ Update a campaign
         "description": "Update a campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -31528,19 +30533,13 @@ Update a campaign
                 "sample5": "test",
                 "message_flow": "some string",
                 "help_message": "help string",
-                "help_keywords": [
-                  "HELP"
-                ],
+                "help_keywords": ["HELP"],
                 "auto_renewal": 1,
                 "description": "description text",
                 "dca_election_status": "accepted",
-                "optin_keywords": [
-                  "START"
-                ],
+                "optin_keywords": ["START"],
                 "optin_message": "some string",
-                "optout_keywords": [
-                  "STOP"
-                ],
+                "optout_keywords": ["STOP"],
                 "optout_message": "some string",
                 "help_message_include_email": true,
                 "help_message_include_phone_number": true,
@@ -31628,14 +30627,10 @@ Delete a campaign
         "description": "Delete a campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -31735,14 +30730,10 @@ List phone numbers assigned in a campaign or phone numbers not associated with a
         "description": "List phone numbers assigned in a campaign or phone numbers not associated with a campaign.",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -31951,14 +30942,10 @@ Assign phone numbers to campaign by domain.
         "description": "Assign phone numbers to campaign by domain.",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32066,14 +31053,10 @@ Assign or unassign a group of phone numbers to a messaging campaign.
         "description": "Assign or unassign a group of phone numbers to a messaging campaign.",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32107,9 +31090,7 @@ Assign or unassign a group of phone numbers to a messaging campaign.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone_numbers"
-                ],
+                "required": ["phone_numbers"],
                 "properties": {
                   "phone_numbers": {
                     "type": "array",
@@ -32120,10 +31101,7 @@ Assign or unassign a group of phone numbers to a messaging campaign.
                 }
               },
               "example": {
-                "phone_numbers": [
-                  "16027336369",
-                  "17826981628"
-                ]
+                "phone_numbers": ["16027336369", "17826981628"]
               }
             }
           }
@@ -32207,14 +31185,10 @@ Assign a phone number to a campaign
         "description": "Assign a phone number to a campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32338,14 +31312,10 @@ Unassign a phone number from a campaign
         "description": "Unassign a phone number from a campaign",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32454,14 +31424,10 @@ Set notes to campaign phone number
         "description": "Set notes to campaign phone number",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32585,14 +31551,10 @@ Get campaign by phone numbr
         "description": "Get campaign by phone numbr",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32817,14 +31779,10 @@ Calculate 10dlc pricing
         "description": "Calculate 10dlc pricing",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -32902,12 +31860,7 @@ Calculate 10dlc pricing
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "number_of_dids",
-                  "vetting",
-                  "all_sms",
-                  "all_mms"
-                ],
+                "required": ["number_of_dids", "vetting", "all_sms", "all_mms"],
                 "properties": {
                   "number_of_dids": {
                     "type": "integer",
@@ -33008,14 +31961,10 @@ Retrieve a reseller
         "description": "Retrieve a reseller",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -33153,14 +32102,10 @@ Create a reseller
         "description": "Create a reseller",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -33281,14 +32226,10 @@ Update a reseller
         "description": "Update a reseller",
         "security": [
           {
-            "api_auth": [
-              "ten_dlc"
-            ]
+            "api_auth": ["ten_dlc"]
           }
         ],
-        "tags": [
-          "10DLC"
-        ],
+        "tags": ["10DLC"],
         "parameters": [
           {
             "in": "path",
@@ -33409,14 +32350,10 @@ List toll free brands and campaigns.
         "description": "List toll free brands and campaigns.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -33595,14 +32532,10 @@ Create Toll Free A2P brand.
         "description": "Create Toll Free A2P brand.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -33755,14 +32688,10 @@ Get Toll Free A2P brand.
         "description": "Get Toll Free A2P brand.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -33919,14 +32848,10 @@ Update Toll Free A2P brand.
         "description": "Update Toll Free A2P brand.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34057,14 +32982,10 @@ Delete Toll Free A2P brand.
         "description": "Delete Toll Free A2P brand.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34164,14 +33085,10 @@ Create Toll Free A2P campaign.
         "description": "Create Toll Free A2P campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34212,12 +33129,7 @@ Create Toll Free A2P campaign.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "brand_id",
-                  "usecase",
-                  "description",
-                  "status"
-                ],
+                "required": ["brand_id", "usecase", "description", "status"],
                 "properties": {
                   "brand_id": {
                     "type": "integer"
@@ -34312,14 +33224,10 @@ List TollFree A2P use cases.
         "description": "List TollFree A2P use cases.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34431,14 +33339,10 @@ Get Toll Free A2P campaign.
         "description": "Get Toll Free A2P campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34563,14 +33467,10 @@ Update Toll Free A2P campaign.
         "description": "Update Toll Free A2P campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34692,14 +33592,10 @@ Delete Toll Free A2P campaign.
         "description": "Delete Toll Free A2P campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34799,14 +33695,10 @@ List toll free campaign phone numbers.
         "description": "List toll free campaign phone numbers.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -34964,14 +33856,10 @@ Bulk assign/unassign phone numbers to a toll free campaign.
         "description": "Bulk assign/unassign phone numbers to a toll free campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -35005,9 +33893,7 @@ Bulk assign/unassign phone numbers to a toll free campaign.
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": [
-                  "phone_numbers"
-                ],
+                "required": ["phone_numbers"],
                 "properties": {
                   "phone_numbers": {
                     "type": "array",
@@ -35018,10 +33904,7 @@ Bulk assign/unassign phone numbers to a toll free campaign.
                 }
               },
               "example": {
-                "phone_numbers": [
-                  "16027336369",
-                  "17826981628"
-                ]
+                "phone_numbers": ["16027336369", "17826981628"]
               }
             }
           }
@@ -35105,14 +33988,10 @@ Assign phone number to a toll free campaign.
         "description": "Assign phone number to a toll free campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -35221,14 +34100,10 @@ Unassign phone number to a toll free campaign.
         "description": "Unassign phone number to a toll free campaign.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",
@@ -35337,14 +34212,10 @@ Get toll free campaign phone number.
         "description": "Get toll free campaign phone number.",
         "security": [
           {
-            "api_auth": [
-              "tollfree_a2p"
-            ]
+            "api_auth": ["tollfree_a2p"]
           }
         ],
-        "tags": [
-          "Toll Free A2P"
-        ],
+        "tags": ["Toll Free A2P"],
         "parameters": [
           {
             "in": "path",

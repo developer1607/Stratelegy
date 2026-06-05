@@ -1,11 +1,11 @@
-import { query, queryOne, execute } from '../query.js';
-import { parsePayload } from '../helpers.js';
-import { ENTITY_REGISTRY, SAAS_ENTITY_NAMES } from '../entityDefinitions.js';
-import { tableExists } from '../schemaHelpers.js';
+import { query, queryOne, execute } from "../query.js";
+import { parsePayload } from "../helpers.js";
+import { ENTITY_REGISTRY, SAAS_ENTITY_NAMES } from "../entityDefinitions.js";
+import { tableExists } from "../schemaHelpers.js";
 
 /** One-time migration: legacy JSON entity_records → dedicated entity tables. */
 export async function migrateEntitiesFromEntityRecords() {
-  if (!(await tableExists('entity_records'))) {
+  if (!(await tableExists("entity_records"))) {
     return {};
   }
 
@@ -14,15 +14,18 @@ export async function migrateEntitiesFromEntityRecords() {
 
   for (const entityName of SAAS_ENTITY_NAMES) {
     const def = ENTITY_REGISTRY[entityName];
-    const existing = await queryOne(`SELECT COUNT(*) AS c FROM \`${def.table}\``);
+    const existing = await queryOne(
+      `SELECT COUNT(*) AS c FROM \`${def.table}\``,
+    );
     if (Number(existing?.c ?? 0) > 0) {
       counts[entityName] = { migrated: 0, skipped: true };
       continue;
     }
 
-    const legacyRows = await query('SELECT * FROM entity_records WHERE entity_name = ?', [
-      entityName,
-    ]);
+    const legacyRows = await query(
+      "SELECT * FROM entity_records WHERE entity_name = ?",
+      [entityName],
+    );
 
     let migrated = 0;
     for (const row of legacyRows) {
@@ -32,24 +35,29 @@ export async function migrateEntitiesFromEntityRecords() {
 
       const colValues = { id };
       for (const [col, spec] of Object.entries(def.columns)) {
-        if (col === 'id' || col === 'created_date' || col === 'updated_date') continue;
+        if (col === "id" || col === "created_date" || col === "updated_date")
+          continue;
 
         const apiField =
-          spec.apiField || (def.configEntity && col === 'sort_order' ? 'order' : col);
+          spec.apiField ||
+          (def.configEntity && col === "sort_order" ? "order" : col);
         let value = payload[apiField];
         if (value === undefined && col in payload) value = payload[col];
 
-        if (value === undefined || value === null || value === '') {
+        if (value === undefined || value === null || value === "") {
           if (spec.default !== undefined) value = spec.default;
           else continue;
         }
 
-        if (spec.type === 'bool') {
-          value = value === true || value === 1 || value === '1' || value === 'true' ? 1 : 0;
-        } else if (spec.type === 'int') {
+        if (spec.type === "bool") {
+          value =
+            value === true || value === 1 || value === "1" || value === "true"
+              ? 1
+              : 0;
+        } else if (spec.type === "int") {
           value = parseInt(value, 10);
           if (Number.isNaN(value)) continue;
-        } else if (spec.type === 'decimal') {
+        } else if (spec.type === "decimal") {
           value = parseFloat(value);
           if (Number.isNaN(value)) continue;
         }
@@ -58,19 +66,19 @@ export async function migrateEntitiesFromEntityRecords() {
       }
 
       const cols = Object.keys(colValues);
-      const placeholders = cols.map(() => '?').join(', ');
-      const updateCols = cols.filter((c) => c !== 'id');
+      const placeholders = cols.map(() => "?").join(", ");
+      const updateCols = cols.filter((c) => c !== "id");
       const updates =
         updateCols.length > 0
-          ? `${updateCols.map((c) => `\`${c}\` = VALUES(\`${c}\`)`).join(', ')}, updated_date = VALUES(updated_date)`
-          : 'updated_date = VALUES(updated_date)';
+          ? `${updateCols.map((c) => `\`${c}\` = VALUES(\`${c}\`)`).join(", ")}, updated_date = VALUES(updated_date)`
+          : "updated_date = VALUES(updated_date)";
 
       try {
         await execute(
-          `INSERT INTO \`${def.table}\` (${cols.map((c) => `\`${c}\``).join(', ')}, created_date, updated_date)
+          `INSERT INTO \`${def.table}\` (${cols.map((c) => `\`${c}\``).join(", ")}, created_date, updated_date)
            VALUES (${placeholders}, ?, ?)
            ON DUPLICATE KEY UPDATE ${updates}`,
-          [...Object.values(colValues), row.created_date, row.updated_date]
+          [...Object.values(colValues), row.created_date, row.updated_date],
         );
         migrated++;
       } catch (e) {
@@ -82,7 +90,7 @@ export async function migrateEntitiesFromEntityRecords() {
     if (migrated > 0) {
       anyMigrated = true;
       console.log(
-        `[db] Migrated ${migrated} ${entityName} records from entity_records to ${def.table}`
+        `[db] Migrated ${migrated} ${entityName} records from entity_records to ${def.table}`,
       );
     }
   }
@@ -95,8 +103,8 @@ export async function migrateEntitiesFromEntityRecords() {
   }
 
   if (anyMigrated) {
-    await execute('DELETE FROM entity_records');
-    console.log('[db] Cleared legacy entity_records after migration');
+    await execute("DELETE FROM entity_records");
+    console.log("[db] Cleared legacy entity_records after migration");
   }
 
   return counts;
@@ -108,7 +116,7 @@ async function migrateTicketsIfEmpty() {
     comments: { migrated: 0, skipped: true },
   };
 
-  const ticketsExist = await queryOne('SELECT COUNT(*) AS c FROM tickets');
+  const ticketsExist = await queryOne("SELECT COUNT(*) AS c FROM tickets");
   if (Number(ticketsExist?.c ?? 0) > 0) {
     return result;
   }
@@ -116,9 +124,11 @@ async function migrateTicketsIfEmpty() {
   result.tickets.skipped = false;
   result.comments.skipped = false;
 
-  const legacyTickets = await query("SELECT * FROM entity_records WHERE entity_name = 'Ticket'");
+  const legacyTickets = await query(
+    "SELECT * FROM entity_records WHERE entity_name = 'Ticket'",
+  );
   const legacyComments = await query(
-    "SELECT * FROM entity_records WHERE entity_name = 'TicketComment'"
+    "SELECT * FROM entity_records WHERE entity_name = 'TicketComment'",
   );
 
   for (const row of legacyTickets) {
@@ -134,24 +144,24 @@ async function migrateTicketsIfEmpty() {
         [
           id,
           p.ticket_number ?? null,
-          p.title || 'Untitled',
-          p.description || '',
-          p.status || 'open',
-          p.priority || 'medium',
-          p.category || 'report_a_problem',
+          p.title || "Untitled",
+          p.description || "",
+          p.status || "open",
+          p.priority || "medium",
+          p.category || "report_a_problem",
           p.department || null,
-          p.source || 'web',
+          p.source || "web",
           p.assigned_to || p.assignee || null,
           p.requester || null,
           p.requester_email || null,
           p.created_by || null,
           row.created_date,
           row.updated_date,
-        ]
+        ],
       );
       result.tickets.migrated++;
     } catch (e) {
-      console.error('[migrate] ticket', id, e.message);
+      console.error("[migrate] ticket", id, e.message);
     }
   }
 
@@ -166,28 +176,28 @@ async function migrateTicketsIfEmpty() {
         [
           row.id,
           p.ticket_id,
-          p.message || '',
+          p.message || "",
           p.is_internal ? 1 : 0,
           p.author || null,
           p.author_email || null,
           row.created_date,
           row.updated_date,
-        ]
+        ],
       );
       result.comments.migrated++;
     } catch (e) {
-      console.error('[migrate] comment', row.id, e.message);
+      console.error("[migrate] comment", row.id, e.message);
     }
   }
 
   if (result.tickets.migrated > 0) {
     console.log(
-      `[db] Migrated ${result.tickets.migrated} tickets from entity_records to tickets table`
+      `[db] Migrated ${result.tickets.migrated} tickets from entity_records to tickets table`,
     );
   }
   if (result.comments.migrated > 0) {
     console.log(
-      `[db] Migrated ${result.comments.migrated} TicketComment records from entity_records`
+      `[db] Migrated ${result.comments.migrated} TicketComment records from entity_records`,
     );
   }
 

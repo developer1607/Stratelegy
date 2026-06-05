@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X, Phone, Mail, MessageCircle, Building2, Calendar, Activity } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
-import moment from 'moment';
+import { format } from 'date-fns';
 
 export default function ContactDetailsPanel({ contact, onClose }) {
   const { data: activities = [] } = useQuery({
@@ -142,7 +142,7 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                 <div className="flex-1">
                   <p className="text-sm text-gray-600">Last Activity</p>
                   <p className="font-medium">
-                    {moment(contact.last_activity_date).format('MMM D, YYYY')}
+                    {format(new Date(contact.last_activity_date), 'MMM d, yyyy')}
                   </p>
                 </div>
               </div>
@@ -171,7 +171,7 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                         <p className="font-medium">{activity.type}</p>
                         <p className="text-sm text-gray-600">{activity.description}</p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {moment(activity.date).format('MMM D, YYYY h:mm A')}
+                          {format(new Date(activity.date), 'MMM d, yyyy h:mm a')}
                         </p>
                       </div>
                     </div>

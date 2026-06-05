@@ -1,4 +1,4 @@
-import { config } from '../config.js';
+import { config } from "../config.js";
 
 /** Patterns that must never be returned to API clients. */
 const INTERNAL_LEAK_PATTERNS = [
@@ -15,10 +15,10 @@ const INTERNAL_LEAK_PATTERNS = [
 
 export function isDatabaseError(err) {
   if (!err) return false;
-  if (err.code && String(err.code).startsWith('ER_')) return true;
+  if (err.code && String(err.code).startsWith("ER_")) return true;
   if (err.sqlState || err.sqlMessage) return true;
   if (
-    typeof err.message === 'string' &&
+    typeof err.message === "string" &&
     INTERNAL_LEAK_PATTERNS.some((re) => re.test(err.message))
   ) {
     return /\bsql\b|\bmysql\b|ER_/i.test(err.message);
@@ -27,7 +27,7 @@ export function isDatabaseError(err) {
 }
 
 export function looksLikeInternalLeak(message) {
-  if (!message || typeof message !== 'string') return false;
+  if (!message || typeof message !== "string") return false;
   return INTERNAL_LEAK_PATTERNS.some((re) => re.test(message));
 }
 
@@ -40,7 +40,7 @@ export function formatHttpError(err) {
   const isClientError = status >= 400 && status < 500;
 
   if (isDatabaseError(err)) {
-    return { status: 500, message: 'Internal server error' };
+    return { status: 500, message: "Internal server error" };
   }
 
   if (isClientError && err.message && !looksLikeInternalLeak(err.message)) {
@@ -51,7 +51,11 @@ export function formatHttpError(err) {
     };
   }
 
-  if (err?.expose === true && err.message && !looksLikeInternalLeak(err.message)) {
+  if (
+    err?.expose === true &&
+    err.message &&
+    !looksLikeInternalLeak(err.message)
+  ) {
     return {
       status,
       message: err.message,
@@ -59,7 +63,11 @@ export function formatHttpError(err) {
     };
   }
 
-  if (!config.isProduction && err?.message && !looksLikeInternalLeak(err.message)) {
+  if (
+    !config.isProduction &&
+    err?.message &&
+    !looksLikeInternalLeak(err.message)
+  ) {
     return {
       status,
       message: err.message,
@@ -68,10 +76,10 @@ export function formatHttpError(err) {
   }
 
   if (isClientError) {
-    return { status, message: 'Request could not be completed' };
+    return { status, message: "Request could not be completed" };
   }
 
-  return { status: 500, message: 'Internal server error' };
+  return { status: 500, message: "Internal server error" };
 }
 
 /** @param {number} status @param {string} message @param {object} [extra] */

@@ -1,20 +1,26 @@
-import { config } from '../../config.js';
-import { getSkySwitchAccessToken } from './auth.js';
+import { config } from "../../config.js";
+import { getSkySwitchAccessToken } from "./auth.js";
+import { isSkySwitchNetworkError, toSkySwitchNetworkError } from "./networkError.js";
 
 /** Normalize SkySwitch object-keyed responses into arrays. */
 export function toArray(data) {
   if (Array.isArray(data)) return data;
-  if (data && typeof data === 'object') return Object.values(data);
+  if (data && typeof data === "object") return Object.values(data);
   return [];
 }
 
-export async function skyswitchRequest(method, path, { query, body, timeoutMs = 30_000 } = {}) {
+export async function skyswitchRequest(
+  method,
+  path,
+  { query, body, timeoutMs = 30_000 } = {},
+) {
   try {
     const token = await getSkySwitchAccessToken();
     const url = new URL(path, config.skyswitch.apiBaseUrl);
     if (query) {
       for (const [key, value] of Object.entries(query)) {
-        if (value != null && value !== '') url.searchParams.set(key, String(value));
+        if (value != null && value !== "")
+          url.searchParams.set(key, String(value));
       }
     }
 
@@ -22,35 +28,45 @@ export async function skyswitchRequest(method, path, { query, body, timeoutMs = 
       method,
       headers: {
         Authorization: `Bearer ${token}`,
-        Accept: 'application/json',
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        Accept: "application/json",
+        ...(body ? { "Content-Type": "application/json" } : {}),
       },
       body: body ? JSON.stringify(body) : undefined,
       signal: AbortSignal.timeout(timeoutMs),
     });
 
-    const contentType = res.headers.get('content-type') || '';
-    const isJson = contentType.includes('application/json');
+    const contentType = res.headers.get("content-type") || "";
+    const isJson = contentType.includes("application/json");
     const data = isJson ? await res.json().catch(() => null) : await res.text();
 
     if (!res.ok) {
       const upstreamMessage =
         (isJson && (data?.message || data?.error)) ||
-        (typeof data === 'string' && !data.includes('<title>') ? data : null);
-      const err = new Error(upstreamMessage || `Phone system request failed (${res.status})`);
+        (typeof data === "string" && !data.includes("<title>") ? data : null);
+      const err = new Error(
+        upstreamMessage || `Phone system request failed (${res.status})`,
+      );
       err.status = res.status >= 500 ? 502 : res.status;
-      err.data = isJson && data && typeof data === 'object' ? { code: data.code } : undefined;
+      err.data =
+        isJson && data && typeof data === "object"
+          ? { code: data.code }
+          : undefined;
       err.expose = res.status < 500;
       throw err;
     }
 
     return data;
   } catch (err) {
-    if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
-      const timeoutErr = new Error('Phone system request timed out. Please try again.');
+    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+      const timeoutErr = new Error(
+        "Phone system request timed out. Please try again.",
+      );
       timeoutErr.status = 504;
       timeoutErr.expose = true;
       throw timeoutErr;
+    }
+    if (isSkySwitchNetworkError(err)) {
+      throw toSkySwitchNetworkError();
     }
     throw err;
   }
@@ -58,6 +74,6 @@ export async function skyswitchRequest(method, path, { query, body, timeoutMs = 
 
 export function accountPath(suffix) {
   const accountId = config.skyswitch.accountId;
-  const path = `/accounts/${accountId}${suffix.startsWith('/') ? suffix : `/${suffix}`}`;
+  const path = `/accounts/${accountId}${suffix.startsWith("/") ? suffix : `/${suffix}`}`;
   return path;
 }

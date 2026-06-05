@@ -49,6 +49,13 @@ export const PERMISSION_DEFS = [
   },
   { key: 'can_view_leads_page', label: 'Leads', module: 'crm', section: 'Screens', page: 'Leads' },
   {
+    key: 'can_view_opportunities_page',
+    label: 'Opportunities',
+    module: 'crm',
+    section: 'Screens',
+    page: 'Opportunities',
+  },
+  {
     key: 'can_view_calendar_page',
     label: 'Calendar',
     module: 'crm',
@@ -398,7 +405,11 @@ export const LEGACY_PERMISSION_EXPAND = {
   can_manage_contacts: ['can_view_contacts_page', 'can_view_contacts', 'can_manage_contacts'],
   can_manage_accounts: ['can_view_accounts_page', 'can_view_accounts', 'can_manage_accounts'],
   can_manage_leads: ['can_view_leads_page', 'can_view_leads', 'can_manage_leads'],
-  can_manage_opportunities: ['can_view_opportunities', 'can_manage_opportunities'],
+  can_manage_opportunities: [
+    'can_view_opportunities_page',
+    'can_view_opportunities',
+    'can_manage_opportunities',
+  ],
   can_manage_tickets: [
     'can_access_support',
     'can_view_support_dashboard',
@@ -491,7 +502,6 @@ export function buildPagePermissionMap() {
     Profile: null,
     Settings: '__admin__',
     UserManagement: '__admin__',
-    EmailTest: '__admin__',
     SupportTicketDetail: 'can_view_tickets',
   };
   for (const def of PERMISSION_DEFS) {

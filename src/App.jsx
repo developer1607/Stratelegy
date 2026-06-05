@@ -1,23 +1,31 @@
-import { Toaster } from '@/components/ui/toaster';
-import { Toaster as SonnerToaster } from '@/components/ui/sonner';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { queryClientInstance } from '@/lib/query-client';
-import NavigationTracker from '@/lib/NavigationTracker';
-import { pagesConfig } from './pages.config';
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
-import PageNotFound from './lib/PageNotFound';
-import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import Login from '@/pages/Login';
-import UserNotRegisteredError from '@/components/UserNotRegisteredError';
-import RouteGuard from '@/components/RouteGuard';
-import ErrorBoundary from '@/components/ErrorBoundary';
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClientInstance } from "@/lib/query-client";
+import NavigationTracker from "@/lib/NavigationTracker";
+import { pagesConfig } from "./pages.config";
+import {
+  BrowserRouter as Router,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
+import PageNotFound from "./lib/PageNotFound";
+import { AuthProvider, useAuth } from "@/lib/AuthContext";
+import Login from "@/pages/Login";
+import UserNotRegisteredError from "@/components/UserNotRegisteredError";
+import RouteGuard from "@/components/RouteGuard";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const { Pages, Layout, mainPage } = pagesConfig;
 const mainPageKey = mainPage ?? Object.keys(Pages)[0];
 const MainPage = mainPageKey ? Pages[mainPageKey] : <></>;
 
 const LayoutWrapper = ({ children, currentPageName }) =>
-  Layout ? <Layout currentPageName={currentPageName}>{children}</Layout> : <>{children}</>;
+  Layout ? (
+    <Layout currentPageName={currentPageName}>{children}</Layout>
+  ) : (
+    <>{children}</>
+  );
 
 function ProtectedPage({ pageName, children }) {
   return (
@@ -29,9 +37,10 @@ function ProtectedPage({ pageName, children }) {
 
 const AuthenticatedApp = () => {
   const location = useLocation();
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } =
+    useAuth();
 
-  if (location.pathname === '/login') {
+  if (location.pathname === "/login") {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
@@ -48,9 +57,9 @@ const AuthenticatedApp = () => {
   }
 
   if (authError) {
-    if (authError.type === 'user_not_registered') {
+    if (authError.type === "user_not_registered") {
       return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
+    } else if (authError.type === "auth_required") {
       navigateToLogin();
       return null;
     }
@@ -88,11 +97,15 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
+        <Router
+          future={{
+            v7_startTransition: true,
+            v7_relativeSplatPath: true,
+          }}
+        >
           <NavigationTracker />
           <AuthenticatedApp />
         </Router>
-        <Toaster />
         <SonnerToaster richColors closeButton position="top-right" />
       </QueryClientProvider>
     </AuthProvider>

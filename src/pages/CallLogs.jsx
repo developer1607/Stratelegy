@@ -1,41 +1,50 @@
-import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { pbxApi } from '@/api/pbx';
-import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
-import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
-import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { pbxApi } from "@/api/pbx";
+import PbxShell, {
+  PbxDataTable,
+  PbxError,
+  PbxLoading,
+} from "@/components/pbx/PbxShell";
+import PbxListToolbar from "@/components/pbx/shared/PbxListToolbar";
+import PbxFilterSelect from "@/components/pbx/shared/PbxFilterSelect";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   matchSearch,
   matchSelect,
   uniqueFieldValues,
   daysAgo,
   todayInput,
-} from '@/lib/listFilters';
+} from "@/lib/listFilters";
 
 export default function CallLogs() {
   return (
-    <PbxShell title="Call Logs" description="Audit and activity logs" requiresDomain={false}>
+    <PbxShell
+      title="Call Logs"
+      description="Audit and activity logs"
+      requiresDomain={false}
+    >
       <LogsContent />
     </PbxShell>
   );
 }
 
 function LogsContent() {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState(daysAgo(7));
   const [endDate, setEndDate] = useState(todayInput());
-  const [resourceFilter, setResourceFilter] = useState('all');
-  const [actionFilter, setActionFilter] = useState('all');
+  const [resourceFilter, setResourceFilter] = useState("all");
+  const [actionFilter, setActionFilter] = useState("all");
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ['pbx-audit-logs', startDate, endDate],
-    queryFn: () => pbxApi.auditLogs({ start_date: startDate, end_date: endDate, page: 1 }),
+    queryKey: ["pbx-audit-logs", startDate, endDate],
+    queryFn: () =>
+      pbxApi.auditLogs({ start_date: startDate, end_date: endDate, page: 1 }),
     retry: false,
   });
 
@@ -51,13 +60,25 @@ function LogsContent() {
     }));
   }, [data]);
 
-  const resourceOptions = useMemo(() => uniqueFieldValues(rawRows, 'resource'), [rawRows]);
-  const actionOptions = useMemo(() => uniqueFieldValues(rawRows, 'action'), [rawRows]);
+  const resourceOptions = useMemo(
+    () => uniqueFieldValues(rawRows, "resource"),
+    [rawRows],
+  );
+  const actionOptions = useMemo(
+    () => uniqueFieldValues(rawRows, "action"),
+    [rawRows],
+  );
 
   const rows = useMemo(() => {
     return rawRows.filter((row) => {
       if (
-        !matchSearch(row, search, ['resource', 'action', 'user_id', 'request_id', 'ip_address'])
+        !matchSearch(row, search, [
+          "resource",
+          "action",
+          "user_id",
+          "request_id",
+          "ip_address",
+        ])
       ) {
         return false;
       }
@@ -81,6 +102,8 @@ function LogsContent() {
           <div>
             <Label className="text-xs text-gray-500 mb-1 block">From</Label>
             <Input
+              id="call-logs-start-date"
+              name="call-logs-start-date"
               type="date"
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
@@ -90,6 +113,8 @@ function LogsContent() {
           <div>
             <Label className="text-xs text-gray-500 mb-1 block">To</Label>
             <Input
+              id="call-logs-end-date"
+              name="call-logs-end-date"
               type="date"
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
@@ -114,12 +139,12 @@ function LogsContent() {
       </PbxListToolbar>
       <PbxDataTable
         columns={[
-          { key: 'created_at', label: 'Time' },
-          { key: 'resource', label: 'Resource' },
-          { key: 'action', label: 'Action' },
-          { key: 'user_id', label: 'User' },
-          { key: 'request_id', label: 'Request ID' },
-          { key: 'ip_address', label: 'IP' },
+          { key: "created_at", label: "Time" },
+          { key: "resource", label: "Resource" },
+          { key: "action", label: "Action" },
+          { key: "user_id", label: "User" },
+          { key: "request_id", label: "Request ID" },
+          { key: "ip_address", label: "IP" },
         ]}
         rows={rows}
         emptyMessage="No audit logs match your filters."

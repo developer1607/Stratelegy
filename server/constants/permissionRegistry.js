@@ -1,1 +1,1 @@
-export * from '../../shared/permissionRegistry.js';
+export * from "../../shared/permissionRegistry.js";

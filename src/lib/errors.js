@@ -7,10 +7,10 @@ export function getUserFacingErrorMessage(
 
   const code = error?.data?.code || error?.extra_data?.reason;
   if (code === 'skyswitch_report_scope_required') {
-    return 'Report access is not enabled for this account. Contact your administrator.';
+    return 'Report access requires the report OAuth scope. Ask your administrator to add report to SKYSWITCH_SCOPE.';
   }
   if (code === 'skyswitch_log_scope_required') {
-    return 'Log access is not enabled for this account. Contact your administrator.';
+    return 'Call log access requires the log OAuth scope. Ask your administrator to add log to SKYSWITCH_SCOPE.';
   }
 
   const message = error?.message || '';

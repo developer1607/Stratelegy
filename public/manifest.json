@@ -1,0 +1,18 @@
+{
+  "name": "Stratelegy Insight",
+  "short_name": "Insight",
+  "description": "Stratelegy Insight portal",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F4F6F9",
+  "theme_color": "#0D1B2E",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,1 +1,1 @@
-export * from '../../shared/ticketConstants.js';
+export * from "../../shared/ticketConstants.js";

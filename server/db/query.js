@@ -46,3 +46,10 @@ export async function createPoolConnection() {
     dateStrings: false,
   });
 }
+
+export async function closePool() {
+  if (!pool) return;
+  const active = pool;
+  pool = undefined;
+  await active.end();
+}

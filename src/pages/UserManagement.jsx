@@ -43,6 +43,8 @@ import {
   Send,
   RotateCcw,
   KeyRound,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { computeEffectivePermissions } from '@/lib/portalPermissions';
 import { hasCrmModuleAccess, hasSupportModuleAccess, hasPbxModuleAccess } from '@/lib/permissions';
@@ -74,6 +76,13 @@ export default function UserManagement({ embedded = false }) {
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
   const [resetPasswordByUser, setResetPasswordByUser] = useState({});
+  const [roleDialogOpen, setRoleDialogOpen] = useState(false);
+  const [editingRoleId, setEditingRoleId] = useState(null);
+  const [roleForm, setRoleForm] = useState({
+    name: '',
+    description: '',
+    permissions: {},
+  });
   const queryClient = useQueryClient();
 
   const {
@@ -178,6 +187,38 @@ export default function UserManagement({ embedded = false }) {
     },
   });
 
+  const createRoleMutation = useMutation({
+    mutationFn: (payload) => api.roles.create(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalRoles'] });
+      setRoleDialogOpen(false);
+      setEditingRoleId(null);
+      showSuccess('Portal role created.');
+    },
+    onError: (error) => showError(error, 'Failed to create role'),
+  });
+
+  const updateRoleMutation = useMutation({
+    mutationFn: ({ id, payload }) => api.roles.update(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalRoles'] });
+      queryClient.invalidateQueries({ queryKey: ['userPermissions'] });
+      setRoleDialogOpen(false);
+      setEditingRoleId(null);
+      showSuccess('Portal role updated.');
+    },
+    onError: (error) => showError(error, 'Failed to update role'),
+  });
+
+  const deleteRoleMutation = useMutation({
+    mutationFn: (id) => api.roles.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portalRoles'] });
+      showSuccess('Portal role deleted.');
+    },
+    onError: (error) => showError(error, 'Failed to delete role'),
+  });
+
   const supportRoutingMutation = useMutation({
     mutationFn: ({ userId, departments, categories }) =>
       api.users.updateSupportRouting(userId, { departments, categories }),
@@ -242,6 +283,57 @@ export default function UserManagement({ embedded = false }) {
     if (!keys?.length) return;
     const updates = Object.fromEntries(keys.map((key) => [key, value]));
     updatePermissionMutation.mutate({ userId: user.id, updates });
+  };
+
+  const openCreateRoleDialog = () => {
+    setEditingRoleId(null);
+    setRoleForm({ name: '', description: '', permissions: {} });
+    setRoleDialogOpen(true);
+  };
+
+  const openEditRoleDialog = (role) => {
+    setEditingRoleId(role.id);
+    setRoleForm({
+      name: role.name,
+      description: role.description || '',
+      permissions: { ...(role.permissions || {}) },
+    });
+    setRoleDialogOpen(true);
+  };
+
+  const handleRolePermissionToggle = (key, value) => {
+    setRoleForm((prev) => ({
+      ...prev,
+      permissions: { ...prev.permissions, [key]: value },
+    }));
+  };
+
+  const handleRoleMasterToggle = (group, value) => {
+    const updates = { [group.masterKey]: value };
+    for (const key of group.allKeys || []) {
+      updates[key] = value;
+    }
+    setRoleForm((prev) => ({
+      ...prev,
+      permissions: { ...prev.permissions, ...updates },
+    }));
+  };
+
+  const handleSaveRole = () => {
+    if (!roleForm.name.trim()) {
+      showInfo('Role name is required.');
+      return;
+    }
+    const payload = {
+      name: roleForm.name.trim(),
+      description: roleForm.description.trim() || undefined,
+      permissions: roleForm.permissions,
+    };
+    if (editingRoleId) {
+      updateRoleMutation.mutate({ id: editingRoleId, payload });
+    } else {
+      createRoleMutation.mutate(payload);
+    }
   };
 
   const handleResetToRole = (user) => {
@@ -414,14 +506,65 @@ export default function UserManagement({ embedded = false }) {
 
         <Card className="mb-6">
           <CardContent className="py-4">
-            <p className="text-sm font-medium text-gray-900 mb-2">Portal roles</p>
+            <div className="flex items-center justify-between gap-3 mb-3">
+              <p className="text-sm font-medium text-gray-900">Portal roles</p>
+              <Button size="sm" variant="outline" onClick={openCreateRoleDialog}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create role
+              </Button>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
               {portalRoles.map((role) => (
-                <div key={role.id} className="rounded border bg-white px-3 py-2">
-                  <span className="font-semibold text-gray-800">{role.name}</span>
-                  {role.description ? (
-                    <p className="mt-0.5 leading-snug">{role.description}</p>
-                  ) : null}
+                <div
+                  key={role.id}
+                  className="rounded border bg-white px-3 py-2 flex items-start justify-between gap-2"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-800">{role.name}</span>
+                      {role.is_system ? (
+                        <Badge variant="secondary" className="text-[10px]">
+                          System
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-[10px]">
+                          Custom
+                        </Badge>
+                      )}
+                    </div>
+                    {role.description ? (
+                      <p className="mt-0.5 leading-snug">{role.description}</p>
+                    ) : null}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={() => openEditRoleDialog(role)}
+                      title={role.is_system ? 'View role permissions' : 'Edit role'}
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    {!role.is_system && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-red-600 hover:text-red-700"
+                        disabled={deleteRoleMutation.isPending}
+                        onClick={() => {
+                          if (window.confirm(`Delete role "${role.name}"?`)) {
+                            deleteRoleMutation.mutate(role.id);
+                          }
+                        }}
+                        title="Delete role"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -949,6 +1092,127 @@ export default function UserManagement({ embedded = false }) {
             >
               {adding ? 'Creating...' : 'Create Portal User'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={roleDialogOpen}
+        onOpenChange={(open) => {
+          setRoleDialogOpen(open);
+          if (!open) setEditingRoleId(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingRoleId
+                ? portalRoles.find((r) => r.id === editingRoleId)?.is_system
+                  ? 'View portal role'
+                  : 'Edit portal role'
+                : 'Create portal role'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label>Name</Label>
+              <Input
+                value={roleForm.name}
+                onChange={(e) => setRoleForm((f) => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Sales Rep"
+                className="mt-1"
+                disabled={
+                  editingRoleId &&
+                  portalRoles.find((r) => r.id === editingRoleId)?.is_system
+                }
+              />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Input
+                value={roleForm.description}
+                onChange={(e) => setRoleForm((f) => ({ ...f, description: e.target.value }))}
+                placeholder="Optional summary for admins"
+                className="mt-1"
+                disabled={
+                  editingRoleId &&
+                  portalRoles.find((r) => r.id === editingRoleId)?.is_system
+                }
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {permissionGroups.map((group) => {
+                const masterEnabled = group.masterKey
+                  ? Boolean(roleForm.permissions[group.masterKey])
+                  : true;
+                const isSystemRole =
+                  editingRoleId && portalRoles.find((r) => r.id === editingRoleId)?.is_system;
+                return (
+                  <div key={group.id} className="rounded-lg border p-3 bg-gray-50/50">
+                    <div className="flex items-center justify-between mb-2 gap-2">
+                      <span className="font-medium text-sm">{group.label}</span>
+                      {group.masterKey && !isSystemRole ? (
+                        <Switch
+                          checked={Boolean(roleForm.permissions[group.masterKey])}
+                          onCheckedChange={(val) => handleRoleMasterToggle(group, val)}
+                        />
+                      ) : null}
+                    </div>
+                    <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+                      {group.sections?.map((section) => (
+                        <div key={section.label}>
+                          <p className="text-[10px] font-semibold text-gray-500 uppercase mb-1">
+                            {section.label}
+                          </p>
+                          <div className="space-y-1.5">
+                            {section.permissions.map((perm) => (
+                              <div
+                                key={perm.key}
+                                className="flex items-center justify-between gap-2"
+                              >
+                                <Label className="text-xs font-normal text-gray-600 leading-snug">
+                                  {perm.label}
+                                </Label>
+                                <Switch
+                                  checked={Boolean(roleForm.permissions[perm.key])}
+                                  disabled={!masterEnabled || isSystemRole}
+                                  onCheckedChange={(val) =>
+                                    handleRolePermissionToggle(perm.key, val)
+                                  }
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleDialogOpen(false)}>
+              Cancel
+            </Button>
+            {!(
+              editingRoleId && portalRoles.find((r) => r.id === editingRoleId)?.is_system
+            ) && (
+              <Button
+                onClick={handleSaveRole}
+                disabled={
+                  !roleForm.name.trim() ||
+                  createRoleMutation.isPending ||
+                  updateRoleMutation.isPending
+                }
+              >
+                {createRoleMutation.isPending || updateRoleMutation.isPending
+                  ? 'Saving...'
+                  : editingRoleId
+                    ? 'Save role'
+                    : 'Create role'}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

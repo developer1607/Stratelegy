@@ -1,14 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -26,7 +20,14 @@ const STAGES = [
   'closed_lost',
 ];
 
-export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoading }) {
+export default function EditOpportunityDialog({
+  open,
+  onOpenChange,
+  opportunity,
+  onSubmit,
+  isLoading,
+  readOnly = false,
+}) {
   const [formData, setFormData] = useState({
     name: '',
     account_name: '',
@@ -38,58 +39,67 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
     source: '',
   });
 
+  useEffect(() => {
+    if (opportunity) {
+      setFormData({
+        name: opportunity.name || '',
+        account_name: opportunity.account_name || '',
+        amount: opportunity.amount ?? '',
+        stage: opportunity.stage || 'prospecting',
+        probability: opportunity.probability ?? '',
+        close_date: opportunity.close_date || '',
+        owner: opportunity.owner || '',
+        source: opportunity.source || '',
+      });
+    }
+  }, [opportunity]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (readOnly) return;
     onSubmit({
       ...formData,
-      amount: formData.amount ? parseFloat(formData.amount) : undefined,
-      probability: formData.probability ? parseFloat(formData.probability) : undefined,
-    });
-    setFormData({
-      name: '',
-      account_name: '',
-      amount: '',
-      stage: 'prospecting',
-      probability: '',
-      close_date: '',
-      owner: '',
-      source: '',
+      amount: formData.amount !== '' ? Number(formData.amount) : undefined,
+      probability: formData.probability !== '' ? Number(formData.probability) : undefined,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create Opportunity</DialogTitle>
+          <DialogTitle>{readOnly ? 'View Opportunity' : 'Edit Opportunity'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="opp-name">Name *</Label>
+              <Label htmlFor="edit-opp-name">Name *</Label>
               <Input
-                id="opp-name"
+                id="edit-opp-name"
                 required
+                disabled={readOnly}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="opp-account">Account</Label>
+              <Label htmlFor="edit-opp-account">Account</Label>
               <Input
-                id="opp-account"
+                id="edit-opp-account"
+                disabled={readOnly}
                 value={formData.account_name}
                 onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="opp-amount">Amount</Label>
+                <Label htmlFor="edit-opp-amount">Amount</Label>
                 <Input
-                  id="opp-amount"
+                  id="edit-opp-amount"
                   type="number"
                   min="0"
                   step="0.01"
+                  disabled={readOnly}
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                 />
@@ -97,6 +107,7 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
               <div className="space-y-2">
                 <Label>Stage</Label>
                 <Select
+                  disabled={readOnly}
                   value={formData.stage}
                   onValueChange={(stage) => setFormData({ ...formData, stage })}
                 >
@@ -115,21 +126,23 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="opp-probability">Probability (%)</Label>
+                <Label htmlFor="edit-opp-probability">Probability (%)</Label>
                 <Input
-                  id="opp-probability"
+                  id="edit-opp-probability"
                   type="number"
                   min="0"
                   max="100"
+                  disabled={readOnly}
                   value={formData.probability}
                   onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="opp-close">Close date</Label>
+                <Label htmlFor="edit-opp-close">Close date</Label>
                 <Input
-                  id="opp-close"
+                  id="edit-opp-close"
                   type="date"
+                  disabled={readOnly}
                   value={formData.close_date}
                   onChange={(e) => setFormData({ ...formData, close_date: e.target.value })}
                 />
@@ -137,31 +150,35 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="opp-owner">Owner</Label>
+                <Label htmlFor="edit-opp-owner">Owner</Label>
                 <Input
-                  id="opp-owner"
+                  id="edit-opp-owner"
+                  disabled={readOnly}
                   value={formData.owner}
                   onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="opp-source">Source</Label>
+                <Label htmlFor="edit-opp-source">Source</Label>
                 <Input
-                  id="opp-source"
+                  id="edit-opp-source"
+                  disabled={readOnly}
                   value={formData.source}
                   onChange={(e) => setFormData({ ...formData, source: e.target.value })}
                 />
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create'}
-            </Button>
-          </DialogFooter>
+          {!readOnly && (
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Saving...' : 'Save'}
+              </Button>
+            </div>
+          )}
         </form>
       </DialogContent>
     </Dialog>

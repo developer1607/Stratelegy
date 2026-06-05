@@ -1,4 +1,5 @@
 import { config } from '../../config.js';
+import { isSkySwitchNetworkError, toSkySwitchNetworkError } from './networkError.js';
 
 /** @type {{ accessToken: string | null, refreshToken: string | null, expiresAt: number }} */
 let tokenCache = {
@@ -13,19 +14,26 @@ function isConfigured() {
 }
 
 async function requestToken(body) {
-  const res = await fetch(`${config.skyswitch.apiBaseUrl}/oauth/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams(body),
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const err = new Error(data.message || data.error || 'SkySwitch authentication failed');
-    err.status = res.status;
-    err.data = data;
+  try {
+    const res = await fetch(`${config.skyswitch.apiBaseUrl}/oauth/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data.message || data.error || 'SkySwitch authentication failed');
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
+    return data;
+  } catch (err) {
+    if (isSkySwitchNetworkError(err)) {
+      throw toSkySwitchNetworkError();
+    }
     throw err;
   }
-  return data;
 }
 
 export function skyswitchIsConfigured() {
@@ -36,6 +44,7 @@ export async function getSkySwitchAccessToken() {
   if (!skyswitchIsConfigured()) {
     const err = new Error('SkySwitch API is not configured');
     err.status = 503;
+    err.expose = true;
     throw err;
   }
 

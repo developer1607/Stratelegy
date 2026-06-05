@@ -1,7 +1,7 @@
 /** Parse JSON payload from legacy entity_records rows. */
 export function parsePayload(payload) {
   if (payload == null) return {};
-  if (typeof payload === 'string') return JSON.parse(payload);
+  if (typeof payload === "string") return JSON.parse(payload);
   return payload;
 }
 

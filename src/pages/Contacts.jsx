@@ -55,7 +55,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
-import moment from 'moment';
+import { differenceInDays, isAfter, startOfMonth } from 'date-fns';
 
 export default function Contacts() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,7 +234,7 @@ export default function Contacts() {
       // No recent activity filter
       if (filters.noRecentActivity) {
         if (!contact.last_activity_date) return true;
-        const daysSinceActivity = moment().diff(moment(contact.last_activity_date), 'days');
+        const daysSinceActivity = differenceInDays(new Date(), new Date(contact.last_activity_date));
         if (daysSinceActivity < 30) return false;
       }
 
@@ -268,14 +268,14 @@ export default function Contacts() {
   const kpis = useMemo(() => {
     const total = contactsTotal;
     const thisMonth = contacts.filter((c) =>
-      moment(c.created_date).isAfter(moment().startOf('month'))
+      isAfter(new Date(c.created_date), startOfMonth(new Date()))
     ).length;
     const decisionMakers = contacts.filter(
       (c) => c.role === 'Decision Maker' || c.role === 'Key Contact'
     ).length;
     const noActivity = contacts.filter((c) => {
       if (!c.last_activity_date) return true;
-      return moment().diff(moment(c.last_activity_date), 'days') >= 30;
+      return differenceInDays(new Date(), new Date(c.last_activity_date)) >= 30;
     }).length;
 
     return { total, thisMonth, decisionMakers, noActivity };
@@ -289,7 +289,7 @@ export default function Contacts() {
 
   const getDaysSinceActivity = (contact) => {
     if (!contact.last_activity_date) return 'Never';
-    const days = moment().diff(moment(contact.last_activity_date), 'days');
+    const days = differenceInDays(new Date(), new Date(contact.last_activity_date));
     if (days === 0) return 'Today';
     if (days === 1) return '1 day ago';
     if (days < 30) return `${days} days ago`;
@@ -454,7 +454,7 @@ export default function Contacts() {
                   ) : (
                     filteredAndSortedContacts.map((contact) => {
                       const daysSinceActivity = contact.last_activity_date
-                        ? moment().diff(moment(contact.last_activity_date), 'days')
+                        ? differenceInDays(new Date(), new Date(contact.last_activity_date))
                         : 999;
                       const isKeyContact = contact.priority === 'Key';
                       const hasNoRecentActivity = daysSinceActivity >= 30;

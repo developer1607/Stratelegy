@@ -290,6 +290,25 @@ export default function Settings() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
+                  <Label>Monthly Sales Target</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={defaultSettings?.monthly_sales_target ?? ''}
+                    onChange={(e) =>
+                      handleUpdateSettings(
+                        'monthly_sales_target',
+                        e.target.value === '' ? 0 : parseFloat(e.target.value)
+                      )
+                    }
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-gray-500">
+                    Shown on the CRM dashboard as the monthly revenue goal.
+                  </p>
+                </div>
+                <div className="space-y-2">
                   <Label>Default Currency</Label>
                   <Input
                     value={defaultSettings?.default_currency || 'AED'}

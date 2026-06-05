@@ -1,6 +1,7 @@
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import { getSkySwitchScopeStatus } from './services/skyswitch/scopes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, '..');
@@ -55,12 +56,48 @@ export const config = {
   },
 };
 
+function isLocalhostUrl(url) {
+  try {
+    const { hostname } = new URL(url);
+    return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return true;
+  }
+}
+
 /** Fail fast when production is misconfigured. */
 export function assertProductionConfig() {
   if (!config.isProduction) return;
 
   if (!process.env.JWT_SECRET || config.jwtSecret === DEV_JWT_SECRET) {
     throw new Error('[config] JWT_SECRET must be set to a strong value in production');
+  }
+  if (!process.env.APP_BASE_URL || isLocalhostUrl(config.appBaseUrl)) {
+    throw new Error(
+      '[config] APP_BASE_URL must be set to your public site URL in production (e.g. https://app.example.com)'
+    );
+  }
+  if (!process.env.MYSQL_PASSWORD) {
+    console.warn('[config] MYSQL_PASSWORD is not set — using empty password');
+  }
+  if (!config.mail.enabled) {
+    console.warn('[config] MAIL_ENABLED is false — outbound email (invites, notifications) is disabled');
+  }
+  if (config.skyswitch.enabled) {
+    const missing = [];
+    if (!config.skyswitch.clientId) missing.push('SKYSWITCH_CLIENT_ID');
+    if (!config.skyswitch.clientSecret) missing.push('SKYSWITCH_CLIENT_SECRET');
+    if (!config.skyswitch.username) missing.push('SKYSWITCH_USERNAME');
+    if (!config.skyswitch.password) missing.push('SKYSWITCH_PASSWORD');
+    if (missing.length) {
+      console.warn(`[config] SkySwitch enabled but missing: ${missing.join(', ')}`);
+    }
+    const scopeStatus = getSkySwitchScopeStatus(config.skyswitch.scope);
+    if (scopeStatus.missing.length) {
+      console.warn(
+        `[config] SKYSWITCH_SCOPE is missing: ${scopeStatus.missing.join(', ')} — Call Logs and E911 Reports may return 403`
+      );
+    }
   }
   if (!config.emailWebhookSecret) {
     console.warn('[config] EMAIL_WEBHOOK_SECRET is not set — inbound email webhooks are disabled');

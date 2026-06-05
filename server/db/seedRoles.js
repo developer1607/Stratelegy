@@ -7,7 +7,7 @@ export const SEEDED_ROLES = [
   {
     slug: 'crm',
     name: 'CRM',
-    description: 'Sales module — accounts, contacts, leads, calendar, activities, reports.',
+    description: 'Sales module — accounts, contacts, leads, opportunities, calendar, activities, reports.',
     sort_order: 10,
     permissions: expandPermissionKeys(['can_access_crm']),
   },

@@ -3,13 +3,22 @@ import {
   PERMISSION_DEFS,
   expandPermissionKeys,
   hasPermissionKey,
-} from './permissionRegistry.js';
+} from "./permissionRegistry.js";
 
-export { PERMISSION_KEYS, PERMISSION_DEFS, expandPermissionKeys, hasPermissionKey };
+export {
+  PERMISSION_KEYS,
+  PERMISSION_DEFS,
+  expandPermissionKeys,
+  hasPermissionKey,
+};
 
-export const DEFAULT_PERMISSIONS = Object.fromEntries(PERMISSION_KEYS.map((k) => [k, false]));
+export const DEFAULT_PERMISSIONS = Object.fromEntries(
+  PERMISSION_KEYS.map((k) => [k, false]),
+);
 
-export const ADMIN_PERMISSIONS = Object.fromEntries(PERMISSION_KEYS.map((k) => [k, true]));
+export const ADMIN_PERMISSIONS = Object.fromEntries(
+  PERMISSION_KEYS.map((k) => [k, true]),
+);
 
 export function emptyPermissions() {
   return { ...DEFAULT_PERMISSIONS };

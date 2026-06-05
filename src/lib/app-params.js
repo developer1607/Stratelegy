@@ -14,12 +14,9 @@ const storage = isNode
 
 const toSnakeCase = (str) => str.replace(/([A-Z])/g, '_$1').toLowerCase();
 
-const LEGACY_PARAM_PREFIX = 'base44_';
-
 const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl = false } = {}) => {
   if (isNode) return defaultValue;
   const storageKey = `app_${toSnakeCase(paramName)}`;
-  const legacyStorageKey = `${LEGACY_PARAM_PREFIX}${toSnakeCase(paramName)}`;
   const urlParams = new URLSearchParams(window.location.search);
   const searchParam = urlParams.get(paramName);
   if (removeFromUrl) {
@@ -29,33 +26,19 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
   }
   if (searchParam) {
     storage.setItem(storageKey, searchParam);
-    storage.removeItem(legacyStorageKey);
     return searchParam;
   }
   if (defaultValue) {
     storage.setItem(storageKey, defaultValue);
-    storage.removeItem(legacyStorageKey);
     return defaultValue;
   }
 
-  const storedValue = storage.getItem(storageKey);
-  if (storedValue) return storedValue;
-
-  const legacyValue = storage.getItem(legacyStorageKey);
-  if (legacyValue) {
-    storage.setItem(storageKey, legacyValue);
-    storage.removeItem(legacyStorageKey);
-    return legacyValue;
-  }
-
-  return null;
+  return storage.getItem(storageKey);
 };
 
 const getAppParams = () => {
   if (getAppParamValue('clear_access_token') === 'true') {
-    ['access_token', 'token', 'base44_access_token', 'app_access_token'].forEach((key) =>
-      storage.removeItem(key)
-    );
+    storage.removeItem('access_token');
   }
   return {
     appId:

@@ -54,6 +54,15 @@ export default function Dashboard() {
     staleTime: 60_000,
   });
 
+  const { data: defaultSettings } = useQuery({
+    queryKey: ['defaultSettings'],
+    queryFn: async () => {
+      const settings = await api.entities.DefaultSettings.list();
+      return settings[0] || null;
+    },
+    staleTime: 60_000,
+  });
+
   const filteredOpportunities = useMemo(() => {
     return opportunities.filter((opp) => {
       if (ownerFilter !== 'all' && opp.owner !== ownerFilter) return false;
@@ -75,7 +84,7 @@ export default function Dashboard() {
       )
       .reduce((sum, o) => sum + (o.amount || 0), 0);
 
-    const salesTarget = 0;
+    const salesTarget = Number(defaultSettings?.monthly_sales_target) || 0;
     const targetProgress =
       salesTarget > 0 ? ((revenueThisMonth / salesTarget) * 100).toFixed(1) : 0;
 
@@ -106,7 +115,7 @@ export default function Dashboard() {
       conversionRate,
       avgSalesCycle,
     };
-  }, [leads, filteredOpportunities]);
+  }, [leads, filteredOpportunities, defaultSettings]);
 
   const pipelineData = useMemo(() => {
     const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won'];
@@ -405,7 +414,12 @@ export default function Dashboard() {
 
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input placeholder="Stage: Source" className="pl-9 h-9" />
+            <Input
+              id="dashboard-stage-source-filter"
+              name="dashboard-stage-source-filter"
+              placeholder="Stage: Source"
+              className="pl-9 h-9"
+            />
           </div>
 
           <Button variant="ghost" size="sm">

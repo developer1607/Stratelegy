@@ -2,11 +2,14 @@ export function normalizeObjectMap(data, idField) {
   if (Array.isArray(data)) {
     return data.map((item) => normalizeRecord(item, idField));
   }
-  if (!data || typeof data !== 'object') return [];
+  if (!data || typeof data !== "object") return [];
 
   return Object.entries(data).map(([key, value]) => {
-    if (value && typeof value === 'object' && !Array.isArray(value)) {
-      return normalizeRecord({ ...value, [idField]: value[idField] || key }, idField);
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return normalizeRecord(
+        { ...value, [idField]: value[idField] || key },
+        idField,
+      );
     }
     return { [idField]: key, name: String(value) };
   });
@@ -18,17 +21,17 @@ function normalizeRecord(record, idField) {
 }
 
 export function normalizeDomainList(data) {
-  return normalizeObjectMap(data, 'domain').sort((a, b) =>
-    (a.domain || '').localeCompare(b.domain || '', undefined, {
-      sensitivity: 'base',
-    })
+  return normalizeObjectMap(data, "domain").sort((a, b) =>
+    (a.domain || "").localeCompare(b.domain || "", undefined, {
+      sensitivity: "base",
+    }),
   );
 }
 
 export function normalizeResellerList(data) {
-  return normalizeObjectMap(data, 'name').sort((a, b) =>
-    (a.name || '').localeCompare(b.name || '', undefined, {
-      sensitivity: 'base',
-    })
+  return normalizeObjectMap(data, "name").sort((a, b) =>
+    (a.name || "").localeCompare(b.name || "", undefined, {
+      sensitivity: "base",
+    }),
   );
 }
