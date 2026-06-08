@@ -8,34 +8,46 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup SSH key
-        run: |
-          echo "${{ secrets.DEPLOY_SSH_KEY_B64 }}" | base64 -d > deploy_key
-          chmod 600 deploy_key
-          ssh-keygen -y -f deploy_key > /dev/null
-
       - name: Deploy to Bluehost VPS
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key_path: deploy_key
-          port: 22
-          timeout: 60s
-          command_timeout: 15m
-          script: |
-            set -e
-            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
-            git config --global --add safe.directory /home/stratelegy/stratelegy
-            cd ${{ secrets.DEPLOY_PATH }}
-            git pull origin main
-            npm ci
-            npm run build
-            if pm2 describe stratelegy >/dev/null 2>&1; then
-              pm2 restart stratelegy --update-env
-            else
-              pm2 start server/index.js --name stratelegy
-            fi
-            pm2 save
-            sleep 5
-            curl -fsS http://127.0.0.1:3000/api/health
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
+        run: |
+          set -euo pipefail
+          KEY_FILE="${{ github.workspace }}/deploy_key"
+
+          if [ -z "${SSH_KEY_B64}" ]; then
+            echo "DEPLOY_SSH_KEY_B64 secret is not set."
+            echo "On the server run: base64 -w 0 /root/.ssh/github_actions_deploy"
+            echo "Then add that single line as DEPLOY_SSH_KEY_B64 in GitHub → Settings → Secrets → Actions."
+            exit 1
+          fi
+
+          echo "${SSH_KEY_B64}" | base64 -d > "${KEY_FILE}"
+          chmod 600 "${KEY_FILE}"
+          test -s "${KEY_FILE}"
+          ssh-keygen -y -f "${KEY_FILE}" > /dev/null
+          echo "SSH key ready ($(wc -c < "${KEY_FILE}") bytes)"
+
+          ssh -i "${KEY_FILE}" \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=accept-new \
+            "${DEPLOY_USER}@${DEPLOY_HOST}" << EOF
+          set -e
+          export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:\$PATH"
+          git config --global --add safe.directory ${DEPLOY_PATH}
+          cd ${DEPLOY_PATH}
+          git pull origin main
+          npm ci
+          npm run build
+          if pm2 describe stratelegy >/dev/null 2>&1; then
+            pm2 restart stratelegy --update-env
+          else
+            pm2 start server/index.js --name stratelegy
+          fi
+          pm2 save
+          sleep 5
+          curl -fsS http://127.0.0.1:3000/api/health
+          EOF
