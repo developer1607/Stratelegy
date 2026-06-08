@@ -8,19 +8,25 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Setup SSH key
+        run: |
+          echo "${{ secrets.DEPLOY_SSH_KEY_B64 }}" | base64 -d > deploy_key
+          chmod 600 deploy_key
+          ssh-keygen -y -f deploy_key > /dev/null
+
       - name: Deploy to Bluehost VPS
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          key_path: deploy_key
           port: 22
           timeout: 60s
           command_timeout: 15m
-          fingerprint: SHA256:HANmmSDkHgAVU8Nkn5TpC7CqEgVU0bkAMe8lU8GIhdY
           script: |
             set -e
             export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+            git config --global --add safe.directory /home/stratelegy/stratelegy
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             npm ci
@@ -31,4 +37,5 @@ jobs:
               pm2 start server/index.js --name stratelegy
             fi
             pm2 save
+            sleep 5
             curl -fsS http://127.0.0.1:3000/api/health
