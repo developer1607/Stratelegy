@@ -14,11 +14,21 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          timeout: 60s
+          command_timeout: 15m
+          fingerprint: SHA256:HANmmSDkHgAVU8Nkn5TpC7CqEgVU0bkAMe8lU8GIhdY
           script: |
             set -e
+            export PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
             cd ${{ secrets.DEPLOY_PATH }}
             git pull origin main
             npm ci
             npm run build
-            pm2 restart stratelegy --update-env
+            if pm2 describe stratelegy >/dev/null 2>&1; then
+              pm2 restart stratelegy --update-env
+            else
+              pm2 start server/index.js --name stratelegy
+            fi
+            pm2 save
             curl -fsS http://127.0.0.1:3000/api/health
