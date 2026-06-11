@@ -100,7 +100,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error('Unexpected error:', error);
-      setAuthError({ type: 'unknown', message: error.message || 'An unexpected error occurred' });
+      setAuthError({ type: 'unknown', message: error.message || 'Auth failed' });
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
     }

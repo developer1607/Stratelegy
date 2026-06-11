@@ -4,13 +4,8 @@ import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
+import FaxAtaActions from '@/components/pbx/endpoints/FaxAtaActions';
 import { matchSearch } from '@/lib/listFilters';
-
-const ataColumns = [
-  { key: 'mac_address', label: 'MAC address' },
-  { key: 'phone_number', label: 'Phone number' },
-  { key: 'deliver_offline', label: 'Deliver offline' },
-];
 
 export default function OfflineEndpoints() {
   return (
@@ -41,6 +36,20 @@ function OfflineContent({ domain }) {
       if (offlineFilter === 'no' && row.deliver_offline) return false;
       return true;
     });
+
+  const ataColumns = useMemo(
+    () => [
+      { key: 'mac_address', label: 'MAC address' },
+      { key: 'phone_number', label: 'Phone number' },
+      { key: 'deliver_offline', label: 'Deliver offline' },
+      {
+        key: 'actions',
+        label: 'Actions',
+        render: (row) => <FaxAtaActions macAddress={row.mac_address} />,
+      },
+    ],
+    []
+  );
 
   const offlineRows = useMemo(
     () => filterRows(data?.offlineFaxAtas || []),

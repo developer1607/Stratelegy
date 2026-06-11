@@ -11,7 +11,7 @@ export function requirePbxPermission(permissionKey) {
     if (permissionKey && perms[permissionKey]) return next();
     return res
       .status(403)
-      .json({ message: "You do not have permission to access PBX data" });
+      .json({ message: "No PBX access" });
   };
 }
 
@@ -26,6 +26,6 @@ export function requireAnyPbxPermission(...permissionKeys) {
     if (permissionKeys.some((key) => perms[key])) return next();
     return res
       .status(403)
-      .json({ message: "You do not have permission to access PBX data" });
+      .json({ message: "No PBX access" });
   };
 }

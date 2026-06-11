@@ -73,4 +73,33 @@ export const pbxApi = {
   troubleshooting: (domain) => pbxGet("/troubleshooting", { domain }),
   uiConfig: (domain, config_name) =>
     pbxGet("/ui-config", { domain, config_name }),
+  faxAtas: () => pbxGet("/fax-atas"),
+  faxAtaStatus: (macAddress) =>
+    pbxGet(`/fax-atas/${encodeURIComponent(macAddress)}/status`),
+  rebootFaxAta: (macAddress) =>
+    pbxRequest("POST", `/fax-atas/${encodeURIComponent(macAddress)}/reboot`),
+  ucSettings: (query) => pbxGet("/uc/settings", query),
+  ucConfig: (domain, subscriber, query) =>
+    pbxGet("/uc/config", { domain, subscriber, ...query }),
+  storeUcConfigRule: (body) => pbxRequest("POST", "/uc/config-rules", body),
+  getUcConfigRule: (ruleId) =>
+    pbxGet(`/uc/config-rules/${encodeURIComponent(ruleId)}`),
+  deleteUcConfigRule: (ruleId) =>
+    pbxRequest("DELETE", `/uc/config-rules/${encodeURIComponent(ruleId)}`),
+  entitlements: (query) => pbxGet("/entitlements", query),
+  storeEntitlement: (body) => pbxRequest("PUT", "/entitlements", body),
+  entitlementOfferings: () => pbxGet("/entitlements/offerings"),
+  entitlementOfferOptions: (query) => pbxGet("/entitlements/offeroptions", query),
+  entitlementOfferValue: (query) => pbxGet("/entitlements/offervalue", query),
+  deleteEntitlement: (id) =>
+    pbxRequest("DELETE", `/entitlements/${encodeURIComponent(id)}`),
+  getOutboundCnam: (phoneNumber) =>
+    pbxGet(`/cnam-outbound/${encodeURIComponent(phoneNumber)}`),
+  setOutboundCnam: (phoneNumber, body) =>
+    pbxRequest("PUT", `/cnam-outbound/${encodeURIComponent(phoneNumber)}`, body),
+  removeOutboundCnam: (phoneNumber) =>
+    pbxRequest("DELETE", `/cnam-outbound/${encodeURIComponent(phoneNumber)}`),
+  auditActions: () => pbxGet("/audit-logs/resource-actions"),
+  journals: (params) => pbxGet("/journals", params),
+  journalMeta: () => pbxGet("/journals/module-type-actions"),
 };

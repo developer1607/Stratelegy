@@ -81,7 +81,7 @@ export default function Settings() {
 
   const handleResetData = async () => {
     if (resetConfirmation !== 'RESET') {
-      showInfo('Please type RESET to confirm.');
+      showInfo('Type RESET to confirm.');
       return;
     }
 

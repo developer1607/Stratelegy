@@ -52,7 +52,7 @@ export default function Profile() {
     try {
       const { file_url } = await api.integrations.Core.UploadFile({ file });
       setFormData({ ...formData, profile_picture: file_url });
-      toast.success('Photo uploaded successfully');
+      toast.success('Photo uploaded');
     } catch {
       toast.error('Failed to upload photo');
     } finally {
@@ -73,7 +73,7 @@ export default function Profile() {
       const updatedUser = await api.auth.me();
       setUser(updatedUser);
       await refreshAuth();
-      toast.success('Profile updated successfully');
+      toast.success('Profile updated');
     } catch (error) {
       console.error('Update error:', error);
       toast.error('Failed to update profile');
@@ -108,7 +108,7 @@ export default function Profile() {
     try {
       await api.auth.changePassword({ current_password, new_password });
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
-      toast.success('Password updated successfully');
+      toast.success('Password updated');
     } catch (error) {
       toast.error(error.message || 'Failed to update password');
     } finally {

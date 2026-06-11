@@ -133,8 +133,7 @@ export default function PBXDomains() {
             <Globe className="h-10 w-10 text-gray-300 mx-auto mb-3" />
             <p className="font-medium text-gray-900">No PBX domains found</p>
             <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-              No domains were found for this account. Contact your administrator if you expect
-              domains to appear here.
+              No domains on this account.
             </p>
           </CardContent>
         </Card>

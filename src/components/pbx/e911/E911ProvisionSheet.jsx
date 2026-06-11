@@ -128,7 +128,7 @@ export default function E911ProvisionSheet({
 
   const handleValidate = () => {
     if (!canValidate) {
-      toast.error('Fill in street, city, state, ZIP, and country before validating.');
+      toast.error('Enter a full address first.');
       return;
     }
     setValidationSummary(null);

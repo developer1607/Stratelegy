@@ -98,7 +98,7 @@ export default function SupportTickets() {
   const createMutation = useMutation({
     /** @param {Record<string, unknown>} data */
     mutationFn: async (data) => {
-      if (!currentUser) throw new Error('Please log in to create tickets');
+      if (!currentUser) throw new Error('Sign in required');
       const payload = normalizeTicketPayload({
         ...data,
         requester: data.requester || currentUser.full_name || currentUser.email,

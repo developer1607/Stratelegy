@@ -47,12 +47,12 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
       } else {
         showError(
           null,
-          'Failed to extract contact information from the business card. Please try again or enter manually.'
+          'Card not readable. Enter details manually.'
         );
       }
     } catch (error) {
       console.error('Error scanning business card:', error);
-      showError(null, 'An error occurred while scanning the business card. Please try again.');
+      showError(null, 'Scan failed.');
     } finally {
       setIsScanning(false);
     }

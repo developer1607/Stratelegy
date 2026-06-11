@@ -59,7 +59,7 @@ export async function skyswitchRequest(
   } catch (err) {
     if (err?.name === "TimeoutError" || err?.name === "AbortError") {
       const timeoutErr = new Error(
-        "Phone system request timed out. Please try again.",
+        "Phone system request timed out.",
       );
       timeoutErr.status = 504;
       timeoutErr.expose = true;

@@ -70,7 +70,7 @@ function ReportsContent() {
             { key: 'value', label: 'Type key' },
           ]}
           rows={reportRows}
-          emptyMessage="No E911 reports are available for this account."
+          emptyMessage="No E911 reports for this account."
         />
       </section>
       <PbxCompletedExports title="Completed report exports" />

@@ -9,15 +9,15 @@ import {
 } from '../services/skyswitch/apiRegistry.js';
 import {
   getSkySwitchScopeStatus,
-  mapSkySwitchScopeError,
+  scopeErrBody,
 } from '../services/skyswitch/scopes.js';
 import { config } from '../config.js';
 import { requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
 
-function handleSkySwitchScopeError(err, feature, res, next) {
-  const mapped = mapSkySwitchScopeError(err, feature);
+function scopeErr(err, feature, res, next) {
+  const mapped = scopeErrBody(err, feature);
   if (mapped) return res.status(mapped.status).json(mapped.body);
   return next(err);
 }
@@ -351,6 +351,56 @@ router.get(
 );
 
 router.get(
+  '/audit-logs/resource-actions',
+  requirePbxPermission('can_view_call_logs_page'),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.listAuditActions());
+    } catch (err) {
+      return scopeErr(err, 'log', res, next);
+    }
+  }
+);
+
+router.get(
+  '/journals/module-type-actions',
+  requirePbxPermission('can_view_call_logs_page'),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.listJournalTypes());
+    } catch (err) {
+      return scopeErr(err, 'log', res, next);
+    }
+  }
+);
+
+router.get(
+  '/journals',
+  requirePbxPermission('can_view_call_logs_page'),
+  async (req, res, next) => {
+    try {
+      const end = req.query.end_date || new Date().toISOString().slice(0, 10);
+      const start =
+        req.query.start_date || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+      res.json(
+        await pbx.listJournals({
+          startDate: start,
+          endDate: end,
+          page: Number(req.query.page) || 1,
+          perPage: Number(req.query.per_page) || 25,
+          module: req.query.module,
+          type: req.query.type,
+          action: req.query.action,
+          identifier: req.query.identifier,
+        })
+      );
+    } catch (err) {
+      return scopeErr(err, 'log', res, next);
+    }
+  }
+);
+
+router.get(
   '/audit-logs',
   requirePbxPermission('can_view_call_logs_page'),
   async (req, res, next) => {
@@ -366,7 +416,7 @@ router.get(
         })
       );
     } catch (err) {
-      return handleSkySwitchScopeError(err, 'log', res, next);
+      return scopeErr(err, 'log', res, next);
     }
   }
 );
@@ -378,7 +428,7 @@ router.get(
     try {
       res.json(await pbx.listReportTypes());
     } catch (err) {
-      return handleSkySwitchScopeError(err, 'report', res, next);
+      return scopeErr(err, 'report', res, next);
     }
   }
 );
@@ -392,7 +442,7 @@ router.get('/reports', requirePbxPermission('can_view_e911_reports'), async (req
       })
     );
   } catch (err) {
-    return handleSkySwitchScopeError(err, 'report', res, next);
+    return scopeErr(err, 'report', res, next);
   }
 });
 
@@ -407,7 +457,7 @@ router.get(
     try {
       res.json(await pbx.getReportFileDownload(req.params.fileId));
     } catch (err) {
-      return handleSkySwitchScopeError(err, 'report', res, next);
+      return scopeErr(err, 'report', res, next);
     }
   }
 );
@@ -419,7 +469,7 @@ router.get(
     try {
       res.json(await pbx.getReport(req.params.reportId));
     } catch (err) {
-      return handleSkySwitchScopeError(err, 'report', res, next);
+      return scopeErr(err, 'report', res, next);
     }
   }
 );
@@ -432,7 +482,7 @@ router.delete(
       await pbx.cancelReport(req.params.reportId);
       res.status(204).send();
     } catch (err) {
-      return handleSkySwitchScopeError(err, 'report', res, next);
+      return scopeErr(err, 'report', res, next);
     }
   }
 );
@@ -563,6 +613,214 @@ router.delete(
   async (req, res, next) => {
     try {
       res.json(await pbx.unprovisionHubUser(req.params.userId));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/fax-atas',
+  requirePbxPermission('can_view_offline_endpoints'),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.listFaxAtas());
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/fax-atas/:macAddress/status',
+  requirePbxPermission('can_view_offline_endpoints'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.getFaxAtaStatus(req.params.macAddress));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/fax-atas/:macAddress/reboot',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.rebootFaxAta(req.params.macAddress));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/uc/settings',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.listUcSettings(req.query));
+    } catch (err) {
+      return scopeErr(err, 'uc_config', res, next);
+    }
+  }
+);
+
+router.get(
+  '/uc/config',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      const { domain, subscriber, ...rest } = req.query;
+      if (!subscriber) {
+        return res.status(400).json({ message: 'subscriber query parameter is required' });
+      }
+      res.json(await pbx.listUcConfig(domain, subscriber, rest));
+    } catch (err) {
+      return scopeErr(err, 'uc_config', res, next);
+    }
+  }
+);
+
+router.post(
+  '/uc/config-rules',
+  requirePbxPermission('can_manage_pbx_routing'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.storeUcConfigRule(req.body));
+    } catch (err) {
+      return scopeErr(err, 'uc_config', res, next);
+    }
+  }
+);
+
+router.get(
+  '/uc/config-rules/:ruleId',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.getUcConfigRule(req.params.ruleId));
+    } catch (err) {
+      return scopeErr(err, 'uc_config', res, next);
+    }
+  }
+);
+
+router.delete(
+  '/uc/config-rules/:ruleId',
+  requirePbxPermission('can_manage_pbx_routing'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.deleteUcConfigRule(req.params.ruleId));
+    } catch (err) {
+      return scopeErr(err, 'uc_config', res, next);
+    }
+  }
+);
+
+router.get(
+  '/entitlements/offerings',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.listEntitlementOfferings());
+    } catch (err) {
+      return scopeErr(err, 'entitlement', res, next);
+    }
+  }
+);
+
+router.get(
+  '/entitlements/offeroptions',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.listEntitlementOfferOptions(req.query));
+    } catch (err) {
+      return scopeErr(err, 'entitlement', res, next);
+    }
+  }
+);
+
+router.get(
+  '/entitlements/offervalue',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.getEntitlementOfferValue(req.query));
+    } catch (err) {
+      return scopeErr(err, 'entitlement', res, next);
+    }
+  }
+);
+
+router.get(
+  '/entitlements',
+  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.listEntitlements(req.query));
+    } catch (err) {
+      return scopeErr(err, 'entitlement', res, next);
+    }
+  }
+);
+
+router.put(
+  '/entitlements',
+  requirePbxPermission('can_manage_pbx_routing'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.storeEntitlement(req.body));
+    } catch (err) {
+      return scopeErr(err, 'entitlement', res, next);
+    }
+  }
+);
+
+router.delete(
+  '/entitlements/:entitlementId',
+  requirePbxPermission('can_manage_pbx_routing'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.deleteEntitlement(req.params.entitlementId));
+    } catch (err) {
+      return scopeErr(err, 'entitlement', res, next);
+    }
+  }
+);
+
+router.get(
+  '/cnam-outbound/:phoneNumber(\\d{11})',
+  requirePbxPermission('can_view_phone_numbers_page'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.getOutboundCnam(req.params.phoneNumber));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/cnam-outbound/:phoneNumber(\\d{11})',
+  requirePbxPermission('can_manage_pbx_routing'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.setOutboundCnam(req.params.phoneNumber, req.body));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/cnam-outbound/:phoneNumber(\\d{11})',
+  requirePbxPermission('can_manage_pbx_routing'),
+  async (req, res, next) => {
+    try {
+      res.json(await pbx.removeOutboundCnam(req.params.phoneNumber));
     } catch (err) {
       next(err);
     }

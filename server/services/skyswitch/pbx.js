@@ -16,7 +16,7 @@ export async function getPbxStatus() {
     return {
       configured: true,
       connected: false,
-      message: 'Unable to connect to the phone system',
+      message: 'Phone system unreachable',
     };
   }
 }
@@ -337,4 +337,120 @@ export async function provisionHubUser(body) {
 
 export async function unprovisionHubUser(userId) {
   return skyswitchRequest('DELETE', accountPath(`/messaging/hubusers/${userId}`));
+}
+
+// ── Fax ATA ──
+
+export async function getFaxAtaStatus(macAddress) {
+  return skyswitchRequest('GET', accountPath(`/fax-atas/${encodeURIComponent(macAddress)}/status`));
+}
+
+export async function rebootFaxAta(macAddress) {
+  return skyswitchRequest('POST', accountPath(`/fax-atas/${encodeURIComponent(macAddress)}/reboot`));
+}
+
+// ── UC config ──
+
+export async function listUcConfig(domain, subscriber, query = {}) {
+  const resolved = await resolveDomain(domain);
+  if (!resolved || !subscriber) {
+    const err = new Error('domain and subscriber are required');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+  return skyswitchRequest('GET', accountPath('/uc/config'), {
+    query: { domain: resolved, subscriber, ...query },
+  });
+}
+
+export async function listUcSettings(query = {}) {
+  return skyswitchRequest('GET', '/uc/settings', { query });
+}
+
+export async function storeUcConfigRule(body) {
+  return skyswitchRequest('POST', accountPath('/uc/config-rules'), { body });
+}
+
+export async function getUcConfigRule(ruleId) {
+  return skyswitchRequest('GET', accountPath(`/uc/config-rules/${ruleId}`));
+}
+
+export async function deleteUcConfigRule(ruleId) {
+  return skyswitchRequest('DELETE', accountPath(`/uc/config-rules/${ruleId}`));
+}
+
+// ── Entitlements ──
+
+export async function listEntitlements(query = {}) {
+  const resolved = query.domain ? await resolveDomain(query.domain) : query.domain;
+  return skyswitchRequest('GET', accountPath('/entitlements'), {
+    query: { ...query, domain: resolved || query.domain },
+  });
+}
+
+export async function storeEntitlement(body) {
+  return skyswitchRequest('PUT', accountPath('/entitlements'), { body });
+}
+
+export async function listEntitlementOfferings() {
+  return skyswitchRequest('GET', accountPath('/entitlements/offerings'));
+}
+
+export async function listEntitlementOfferOptions(query = {}) {
+  return skyswitchRequest('GET', accountPath('/entitlements/offeroptions'), { query });
+}
+
+export async function getEntitlementOfferValue(query) {
+  return skyswitchRequest('GET', accountPath('/entitlements/offervalue'), { query });
+}
+
+export async function deleteEntitlement(entitlementId) {
+  return skyswitchRequest('DELETE', accountPath(`/entitlements/${entitlementId}`));
+}
+
+// ── Outbound CNAM ──
+
+export async function getOutboundCnam(phoneNumber) {
+  return skyswitchRequest(
+    'GET',
+    accountPath(`/phone-numbers/${phoneNumber}/cnam-outbound/enum`)
+  );
+}
+
+export async function setOutboundCnam(phoneNumber, body) {
+  return skyswitchRequest(
+    'PUT',
+    accountPath(`/phone-numbers/${phoneNumber}/cnam-outbound/neustar`),
+    { body }
+  );
+}
+
+export async function removeOutboundCnam(phoneNumber) {
+  return skyswitchRequest(
+    'DELETE',
+    accountPath(`/phone-numbers/${phoneNumber}/cnam-outbound/neustar`)
+  );
+}
+
+// ── Audit logs & journals ──
+
+export async function listAuditActions() {
+  return skyswitchRequest('GET', accountPath('/audit-logs/resource-actions'));
+}
+
+export async function listJournals({ startDate, endDate, page = 1, perPage = 25, ...rest } = {}) {
+  return skyswitchRequest('GET', accountPath('/journals'), {
+    query: {
+      start_date: startDate,
+      end_date: endDate,
+      page,
+      per_page: perPage,
+      ...rest,
+    },
+  });
+}
+
+export async function listJournalTypes() {
+  return skyswitchRequest('GET', accountPath('/journals/module-type-actions'));
 }

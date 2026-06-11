@@ -127,22 +127,22 @@ export default function NotificationBell({ user }) {
   const markReadMutation = useMutation({
     mutationFn: ({ id, read }) => api.notifications.markRead(id, read),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e.message || 'Failed to update notification'),
+    onError: (e) => toast.error(e.message || 'Update failed'),
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: () => api.notifications.markAllRead(),
     onSuccess: () => {
       invalidate();
-      toast.success('All notifications marked as read');
+      toast.success('All read');
     },
-    onError: (e) => toast.error(e.message || 'Failed to mark all as read'),
+    onError: (e) => toast.error(e.message || 'Update failed'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.notifications.delete(id),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e.message || 'Failed to delete notification'),
+    onError: (e) => toast.error(e.message || 'Delete failed'),
   });
 
   const deleteAllReadMutation = useMutation({
@@ -150,10 +150,10 @@ export default function NotificationBell({ user }) {
     onSuccess: (result) => {
       invalidate();
       if (result.deleted > 0) {
-        toast.success(`Cleared ${result.deleted} read notification(s)`);
+        toast.success(`Cleared ${result.deleted}`);
       }
     },
-    onError: (e) => toast.error(e.message || 'Failed to clear read notifications'),
+    onError: (e) => toast.error(e.message || 'Clear failed'),
   });
 
   const handleOpen = async (notification) => {

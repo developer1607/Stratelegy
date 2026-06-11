@@ -76,7 +76,7 @@ export function formatHttpError(err) {
   }
 
   if (isClientError) {
-    return { status, message: "Request could not be completed" };
+    return { status, message: "Request failed" };
   }
 
   return { status: 500, message: "Internal server error" };

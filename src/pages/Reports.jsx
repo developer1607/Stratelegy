@@ -268,7 +268,7 @@ export default function Reports() {
       pdf.save(`crm_reports_${new Date().toISOString().split('T')[0]}.pdf`);
     } catch (error) {
       console.error('PDF export failed:', error);
-      showError(null, 'Failed to export PDF. Please try again.');
+      showError(null, 'PDF export failed.');
     }
   };
 

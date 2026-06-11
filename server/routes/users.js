@@ -4,6 +4,7 @@ import {
   createUser,
   inviteUser,
   getUserById,
+  deleteUser,
   setUserPasswordAdmin,
   updateUserSupportRouting,
 } from '../services/users.js';
@@ -146,6 +147,15 @@ router.patch('/:id/permissions', requireAdmin, async (req, res, next) => {
       useCustomPermissions: true,
     });
     res.json({ permission });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.delete('/:id', requireAdmin, async (req, res, next) => {
+  try {
+    const result = await deleteUser(req.params.id, { deletedByUserId: req.user.id });
+    res.json({ ...result, message: 'User deleted' });
   } catch (e) {
     next(e);
   }

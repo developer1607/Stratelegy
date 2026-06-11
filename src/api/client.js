@@ -233,6 +233,7 @@ export const api = {
       }),
     setPassword: (userId, password) =>
       request("PATCH", `/api/users/${userId}/password`, { password }),
+    delete: (userId) => request("DELETE", `/api/users/${userId}`),
   },
 
   roles: {

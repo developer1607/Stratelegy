@@ -81,7 +81,7 @@ const authRateLimiter = rateLimit({
   max: config.isProduction ? 20 : 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many login attempts. Please try again later." },
+  message: { message: "Too many login attempts. Try again later." },
 });
 
 const inviteRateLimiter = rateLimit({
@@ -90,7 +90,7 @@ const inviteRateLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    message: "Too many registration attempts. Please try again later.",
+    message: "Too many registration attempts. Try again later.",
   },
 });
 
@@ -99,7 +99,7 @@ const apiRateLimiter = rateLimit({
   max: config.isProduction ? 600 : 3000,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { message: "Too many requests. Please try again later." },
+  message: { message: "Too many requests. Try again later." },
 });
 
 app.use("/api", (req, res, next) => {

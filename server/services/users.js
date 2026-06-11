@@ -318,3 +318,37 @@ export async function registerFromInvite({ token, email, password, fullName }) {
 
   return getUserById(id);
 }
+
+/** Admin: permanently delete a portal user and related permission records. */
+export async function deleteUser(userId, { deletedByUserId } = {}) {
+  const user = await getUserById(userId);
+  if (!user) {
+    const err = new Error('User not found');
+    err.status = 404;
+    throw err;
+  }
+
+  if (deletedByUserId && userId === deletedByUserId) {
+    const err = new Error('You cannot delete your own account');
+    err.status = 400;
+    throw err;
+  }
+
+  if (user.role === 'admin') {
+    const row = await queryOne(
+      "SELECT COUNT(*) AS c FROM users WHERE role = 'admin' AND is_active = 1"
+    );
+    if (Number(row?.c) <= 1) {
+      const err = new Error('Cannot delete the last administrator');
+      err.status = 400;
+      throw err;
+    }
+  }
+
+  await execute('DELETE FROM user_permissions WHERE user_id = ?', [userId]);
+  await execute('DELETE FROM user_notifications WHERE user_id = ?', [userId]);
+  await execute('DELETE FROM invites WHERE email = ?', [user.email.toLowerCase()]);
+  await execute('DELETE FROM users WHERE id = ?', [userId]);
+
+  return { id: userId, email: user.email };
+}

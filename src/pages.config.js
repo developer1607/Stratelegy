@@ -26,13 +26,13 @@ import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 // import SIPALG from "./pages/SIPALG";
-import SIPTrunks from "./pages/SIPTrunks";
-// import SupportDashboard from "./pages/SupportDashboard";
-// import SupportTicketDetail from "./pages/SupportTicketDetail";
-// import SupportTickets from "./pages/SupportTickets";
+// import SIPTrunks from "./pages/SIPTrunks";
+import SupportDashboard from "./pages/SupportDashboard";
+import SupportTicketDetail from "./pages/SupportTicketDetail";
+import SupportTickets from "./pages/SupportTickets";
 import Troubleshooting from "./pages/Troubleshooting";
 import UserManagement from "./pages/UserManagement";
-// import Voicemail from "./pages/Voicemail";
+import Voicemail from "./pages/Voicemail";
 import __Layout from "./Layout.jsx";
 
 export const PAGES = {
@@ -60,13 +60,13 @@ export const PAGES = {
   Reports,
   Settings,
   // SIPALG,
-  SIPTrunks,
-  // SupportDashboard,
-  // SupportTicketDetail,
-  // SupportTickets,
+  // SIPTrunks,
+  SupportDashboard,
+  SupportTicketDetail,
+  SupportTickets,
   Troubleshooting,
   UserManagement,
-  // Voicemail,
+  Voicemail,
 };
 
 export const pagesConfig = {

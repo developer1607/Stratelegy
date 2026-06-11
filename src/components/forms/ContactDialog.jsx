@@ -64,7 +64,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      showError(null, 'Please upload an image file (JPG or PNG).');
+      showError(null, 'Use JPG or PNG.');
       return;
     }
 
@@ -74,7 +74,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
       setFormData({ ...formData, photo_url: file_url });
     } catch (error) {
       console.error('Failed to upload photo:', error);
-      showError(null, 'Failed to upload photo. Please try again.');
+      showError(null, 'Upload failed.');
     } finally {
       setUploadingPhoto(false);
     }

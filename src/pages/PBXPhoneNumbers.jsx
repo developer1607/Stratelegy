@@ -4,6 +4,8 @@ import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
+import CnamOutboundSheet from '@/components/pbx/phone-numbers/CnamOutboundSheet';
+import { Button } from '@/components/ui/button';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
 
 export default function PBXPhoneNumbers() {
@@ -21,6 +23,7 @@ function PhoneNumbersContent({ domain }) {
   const [search, setSearch] = useState('');
   const [scope, setScope] = useState('domain');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [cnamPhone, setCnamPhone] = useState(null);
 
   const {
     data = [],
@@ -56,6 +59,28 @@ function PhoneNumbersContent({ domain }) {
   }, [data, search, statusFilter]);
 
   const { rows: filteredRows, statusOptions } = rows;
+
+  const columns = useMemo(
+    () => [
+      { key: 'phone_number', label: 'Phone number' },
+      { key: 'description', label: 'Description' },
+      { key: 'status', label: 'Status' },
+      {
+        key: 'actions',
+        label: 'CNAM',
+        render: (row) => {
+          const phone = String(row.phone_number || '').replace(/\D/g, '');
+          if (phone.length !== 11) return '—';
+          return (
+            <Button type="button" variant="outline" size="sm" onClick={() => setCnamPhone(phone)}>
+              View CNAM
+            </Button>
+          );
+        },
+      },
+    ],
+    []
+  );
 
   if (scope !== 'inventory' && !domain) return <PbxLoading />;
   if (isLoading) return <PbxLoading />;
@@ -95,17 +120,19 @@ function PhoneNumbersContent({ domain }) {
       </PbxListToolbar>
 
       <PbxDataTable
-        columns={[
-          { key: 'phone_number', label: 'Phone number' },
-          { key: 'description', label: 'Description' },
-          { key: 'status', label: 'Status' },
-        ]}
+        columns={columns}
         rows={filteredRows}
         emptyMessage={
           scope === 'inventory'
             ? 'No inventory phone numbers found.'
             : 'No phone numbers for this domain.'
         }
+      />
+
+      <CnamOutboundSheet
+        phoneNumber={cnamPhone}
+        open={!!cnamPhone}
+        onOpenChange={(open) => !open && setCnamPhone(null)}
       />
     </div>
   );

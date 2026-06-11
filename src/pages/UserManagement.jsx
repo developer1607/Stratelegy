@@ -174,7 +174,7 @@ export default function UserManagement({ embedded = false }) {
         ...prev,
         [userId]: { password: '', confirmPassword: '', error: '' },
       }));
-      showSuccess('Password updated successfully.');
+      showSuccess('Password updated.');
     },
     onError: (error, { userId }) => {
       setResetPasswordByUser((prev) => ({
@@ -226,6 +226,17 @@ export default function UserManagement({ embedded = false }) {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     },
     onError: (error) => showError(error, 'Failed to update ticket routing'),
+  });
+
+  const deleteUserMutation = useMutation({
+    mutationFn: (userId) => api.users.delete(userId),
+    onSuccess: (_data, userId) => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['userPermissions'] });
+      if (expandedUser === userId) setExpandedUser(null);
+      showSuccess('User deleted.');
+    },
+    onError: (error) => showError(error, 'Failed to delete user'),
   });
 
   const getResetPasswordForm = (userId) =>
@@ -444,7 +455,7 @@ export default function UserManagement({ embedded = false }) {
     return (
       <div className="flex flex-col items-center justify-center h-full py-32 gap-4 px-4 text-center">
         <ShieldAlert className="w-12 h-12 text-destructive" />
-        <h2 className="text-xl font-semibold">Could not load user management</h2>
+        <h2 className="text-xl font-semibold">Failed to load user management</h2>
         <p className="text-muted-foreground max-w-md">
           {loadError.message || 'An API request failed.'}
         </p>
@@ -978,6 +989,38 @@ export default function UserManagement({ embedded = false }) {
                           })}
                         </div>
                       </>
+                    )}
+
+                    {isAdmin && currentUser?.id && user.id !== currentUser.id && (
+                      <div className="p-4 rounded-lg border border-red-200 bg-red-50/50 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Trash2 className="w-4 h-4 text-red-600" />
+                          <span className="font-medium text-sm text-gray-900">Delete user</span>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                          Permanently remove {user.full_name || user.email} from the portal. This
+                          cannot be undone.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          disabled={deleteUserMutation.isPending}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const label = user.full_name || user.email;
+                            if (
+                              window.confirm(
+                                `Delete user "${label}"? They will lose access immediately.`
+                              )
+                            ) {
+                              deleteUserMutation.mutate(user.id);
+                            }
+                          }}
+                        >
+                          {deleteUserMutation.isPending ? 'Deleting...' : 'Delete user'}
+                        </Button>
+                      </div>
                     )}
                   </div>
                 )}

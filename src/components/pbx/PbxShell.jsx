@@ -6,7 +6,7 @@ import { createPageUrl } from '@/utils';
 import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import { getUserFacingErrorMessage } from '@/lib/errors';
+import { displayError } from '@/lib/errors';
 
 export function PbxStatusBadge() {
   const { data } = useQuery({
@@ -50,7 +50,7 @@ export default function PbxShell({ title, description, children, actions, requir
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
           <p className="font-medium">Failed to load PBX domains</p>
           <p className="text-sm mt-1">
-            {getUserFacingErrorMessage(error, 'Could not load PBX domains.')}
+            {displayError(error, 'Load failed.')}
           </p>
         </div>
       )}
@@ -74,7 +74,7 @@ export function PbxLoading() {
   return (
     <div className="flex items-center justify-center py-16 text-gray-500">
       <Loader2 className="h-6 w-6 animate-spin mr-2" />
-      Loading SkySwitch data…
+      Loading…
     </div>
   );
 }
@@ -85,17 +85,19 @@ export function PbxError({ error }) {
     <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
       <p className="font-medium">Request failed</p>
       <p className="text-sm mt-1">
-        {getUserFacingErrorMessage(error, 'Could not load phone system data.')}
+        {displayError(error, 'Load failed.')}
       </p>
       {error.data?.code === 'skyswitch_log_scope_required' && (
-        <p className="text-sm mt-2">
-          Log access is not enabled for this account. Contact your administrator.
-        </p>
+        <p className="text-sm mt-2">Call logs unavailable.</p>
       )}
       {error.data?.code === 'skyswitch_report_scope_required' && (
-        <p className="text-sm mt-2">
-          Report access is not enabled for this account. Contact your administrator.
-        </p>
+        <p className="text-sm mt-2">Reports unavailable.</p>
+      )}
+      {error.data?.code === 'skyswitch_uc_config_scope_required' && (
+        <p className="text-sm mt-2">UC config unavailable.</p>
+      )}
+      {error.data?.code === 'skyswitch_entitlement_scope_required' && (
+        <p className="text-sm mt-2">Entitlements unavailable.</p>
       )}
     </div>
   );

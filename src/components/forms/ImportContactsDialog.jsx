@@ -82,7 +82,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
           setResult({
             success: true,
             count: validContacts.length,
-            message: `Successfully imported ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}`,
+            message: `Imported ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}`,
           });
 
           setTimeout(() => {
@@ -94,7 +94,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
         } else {
           setResult({
             success: false,
-            message: 'No valid contacts found. Make sure your file has name and email columns.',
+            message: 'File needs name and email columns.',
           });
         }
       } else {
@@ -107,7 +107,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
       setExtracting(false);
       setResult({
         success: false,
-        message: 'Failed to import contacts. Please try again.',
+        message: 'Import failed.',
       });
     }
   };

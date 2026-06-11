@@ -19,7 +19,7 @@ export function isSkySwitchNetworkError(err) {
 
 export function toSkySwitchNetworkError() {
   const err = new Error(
-    'Unable to reach the phone system. Check your network connection or SkySwitch API settings.'
+    'Phone system unreachable.'
   );
   err.status = 503;
   err.expose = true;

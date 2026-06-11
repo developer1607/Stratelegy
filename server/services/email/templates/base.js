@@ -49,8 +49,8 @@ export function renderLayout({ title, preheader, bodyHtml, ctaUrl, ctaLabel }) {
           </tr>
           <tr>
             <td style="padding:16px 28px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:12px;color:#64748b;">
-              This message was sent by ${appName}.
-              ${config.supportEmail ? ` Need help? Contact <a href="mailto:${escapeHtml(config.supportEmail)}">${escapeHtml(config.supportEmail)}</a>.` : ''}
+              This message was sent from ${appName}.
+              ${config.supportEmail ? ` Questions: <a href="mailto:${escapeHtml(config.supportEmail)}">${escapeHtml(config.supportEmail)}</a>` : ''}
             </td>
           </tr>
         </table>

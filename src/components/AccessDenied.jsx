@@ -13,12 +13,11 @@ export default function AccessDenied({ message = '' }) {
       <ShieldAlert className="w-14 h-14 text-muted-foreground" />
       <h2 className="text-xl font-semibold text-gray-900">Access restricted</h2>
       <p className="text-muted-foreground max-w-md">
-        {message ||
-          'You do not have permission to view this page. Contact your administrator to request access.'}
+        {message || "You don't have access to this page."}
       </p>
       {defaultHomePage && (
         <Button asChild>
-          <Link to={createPageUrl(defaultHomePage)}>Go to your dashboard</Link>
+          <Link to={createPageUrl(defaultHomePage)}>Dashboard</Link>
         </Button>
       )}
     </div>

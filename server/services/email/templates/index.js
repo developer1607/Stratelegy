@@ -11,57 +11,52 @@ function loginUrl() {
 
 export const EMAIL_TEMPLATES = {
   portal_invite: {
-    subject: ({ appName }) => `You're invited to ${appName}`,
+    subject: ({ appName }) => `Invite — ${appName}`,
     render: ({ inviteeEmail, inviteUrl, invitedByName, role }) => ({
-      subject: `You're invited to ${config.appName}`,
+      subject: `Invite — ${config.appName}`,
       text: [
-        `You have been invited to join ${config.appName}.`,
-        invitedByName ? `Invited by: ${invitedByName}` : '',
+        `${config.appName} portal invite.`,
+        invitedByName ? `From: ${invitedByName}` : '',
         `Role: ${role || 'user'}`,
-        `Accept your invite: ${inviteUrl}`,
+        inviteUrl,
       ]
         .filter(Boolean)
         .join('\n'),
       html: renderLayout({
-        title: 'Portal invitation',
-        preheader: `Join ${config.appName} as a portal user`,
+        title: 'Portal invite',
+        preheader: `${config.appName} invite`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Hello,</p>
-          <p style="margin:0 0 16px;">You have been invited to create your portal account for <strong>${escapeHtml(config.appName)}</strong>.</p>
+          <p style="margin:0 0 16px;">Portal invite for <strong>${escapeHtml(config.appName)}</strong>.</p>
           ${infoRow('Email', inviteeEmail)}
-          ${infoRow('Invited by', invitedByName)}
+          ${infoRow('From', invitedByName)}
           ${infoRow('Role', role || 'user')}
-          <p style="margin:16px 0 0;">Click below to set your password and sign in.</p>
         `,
         ctaUrl: inviteUrl,
-        ctaLabel: 'Accept invitation',
+        ctaLabel: 'Set password',
       }),
     }),
   },
 
   portal_welcome: {
-    subject: () => `Your ${config.appName} account is ready`,
+    subject: () => `${config.appName} account`,
     render: ({ fullName, email, loginUrl: url, createdByName }) => ({
-      subject: `Your ${config.appName} account is ready`,
+      subject: `${config.appName} account`,
       text: [
-        `Hello ${fullName || email},`,
-        `An administrator created a portal account for you on ${config.appName}.`,
+        `${fullName || email},`,
+        `Portal account on ${config.appName}.`,
         createdByName ? `Created by: ${createdByName}` : '',
         `Sign in: ${url || loginUrl()}`,
         `Email: ${email}`,
-        'Use the password provided by your administrator.',
       ]
         .filter(Boolean)
         .join('\n'),
       html: renderLayout({
-        title: 'Your account is ready',
-        preheader: `Sign in to ${config.appName}`,
+        title: 'Account ready',
+        preheader: `Sign in — ${config.appName}`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Hello ${escapeHtml(fullName || email)},</p>
-          <p style="margin:0 0 16px;">An administrator created a portal account for you.</p>
+          <p style="margin:0 0 16px;">${escapeHtml(fullName || email)}, your portal account is ready.</p>
           ${infoRow('Email', email)}
           ${infoRow('Created by', createdByName)}
-          <p style="margin:16px 0 0;">Use the password your administrator shared with you to sign in.</p>
         `,
         ctaUrl: url || loginUrl(),
         ctaLabel: 'Sign in',
@@ -70,23 +65,23 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_created_requester: {
-    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber || 'new'} received: ${title}`,
+    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber || 'new'}: ${title}`,
     render: ({ ticket, requesterName }) => ({
-      subject: `Ticket #${ticket.ticket_number || 'new'} received: ${ticket.title}`,
+      subject: `Ticket #${ticket.ticket_number || 'new'}: ${ticket.title}`,
       text: [
-        `Hello ${requesterName || 'there'},`,
-        'We received your support request.',
-        `Ticket: #${ticket.ticket_number || 'pending'} — ${ticket.title}`,
+        requesterName ? `${requesterName},` : '',
+        `Ticket #${ticket.ticket_number || 'pending'} — ${ticket.title}`,
         `Status: ${ticket.status}`,
         `Priority: ${ticket.priority}`,
-        `View ticket: ${ticketUrl(ticket.id)}`,
-      ].join('\n'),
+        ticketUrl(ticket.id),
+      ]
+        .filter(Boolean)
+        .join('\n'),
       html: renderLayout({
-        title: 'Support request received',
-        preheader: `Ticket #${ticket.ticket_number || 'new'} — ${ticket.title}`,
+        title: 'Ticket opened',
+        preheader: `#${ticket.ticket_number || 'new'} — ${ticket.title}`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Hello ${escapeHtml(requesterName || 'there')},</p>
-          <p style="margin:0 0 16px;">We received your support request and our team will review it shortly.</p>
+          <p style="margin:0 0 16px;">Ticket logged.</p>
           ${infoRow('Ticket', `#${ticket.ticket_number || 'pending'}`)}
           ${infoRow('Subject', ticket.title)}
           ${infoRow('Status', ticket.status)}
@@ -100,22 +95,20 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_assigned: {
-    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber} assigned to you: ${title}`,
+    subject: ({ ticketNumber, title }) => `Assigned #${ticketNumber}: ${title}`,
     render: ({ ticket, assigneeName }) => ({
-      subject: `Ticket #${ticket.ticket_number} assigned: ${ticket.title}`,
+      subject: `Assigned #${ticket.ticket_number}: ${ticket.title}`,
       text: [
-        `Hello ${assigneeName || ticket.assigned_to},`,
-        `Ticket #${ticket.ticket_number} has been assigned to you.`,
-        `Subject: ${ticket.title}`,
+        `${assigneeName || ticket.assigned_to},`,
+        `#${ticket.ticket_number} — ${ticket.title}`,
         `Priority: ${ticket.priority}`,
-        `View ticket: ${ticketUrl(ticket.id)}`,
+        ticketUrl(ticket.id),
       ].join('\n'),
       html: renderLayout({
-        title: 'New ticket assignment',
-        preheader: `Ticket #${ticket.ticket_number} — ${ticket.title}`,
+        title: 'Ticket assigned',
+        preheader: `#${ticket.ticket_number} — ${ticket.title}`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Hello ${escapeHtml(assigneeName || ticket.assigned_to)},</p>
-          <p style="margin:0 0 16px;">A support ticket has been assigned to you.</p>
+          <p style="margin:0 0 16px;">Assigned to you.</p>
           ${infoRow('Ticket', `#${ticket.ticket_number}`)}
           ${infoRow('Subject', ticket.title)}
           ${infoRow('Priority', ticket.priority)}
@@ -129,21 +122,22 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_updated: {
-    subject: ({ ticketNumber, title }) => `Ticket #${ticketNumber} updated: ${title}`,
+    subject: ({ ticketNumber, title }) => `Updated #${ticketNumber}: ${title}`,
     render: ({ ticket, requesterName, changesSummary }) => ({
-      subject: `Ticket #${ticket.ticket_number} updated: ${ticket.title}`,
+      subject: `Updated #${ticket.ticket_number}: ${ticket.title}`,
       text: [
-        `Hello ${requesterName || 'there'},`,
-        `Your ticket #${ticket.ticket_number} was updated.`,
+        requesterName ? `${requesterName},` : '',
+        `#${ticket.ticket_number} updated.`,
         changesSummary,
-        `View ticket: ${ticketUrl(ticket.id)}`,
-      ].join('\n'),
+        ticketUrl(ticket.id),
+      ]
+        .filter(Boolean)
+        .join('\n'),
       html: renderLayout({
-        title: 'Ticket update',
-        preheader: `Ticket #${ticket.ticket_number} — ${ticket.title}`,
+        title: 'Ticket updated',
+        preheader: `#${ticket.ticket_number} — ${ticket.title}`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Hello ${escapeHtml(requesterName || 'there')},</p>
-          <p style="margin:0 0 16px;">Your support ticket has been updated.</p>
+          <p style="margin:0 0 16px;">Ticket updated.</p>
           ${infoRow('Ticket', `#${ticket.ticket_number}`)}
           ${infoRow('Subject', ticket.title)}
           ${infoRow('Status', ticket.status)}
@@ -157,28 +151,27 @@ export const EMAIL_TEMPLATES = {
   },
 
   ticket_comment: {
-    subject: ({ ticketNumber, title }) => `New reply on ticket #${ticketNumber}: ${title}`,
+    subject: ({ ticketNumber, title }) => `Reply #${ticketNumber}: ${title}`,
     render: ({ ticket, comment, recipientName, isInternalNote }) => ({
-      subject: `New reply on ticket #${ticket.ticket_number}: ${ticket.title}`,
+      subject: `Reply #${ticket.ticket_number}: ${ticket.title}`,
       text: [
-        `Hello ${recipientName || 'there'},`,
-        isInternalNote
-          ? 'An internal note was added to a ticket you follow.'
-          : 'There is a new reply on your support ticket.',
-        `Ticket: #${ticket.ticket_number} — ${ticket.title}`,
-        `From: ${comment.author || comment.author_email || 'Support team'}`,
+        recipientName ? `${recipientName},` : '',
+        isInternalNote ? 'Internal note.' : 'New reply.',
+        `#${ticket.ticket_number} — ${ticket.title}`,
+        `${comment.author || comment.author_email || 'Support'}:`,
         comment.message,
-        `View ticket: ${ticketUrl(ticket.id)}`,
-      ].join('\n'),
+        ticketUrl(ticket.id),
+      ]
+        .filter(Boolean)
+        .join('\n'),
       html: renderLayout({
-        title: isInternalNote ? 'Internal ticket note' : 'New ticket reply',
-        preheader: `Ticket #${ticket.ticket_number} — ${ticket.title}`,
+        title: isInternalNote ? 'Internal note' : 'New reply',
+        preheader: `#${ticket.ticket_number} — ${ticket.title}`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Hello ${escapeHtml(recipientName || 'there')},</p>
-          <p style="margin:0 0 16px;">${isInternalNote ? 'An internal note was added to a ticket assigned to you.' : 'There is a new reply on your support ticket.'}</p>
+          <p style="margin:0 0 16px;">${isInternalNote ? 'Internal note.' : 'New reply.'}</p>
           ${infoRow('Ticket', `#${ticket.ticket_number}`)}
           ${infoRow('Subject', ticket.title)}
-          ${infoRow('From', comment.author || comment.author_email || 'Support team')}
+          ${infoRow('From', comment.author || comment.author_email || 'Support')}
           <div style="margin:16px 0;padding:16px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;white-space:pre-wrap;">${escapeHtml(comment.message)}</div>
         `,
         ctaUrl: ticketUrl(ticket.id),
@@ -190,8 +183,6 @@ export const EMAIL_TEMPLATES = {
 
 export function renderEmailTemplate(templateId, data) {
   const template = EMAIL_TEMPLATES[templateId];
-  if (!template) {
-    throw new Error(`Unknown email template: ${templateId}`);
-  }
+  if (!template) throw new Error(`Unknown email template: ${templateId}`);
   return template.render(data);
 }
