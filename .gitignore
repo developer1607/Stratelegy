@@ -41,3 +41,7 @@ data/
 
 # Cursor — local IDE/agent config (not shared)
 .cursor/
+/engineering.md
+/README.md
+/ENGINEERING.md
+/apiDocumentation.md
