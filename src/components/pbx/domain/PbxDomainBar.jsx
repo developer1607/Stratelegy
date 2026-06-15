@@ -2,6 +2,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { canViewPbxDomains } from '@/lib/permissions';
 import {
   Select,
   SelectContent,
@@ -14,7 +16,10 @@ import { Globe, Loader2 } from 'lucide-react';
 
 export default function PbxDomainBar({ currentPageName }) {
   const { domain, setDomain, domains, isLoading, error } = usePbxDomain();
+  const { permissions, canAccessPage } = usePermissions();
   const onDomainsPage = currentPageName === 'PBXDomains';
+  const showDomainsLink =
+    !onDomainsPage && canViewPbxDomains(permissions) && canAccessPage('PBXDomains');
 
   return (
     <div className="bg-[#0D1B2E]/95 border-b border-white/10 px-4 sm:px-6 py-2.5 flex flex-col sm:flex-row sm:items-center gap-3">
@@ -49,7 +54,7 @@ export default function PbxDomainBar({ currentPageName }) {
           </Select>
         )}
 
-        {!onDomainsPage && (
+        {showDomainsLink && (
           <Button
             asChild
             variant="ghost"

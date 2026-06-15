@@ -5,6 +5,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Mail, Phone, Calendar, TrendingUp, Users, Target } from 'lucide-react';
+import { activityMatchesAccount } from '@/lib/crmHelpers';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogStatGrid,
+} from '@/lib/formDialog';
 
 export default function AccountInsightsDialog({
   account,
@@ -16,7 +23,7 @@ export default function AccountInsightsDialog({
 }) {
   if (!account) return null;
 
-  const accountActivities = activities.filter((a) => a.related_to_name === account.name);
+  const accountActivities = activities.filter((a) => activityMatchesAccount(a, account));
   const accountContacts = contacts.filter((c) => c.company === account.name);
   const accountOpps = opportunities.filter((o) => o.account_name === account.name);
 
@@ -26,18 +33,18 @@ export default function AccountInsightsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-start justify-between">
-            <div>
-              <DialogTitle className="text-xl">{account.name}</DialogTitle>
+      <DialogContent className={formDialogContent('lg')}>
+        <DialogHeader className={formDialogHeader}>
+          <div className="flex flex-col gap-3 pr-2 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
+              <DialogTitle className="truncate text-xl">{account.name}</DialogTitle>
               <p className="text-sm text-gray-500">{account.industry}</p>
             </div>
             <Badge
               className={
                 account.status === 'active'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-gray-100 text-gray-800'
+                  ? 'w-fit bg-green-100 text-green-800'
+                  : 'w-fit bg-gray-100 text-gray-800'
               }
             >
               {account.status}
@@ -45,8 +52,8 @@ export default function AccountInsightsDialog({
           </div>
         </DialogHeader>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        <div className={formDialogBody}>
+        <div className={`${formDialogStatGrid} mb-6`}>
           <Card>
             <CardContent className="p-4 text-center">
               <TrendingUp className="w-6 h-6 mx-auto mb-2 text-blue-600" />
@@ -73,10 +80,16 @@ export default function AccountInsightsDialog({
         </div>
 
         <Tabs defaultValue="activities">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="activities">Recent Activities</TabsTrigger>
-            <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            <TabsTrigger value="deals">Open Deals</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-1 gap-1 sm:grid-cols-3">
+            <TabsTrigger value="activities" className="text-xs sm:text-sm">
+              Recent Activities
+            </TabsTrigger>
+            <TabsTrigger value="contacts" className="text-xs sm:text-sm">
+              Contacts
+            </TabsTrigger>
+            <TabsTrigger value="deals" className="text-xs sm:text-sm">
+              Open Deals
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="activities" className="space-y-3 mt-4">
@@ -121,18 +134,18 @@ export default function AccountInsightsDialog({
               <p className="text-center text-gray-500 py-8">No contacts found</p>
             ) : (
               accountContacts.map((contact, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <Avatar className="w-10 h-10 bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-semibold">
+                <div key={idx} className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center">
+                  <Avatar className="flex h-10 w-10 shrink-0 items-center justify-center bg-blue-100 text-sm font-semibold text-blue-600">
                     {contact.name
                       .split(' ')
                       .map((n) => n[0])
                       .join('')}
                   </Avatar>
-                  <div className="flex-1">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{contact.name}</p>
                     <p className="text-xs text-gray-500">{contact.position || 'Contact'}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-left sm:text-right">
                     <p className="text-xs text-gray-500">{contact.email}</p>
                     <p className="text-xs text-gray-500">{contact.phone}</p>
                   </div>
@@ -151,7 +164,7 @@ export default function AccountInsightsDialog({
                 .map((opp, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="flex flex-col gap-3 rounded-lg border p-3 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="text-sm font-medium">{opp.name}</p>
@@ -168,6 +181,7 @@ export default function AccountInsightsDialog({
             )}
           </TabsContent>
         </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

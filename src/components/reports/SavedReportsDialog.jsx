@@ -11,6 +11,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Save, Bookmark } from 'lucide-react';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogForm,
+  formDialogFooter,
+} from '@/lib/formDialog';
 
 export default function SavedReportsDialog({
   open,
@@ -51,12 +58,14 @@ export default function SavedReportsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className={formDialogContent('md')}>
+        <DialogHeader className={formDialogHeader}>
           <DialogTitle>Save Custom Report View</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className={formDialogForm}>
+          <div className={formDialogBody}>
+            <div className="space-y-6">
           {/* Save New Report */}
           <div className="space-y-4">
             <div>
@@ -113,7 +122,7 @@ export default function SavedReportsDialog({
                 {savedReports.map((report) => (
                   <div
                     key={report.id}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex flex-col gap-3 rounded-lg bg-gray-50 p-3 transition-colors hover:bg-gray-100 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div className="flex items-center gap-2">
                       <Bookmark className="w-4 h-4 text-blue-600" />
@@ -132,17 +141,19 @@ export default function SavedReportsDialog({
               </div>
             </div>
           )}
-        </div>
+            </div>
+          </div>
 
-        <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={!reportName.trim()}>
-            <Save className="w-4 h-4 mr-2" />
-            Save Report
-          </Button>
-        </DialogFooter>
+          <DialogFooter className={formDialogFooter}>
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={!reportName.trim()}>
+              <Save className="mr-2 h-4 w-4" />
+              Save Report
+            </Button>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

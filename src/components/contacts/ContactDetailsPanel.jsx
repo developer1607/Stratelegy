@@ -10,9 +10,13 @@ import { format } from 'date-fns';
 
 export default function ContactDetailsPanel({ contact, onClose }) {
   const { data: activities = [] } = useQuery({
-    queryKey: ['activities', contact?.id],
-    queryFn: () => api.entities.Activity.filter({ related_to_id: contact.id }),
-    enabled: !!contact,
+    queryKey: ['activities', 'contact', contact?.id],
+    queryFn: () =>
+      api.entities.Activity.filter({
+        related_to_type: 'Contact',
+        related_to_name: contact.name,
+      }),
+    enabled: !!contact?.name,
   });
 
   const { data: opportunities = [] } = useQuery({

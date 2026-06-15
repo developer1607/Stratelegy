@@ -134,7 +134,7 @@ export default function Reports() {
 
     const totalLeads = filteredLeads.length;
     const openLeads = filteredLeads.filter(
-      (l) => l.status === 'new' || l.status === 'contacted'
+      (l) => l.status === 'new' || l.status === 'contacted' || l.status === 'qualified'
     ).length;
 
     const wonDeals = filteredOpportunities.filter((o) => o.stage === 'closed_won');

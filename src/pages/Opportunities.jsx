@@ -31,6 +31,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { showError, showSuccess } from '@/lib/toast';
 import { formatCurrency } from '@/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -87,7 +88,9 @@ export default function Opportunities() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['opportunities'] });
       setDialogOpen(false);
+      showSuccess('Opportunity created.');
     },
+    onError: (error) => showError(error, 'Failed to create opportunity.'),
   });
 
   const updateMutation = useMutation({
@@ -96,14 +99,18 @@ export default function Opportunities() {
       queryClient.invalidateQueries({ queryKey: ['opportunities'] });
       setEditDialogOpen(false);
       setSelectedOpportunity(null);
+      showSuccess('Opportunity updated.');
     },
+    onError: (error) => showError(error, 'Failed to update opportunity.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.entities.Opportunity.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      showSuccess('Opportunity deleted.');
     },
+    onError: (error) => showError(error, 'Failed to delete opportunity.'),
   });
 
   const handleSort = (column) => {

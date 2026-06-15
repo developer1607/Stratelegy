@@ -33,8 +33,13 @@ import AccountKPICard from '../components/accounts/AccountKPICard';
 import PermissionGate from '@/components/PermissionGate';
 import AccountFilters from '../components/accounts/AccountFilters';
 import AccountInsightsDialog from '../components/accounts/AccountInsightsDialog';
+import { activityMatchesAccount } from '@/lib/crmHelpers';
+import { showError, showSuccess } from '@/lib/toast';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Accounts() {
+  const { canWriteEntity } = usePermissions();
+  const canManage = canWriteEntity('Account');
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -73,7 +78,9 @@ export default function Accounts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setDialogOpen(false);
+      showSuccess('Account created.');
     },
+    onError: (error) => showError(error, 'Failed to create account.'),
   });
 
   const updateMutation = useMutation({
@@ -82,19 +89,23 @@ export default function Accounts() {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setEditDialogOpen(false);
       setSelectedAccount(null);
+      showSuccess('Account updated.');
     },
+    onError: (error) => showError(error, 'Failed to update account.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.entities.Account.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      showSuccess('Account deleted.');
     },
+    onError: (error) => showError(error, 'Failed to delete account.'),
   });
 
   const enrichedAccounts = useMemo(() => {
     return accounts.map((account) => {
-      const accountActivities = activities.filter((a) => a.related_to_name === account.name);
+      const accountActivities = activities.filter((a) => activityMatchesAccount(a, account));
       const lastActivity =
         accountActivities.length > 0
           ? new Date(Math.max(...accountActivities.map((a) => new Date(a.date))))
@@ -483,7 +494,7 @@ export default function Accounts() {
                                   handleEdit(account);
                                 }}
                               >
-                                Edit
+                                {canManage ? 'Edit' : 'View'}
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={(e) => {
@@ -493,15 +504,17 @@ export default function Accounts() {
                               >
                                 View Insights
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  deleteMutation.mutate(account.id);
-                                }}
-                              >
-                                Delete
-                              </DropdownMenuItem>
+                              {canManage && (
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    deleteMutation.mutate(account.id);
+                                  }}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -533,6 +546,7 @@ export default function Accounts() {
         account={selectedAccount}
         onSubmit={(data) => updateMutation.mutate({ id: selectedAccount.id, data })}
         isLoading={updateMutation.isPending}
+        readOnly={!canManage}
       />
 
       <AccountInsightsDialog

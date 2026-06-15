@@ -4,8 +4,6 @@ export { CATEGORY_DEFAULT_DEPARTMENT } from "./ticketConstants.js";
 
 export const ROLE_DEFAULT_DEPARTMENTS = {
   support: ["support", "billing"],
-  support_viewer: ["support"],
-  full_portal: ["support", "sales", "billing", "number_porting_team"],
 };
 
 export function parseCsvField(value) {

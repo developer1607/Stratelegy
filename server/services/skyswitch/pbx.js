@@ -1,7 +1,20 @@
 import { config } from '../../config.js';
+import {
+  canAccessPbxDataScope,
+  canViewPbxConnectionStatus,
+  filterPbxSummaryFields,
+} from '../../../shared/pbxDataAccess.js';
 import { skyswitchIsConfigured } from './auth.js';
 import { accountPath, skyswitchRequest, toArray } from './client.js';
 import { normalizeDomainList, normalizeResellerList } from './normalize.js';
+import {
+  normalizeSubscriberList,
+  buildEndpointStats,
+  buildE911DomainReview,
+  buildExtensionOfflineRows,
+  filterMosJournalRows,
+  countSipAlgWarnings,
+} from './pbxEnrichment.js';
 
 export { skyswitchIsConfigured };
 
@@ -31,11 +44,14 @@ export async function listResellers() {
   return normalizeResellerList(data);
 }
 
-export async function resolveDomain(domain) {
+export async function resolveDomain(domain, { allowDomainListFallback = false } = {}) {
   if (domain) return domain;
   if (config.skyswitch.defaultDomain) return config.skyswitch.defaultDomain;
-  const domains = await listDomains();
-  return domains[0]?.domain || null;
+  if (allowDomainListFallback) {
+    const domains = await listDomains();
+    return domains[0]?.domain || null;
+  }
+  return null;
 }
 
 export async function listSubscribers(domain, filter = 'subscriber') {
@@ -178,27 +194,69 @@ export async function listAuditLogs({ startDate, endDate, page = 1 } = {}) {
   });
 }
 
-export async function getDashboardSummary(domain) {
-  const resolved = await resolveDomain(domain);
-  const [domains, e911, trunks, subscribers, phoneNumbers, autoAttendants] = await Promise.all([
-    listDomains(),
-    listE911Endpoints().catch(() => []),
-    listTrunkGroups().catch(() => []),
-    resolved ? listSubscribers(resolved).catch(() => []) : Promise.resolve([]),
-    resolved ? listPbxPhoneNumbers(resolved).catch(() => []) : Promise.resolve([]),
-    resolved ? listAutoAttendants(resolved).catch(() => []) : Promise.resolve([]),
-  ]);
+export async function getDashboardSummary(domain, permissions = null, domainOpts = {}) {
+  const resolved = await resolveDomain(domain, domainOpts);
+  const raw = { domain: resolved };
+  const fetches = [];
 
-  return {
-    domain: resolved,
-    domains: domains.length,
-    subscribers: subscribers.length,
-    e911Endpoints: e911.length,
-    trunkGroups: trunks.length,
-    phoneNumbers: phoneNumbers.length,
-    autoAttendants: autoAttendants.length,
-    domainList: domains,
-  };
+  if (!permissions || canAccessPbxDataScope(permissions, 'domains')) {
+    fetches.push(
+      listDomains()
+        .then((rows) => {
+          raw.domains = rows.length;
+          raw.domainList = rows;
+        })
+        .catch(() => {})
+    );
+  }
+  if (resolved && (!permissions || canAccessPbxDataScope(permissions, 'extensions'))) {
+    fetches.push(
+      listSubscribers(resolved)
+        .then((rows) => {
+          raw.subscribers = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (!permissions || canAccessPbxDataScope(permissions, 'e911')) {
+    fetches.push(
+      listE911Endpoints()
+        .then((rows) => {
+          raw.e911Endpoints = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (!permissions || canAccessPbxDataScope(permissions, 'sipTrunks')) {
+    fetches.push(
+      listTrunkGroups()
+        .then((rows) => {
+          raw.trunkGroups = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (resolved && (!permissions || canAccessPbxDataScope(permissions, 'phoneNumbers'))) {
+    fetches.push(
+      listPbxPhoneNumbers(resolved)
+        .then((rows) => {
+          raw.phoneNumbers = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (resolved && (!permissions || canAccessPbxDataScope(permissions, 'voicemail'))) {
+    fetches.push(
+      listAutoAttendants(resolved)
+        .then((rows) => {
+          raw.autoAttendants = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+
+  await Promise.all(fetches);
+  return filterPbxSummaryFields(permissions, raw);
 }
 
 const SIP_ALG_CONFIGS = [
@@ -226,24 +284,59 @@ export async function getSipAlgSettings(domain) {
   return { domain: resolved, settings: results };
 }
 
-export async function getTroubleshootingSnapshot(domain) {
-  const resolved = await resolveDomain(domain);
-  const status = await getPbxStatus();
-  const [domains, subscribers, e911, trunks] = await Promise.all([
-    listDomains().catch(() => []),
-    listSubscribers(resolved).catch(() => []),
-    listE911Endpoints().catch(() => []),
-    listTrunkGroups().catch(() => []),
-  ]);
-  return {
-    status,
-    domain: resolved,
-    domains: domains.length,
-    subscribers: subscribers.length,
-    e911Endpoints: e911.length,
-    trunkGroups: trunks.length,
-    checkedAt: new Date().toISOString(),
-  };
+export async function getTroubleshootingSnapshot(domain, permissions = null, domainOpts = {}) {
+  const resolved = await resolveDomain(domain, domainOpts);
+  const raw = { domain: resolved, checkedAt: new Date().toISOString() };
+  const fetches = [];
+
+  if (!permissions || canViewPbxConnectionStatus(permissions)) {
+    fetches.push(
+      getPbxStatus()
+        .then((status) => {
+          raw.status = status;
+        })
+        .catch(() => {})
+    );
+  }
+  if (!permissions || canAccessPbxDataScope(permissions, 'domains')) {
+    fetches.push(
+      listDomains()
+        .then((rows) => {
+          raw.domains = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (resolved && (!permissions || canAccessPbxDataScope(permissions, 'extensions'))) {
+    fetches.push(
+      listSubscribers(resolved)
+        .then((rows) => {
+          raw.subscribers = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (!permissions || canAccessPbxDataScope(permissions, 'e911')) {
+    fetches.push(
+      listE911Endpoints()
+        .then((rows) => {
+          raw.e911Endpoints = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+  if (!permissions || canAccessPbxDataScope(permissions, 'sipTrunks')) {
+    fetches.push(
+      listTrunkGroups()
+        .then((rows) => {
+          raw.trunkGroups = rows.length;
+        })
+        .catch(() => {})
+    );
+  }
+
+  await Promise.all(fetches);
+  return filterPbxSummaryFields(permissions, raw);
 }
 
 export async function getCallRoutingOverview(domain) {
@@ -453,4 +546,105 @@ export async function listJournals({ startDate, endDate, page = 1, perPage = 25,
 
 export async function listJournalTypes() {
   return skyswitchRequest('GET', accountPath('/journals/module-type-actions'));
+}
+
+export async function getEndpointControlOverview(domain, domainOpts = {}) {
+  const resolved = await resolveDomain(domain, domainOpts);
+  if (!resolved) {
+    return {
+      domain: null,
+      stats: buildEndpointStats([], []),
+      subscribers: [],
+      messagingUsers: [],
+      sipAlgWarningCount: 0,
+    };
+  }
+
+  const [subscribers, messagingUsers, sipAlg] = await Promise.all([
+    listSubscribers(resolved).catch(() => []),
+    listMessagingUsers(resolved).catch(() => []),
+    getSipAlgSettings(resolved).catch(() => ({ settings: [] })),
+  ]);
+  const normalized = normalizeSubscriberList(subscribers);
+  const sipAlgWarningCount = countSipAlgWarnings(sipAlg);
+
+  return {
+    domain: resolved,
+    stats: buildEndpointStats(normalized, messagingUsers, sipAlgWarningCount),
+    subscribers: normalized,
+    messagingUsers,
+    sipAlgWarningCount,
+  };
+}
+
+export async function getE911ReviewOverview(domain, domainOpts = {}) {
+  const resolved = domain ? await resolveDomain(domain, domainOpts) : null;
+  const [provisioned, subscribers] = await Promise.all([
+    listE911Endpoints().catch(() => []),
+    resolved ? listSubscribers(resolved).catch(() => []) : Promise.resolve([]),
+  ]);
+
+  return {
+    provisioned,
+    domainReview: resolved ? buildE911DomainReview(subscribers, provisioned, resolved) : null,
+  };
+}
+
+export async function getExtensionOfflineOverview(domain, domainOpts = {}) {
+  const resolved = await resolveDomain(domain, domainOpts);
+  const [faxBundle, subscribers] = await Promise.all([
+    resolved
+      ? getOfflineEndpoints(resolved).catch(() => ({
+          offlineFaxAtas: [],
+          faxAtas: [],
+          messagingUsers: [],
+          domain: resolved,
+        }))
+      : Promise.resolve({
+          offlineFaxAtas: [],
+          faxAtas: [],
+          messagingUsers: [],
+          domain: null,
+        }),
+    resolved ? listSubscribers(resolved).catch(() => []) : Promise.resolve([]),
+  ]);
+
+  return {
+    domain: resolved,
+    fax: faxBundle,
+    extensionOffline: buildExtensionOfflineRows(subscribers),
+    extensionCount: normalizeSubscriberList(subscribers).length,
+  };
+}
+
+export async function getMosScores({
+  startDate,
+  endDate,
+  page = 1,
+  perPage = 50,
+  module,
+  type,
+} = {}) {
+  const end = endDate || new Date().toISOString().slice(0, 10);
+  const start = startDate || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const journals = await listJournals({
+    startDate: start,
+    endDate: end,
+    page,
+    perPage,
+    module,
+    type,
+  });
+  const rows = filterMosJournalRows(journals);
+  const raw = toArray(journals?.data ?? journals);
+
+  return {
+    startDate: start,
+    endDate: end,
+    rows,
+    total: rows.length,
+    rawCount: raw.length,
+    page,
+    perPage,
+  };
 }

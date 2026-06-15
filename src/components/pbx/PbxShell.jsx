@@ -4,18 +4,24 @@ import { useQuery } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
 import { createPageUrl } from '@/utils';
 import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { canViewPbxConnectionStatus, canViewPbxDomains } from '@/lib/permissions';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { displayError } from '@/lib/errors';
 
 export function PbxStatusBadge() {
+  const { permissions } = usePermissions();
+  const showStatus = canViewPbxConnectionStatus(permissions);
+
   const { data } = useQuery({
     queryKey: ['pbx-status'],
     queryFn: () => pbxApi.status(),
     staleTime: 60_000,
+    enabled: showStatus,
   });
 
-  if (!data) return null;
+  if (!showStatus || !data) return null;
   if (!data.configured) {
     return (
       <Badge variant="outline" className="text-amber-700 border-amber-300">
@@ -31,7 +37,9 @@ export function PbxStatusBadge() {
 }
 
 export default function PbxShell({ title, description, children, actions, requiresDomain = true }) {
-  const { domain, domains, isLoading, error } = usePbxDomain();
+  const { domain, domains, isLoading, error, canListDomains } = usePbxDomain();
+  const { permissions, canAccessPage } = usePermissions();
+  const showDomainsLink = canViewPbxDomains(permissions) && canAccessPage('PBXDomains');
 
   return (
     <div className="p-4 sm:p-8 space-y-6">
@@ -46,7 +54,7 @@ export default function PbxShell({ title, description, children, actions, requir
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </div>
 
-      {requiresDomain && error && (
+      {requiresDomain && error && canListDomains && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-800">
           <p className="font-medium">Failed to load PBX domains</p>
           <p className="text-sm mt-1">
@@ -57,11 +65,24 @@ export default function PbxShell({ title, description, children, actions, requir
 
       {requiresDomain && !isLoading && !domain && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-amber-900 text-sm">
-          Select a domain below or open the{' '}
-          <Link to={createPageUrl('PBXDomains')} className="font-medium underline">
-            Domains
-          </Link>{' '}
-          page from the PBX menu.
+          {canListDomains ? (
+            <>
+              Select a domain below or open the{' '}
+              {showDomainsLink ? (
+                <Link to={createPageUrl('PBXDomains')} className="font-medium underline">
+                  Domains
+                </Link>
+              ) : (
+                'Domains'
+              )}{' '}
+              page from the PBX menu.
+            </>
+          ) : (
+            <>
+              Add a <span className="font-mono">?domain=your.domain</span> query parameter to the
+              URL, or ask an admin for Domains access to browse available domains.
+            </>
+          )}
         </div>
       )}
 

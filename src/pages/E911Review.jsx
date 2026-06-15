@@ -1,60 +1,55 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
-import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
+import PbxShell, { PbxDataTable, PbxError, PbxLoading, PbxStatGrid } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import AddE911Dialog from '@/components/pbx/e911/AddE911Dialog';
 import E911ProvisionSheet from '@/components/pbx/e911/E911ProvisionSheet';
 import E911UnprovisionAction from '@/components/pbx/e911/E911UnprovisionAction';
+import { EndpointStatusCell } from '@/components/pbx/endpoints/EndpointCells';
 import PermissionGate from '@/components/PermissionGate';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { formatE911Row, E911_COLUMNS } from '@/lib/pbxTable';
+import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
 
 export default function E911Review() {
   return (
-    <PbxShell title="E911 Review" description="Provisioned E911 endpoints" requiresDomain={false}>
+    <PbxShell title="E911 Review" description="Provisioned addresses and domain endpoint review">
       <E911Content />
     </PbxShell>
   );
 }
 
 function E911Content() {
+  const { domain } = usePbxDomain();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('all');
   const [routingFilter, setRoutingFilter] = useState('all');
+  const [wanFilter, setWanFilter] = useState('all');
   const [editPhone, setEditPhone] = useState(null);
 
-  const {
-    data = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['pbx-e911'],
-    queryFn: () => pbxApi.e911(),
+  const overviewQ = useQuery({
+    queryKey: ['pbx-e911-review', domain],
+    queryFn: () => pbxApi.e911ReviewOverview(domain || undefined),
   });
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: ['pbx-e911'] });
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['pbx-e911-review'] });
 
-  const editRecord = editPhone ? data.find((item) => item.phone_number === editPhone) : null;
+  const provisioned = overviewQ.data?.provisioned || [];
+  const domainReview = overviewQ.data?.domainReview;
 
-  const { rows, stateOptions, routingOptions } = useMemo(() => {
-    const list = data.map((item) => ({
-      phone_number: item.phone_number,
-      city: item.location?.address?.civic_address?.city,
-      state: item.location?.address?.civic_address?.state,
-      street:
-        `${item.location?.address?.civic_address?.street_number || ''} ${item.location?.address?.civic_address?.street_name || ''}`.trim(),
-      zip_code: item.location?.address?.civic_address?.zip_code,
-      routing_status: item.location?.level_of_service?.routing_status,
-      name: item.location?.address?.civic_address?.name,
-    }));
+  const editRecord = editPhone ? provisioned.find((item) => item.phone_number === editPhone) : null;
 
+  const { addressRows, stateOptions, routingOptions } = useMemo(() => {
+    const list = provisioned.map(formatE911Row);
     return {
       stateOptions: uniqueFieldValues(list, 'state'),
       routingOptions: uniqueFieldValues(list, 'routing_status'),
-      rows: list.filter((row) => {
+      addressRows: list.filter((row) => {
         if (!matchSearch(row, search, ['phone_number', 'city', 'name', 'street', 'zip_code']))
           return false;
         if (!matchSelect(row.state, stateFilter)) return false;
@@ -62,19 +57,27 @@ function E911Content() {
         return true;
       }),
     };
-  }, [data, search, stateFilter, routingFilter]);
+  }, [provisioned, search, stateFilter, routingFilter]);
 
-  if (isLoading) return <PbxLoading />;
-  if (error) return <PbxError error={error} />;
+  const domainRows = useMemo(() => {
+    const list = domainReview?.rows || [];
+    return list.filter((row) => {
+      if (!matchSearch(row, search, ['extension', 'name', 'caller_id', 'site', 'wan_ip'])) return false;
+      if (wanFilter !== 'all' && row.wan_ip !== wanFilter) return false;
+      return true;
+    });
+  }, [domainReview, search, wanFilter]);
 
-  const columns = [
-    { key: 'phone_number', label: 'Phone' },
-    { key: 'name', label: 'Name' },
-    { key: 'street', label: 'Street' },
-    { key: 'city', label: 'City' },
-    { key: 'state', label: 'State' },
-    { key: 'zip_code', label: 'ZIP' },
-    { key: 'routing_status', label: 'Routing' },
+  const wanOptions = useMemo(
+    () => uniqueFieldValues(domainReview?.rows || [], 'wan_ip'),
+    [domainReview]
+  );
+
+  if (overviewQ.isLoading) return <PbxLoading />;
+  if (overviewQ.error) return <PbxError error={overviewQ.error} />;
+
+  const addressColumns = [
+    ...E911_COLUMNS,
     {
       key: 'actions',
       label: 'Actions',
@@ -93,11 +96,30 @@ function E911Content() {
 
   return (
     <div className="space-y-4">
+      {domainReview?.summary ? (
+        <PbxStatGrid
+          stats={[
+            { label: 'Visible endpoints', value: domainReview.summary.visibleEndpoints },
+            { label: 'WAN groups', value: domainReview.summary.wanGroups },
+            { label: 'Registered', value: domainReview.summary.registered },
+            { label: 'Unregistered', value: domainReview.summary.unregistered },
+          ]}
+        />
+      ) : null}
+
       <PbxListToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search phone, city, or name…"
+        searchPlaceholder="Search phone, ext, name, site…"
       >
+        {wanOptions.length > 0 && (
+          <PbxFilterSelect
+            value={wanFilter}
+            onValueChange={setWanFilter}
+            options={wanOptions}
+            allLabel="All WAN IPs"
+          />
+        )}
         <PbxFilterSelect
           value={stateFilter}
           onValueChange={setStateFilter}
@@ -114,7 +136,71 @@ function E911Content() {
           <AddE911Dialog onSuccess={refresh} />
         </PermissionGate>
       </PbxListToolbar>
-      <PbxDataTable columns={columns} rows={rows} emptyMessage="No E911 endpoints provisioned." />
+
+      <Tabs defaultValue={domain ? 'domain' : 'addresses'}>
+        <TabsList>
+          {domain ? <TabsTrigger value="domain">Domain extensions</TabsTrigger> : null}
+          <TabsTrigger value="addresses">Provisioned addresses</TabsTrigger>
+          {domainReview?.wanGroups?.length ? (
+            <TabsTrigger value="wan">WAN groups</TabsTrigger>
+          ) : null}
+        </TabsList>
+
+        {domain ? (
+          <TabsContent value="domain" className="mt-4">
+            {!domainReview ? (
+              <p className="text-sm text-gray-600 bg-white rounded-lg shadow p-6">
+                Select a domain to review extensions alongside E911 status.
+              </p>
+            ) : (
+              <PbxDataTable
+                columns={[
+                  { key: 'extension', label: 'Ext' },
+                  { key: 'name', label: 'Name' },
+                  { key: 'caller_id', label: 'Caller ID' },
+                  { key: 'site', label: 'Site' },
+                  { key: 'e911_status', label: 'E911' },
+                  { key: 'location', label: 'Location' },
+                  {
+                    key: 'online_status',
+                    label: 'Reg.',
+                    render: (row) => <EndpointStatusCell row={row} />,
+                  },
+                  { key: 'registration_status', label: 'Registration detail' },
+                  { key: 'wan_ip', label: 'WAN IP' },
+                  { key: 'notes', label: 'Notes' },
+                ]}
+                rows={domainRows}
+                emptyMessage="No extensions match your filters."
+              />
+            )}
+          </TabsContent>
+        ) : null}
+
+        <TabsContent value="addresses" className="mt-4">
+          <PbxDataTable
+            columns={addressColumns}
+            rows={addressRows}
+            emptyMessage="No E911 endpoints provisioned."
+          />
+        </TabsContent>
+
+        {domainReview?.wanGroups?.length ? (
+          <TabsContent value="wan" className="mt-4">
+            <PbxDataTable
+              columns={[
+                { key: 'wan_ip', label: 'WAN IP' },
+                { key: 'endpoints', label: 'Endpoints' },
+                { key: 'registered', label: 'Registered' },
+                { key: 'unregistered', label: 'Unregistered' },
+                { key: 'e911_disabled', label: 'E911 disabled' },
+              ]}
+              rows={domainReview.wanGroups}
+            />
+          </TabsContent>
+        ) : null}
+      </Tabs>
+
       <E911ProvisionSheet
         phoneNumber={editPhone || ''}
         initialData={editRecord}

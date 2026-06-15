@@ -102,4 +102,9 @@ export const pbxApi = {
   auditActions: () => pbxGet("/audit-logs/resource-actions"),
   journals: (params) => pbxGet("/journals", params),
   journalMeta: () => pbxGet("/journals/module-type-actions"),
+  endpointControlOverview: (domain) => pbxGet("/endpoint-control/overview", { domain }),
+  e911ReviewOverview: (domain) =>
+    pbxGet("/e911/review-overview", domain ? { domain } : undefined),
+  offlineEndpointsOverview: (domain) => pbxGet("/offline-endpoints/overview", { domain }),
+  mosScores: (params) => pbxGet("/mos-scores", params),
 };

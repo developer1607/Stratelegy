@@ -16,6 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { validateOpportunityForm, showValidationErrors } from '@/lib/crmFormValidation';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogGrid,
+  formDialogField,
+  formDialogForm,
+  formDialogFooter,
+} from '@/lib/formDialog';
 
 const STAGES = [
   'prospecting',
@@ -40,6 +50,8 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!showValidationErrors(validateOpportunityForm(formData))) return;
+
     onSubmit({
       ...formData,
       amount: formData.amount ? parseFloat(formData.amount) : undefined,
@@ -59,102 +71,103 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className={formDialogContent('sm')}>
+        <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create Opportunity</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="opp-name">Name *</Label>
-              <Input
-                id="opp-name"
-                required
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="opp-account">Account</Label>
-              <Input
-                id="opp-account"
-                value={formData.account_name}
-                onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="opp-amount">Amount</Label>
+        <form onSubmit={handleSubmit} className={formDialogForm}>
+          <div className={formDialogBody}>
+            <div className="space-y-4">
+              <div className={formDialogField}>
+                <Label htmlFor="opp-name">Name *</Label>
                 <Input
-                  id="opp-amount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  id="opp-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label>Stage</Label>
-                <Select
-                  value={formData.stage}
-                  onValueChange={(stage) => setFormData({ ...formData, stage })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {STAGES.map((stage) => (
-                      <SelectItem key={stage} value={stage}>
-                        {stage.replace(/_/g, ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="opp-probability">Probability (%)</Label>
+              <div className={formDialogField}>
+                <Label htmlFor="opp-account">Account</Label>
                 <Input
-                  id="opp-probability"
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={formData.probability}
-                  onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
+                  id="opp-account"
+                  value={formData.account_name}
+                  onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="opp-close">Close date</Label>
-                <Input
-                  id="opp-close"
-                  type="date"
-                  value={formData.close_date}
-                  onChange={(e) => setFormData({ ...formData, close_date: e.target.value })}
-                />
+              <div className={formDialogGrid}>
+                <div className={formDialogField}>
+                  <Label htmlFor="opp-amount">Amount</Label>
+                  <Input
+                    id="opp-amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.amount}
+                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  />
+                </div>
+                <div className={formDialogField}>
+                  <Label htmlFor="opp-stage">Stage</Label>
+                  <Select
+                    value={formData.stage}
+                    onValueChange={(stage) => setFormData({ ...formData, stage })}
+                  >
+                    <SelectTrigger id="opp-stage">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
+                      {STAGES.map((stage) => (
+                        <SelectItem key={stage} value={stage}>
+                          {stage.replace(/_/g, ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="opp-owner">Owner</Label>
-                <Input
-                  id="opp-owner"
-                  value={formData.owner}
-                  onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                />
+              <div className={formDialogGrid}>
+                <div className={formDialogField}>
+                  <Label htmlFor="opp-probability">Probability (%)</Label>
+                  <Input
+                    id="opp-probability"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.probability}
+                    onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
+                  />
+                </div>
+                <div className={formDialogField}>
+                  <Label htmlFor="opp-close">Close date</Label>
+                  <Input
+                    id="opp-close"
+                    type="date"
+                    value={formData.close_date}
+                    onChange={(e) => setFormData({ ...formData, close_date: e.target.value })}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="opp-source">Source</Label>
-                <Input
-                  id="opp-source"
-                  value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                />
+              <div className={formDialogGrid}>
+                <div className={formDialogField}>
+                  <Label htmlFor="opp-owner">Owner</Label>
+                  <Input
+                    id="opp-owner"
+                    value={formData.owner}
+                    onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
+                  />
+                </div>
+                <div className={formDialogField}>
+                  <Label htmlFor="opp-source">Source</Label>
+                  <Input
+                    id="opp-source"
+                    value={formData.source}
+                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className={formDialogFooter}>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

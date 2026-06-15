@@ -56,8 +56,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
 import { differenceInDays, isAfter, startOfMonth } from 'date-fns';
+import { showError, showSuccess } from '@/lib/toast';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Contacts() {
+  const { canWriteEntity } = usePermissions();
+  const canManage = canWriteEntity('Contact');
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -102,7 +106,9 @@ export default function Contacts() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       setDialogOpen(false);
+      showSuccess('Contact created.');
     },
+    onError: (error) => showError(error, 'Failed to create contact.'),
   });
 
   const updateMutation = useMutation({
@@ -111,14 +117,18 @@ export default function Contacts() {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
       setEditDialogOpen(false);
       setSelectedContact(null);
+      showSuccess('Contact updated.');
     },
+    onError: (error) => showError(error, 'Failed to update contact.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.entities.Contact.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      showSuccess('Contact deleted.');
     },
+    onError: (error) => showError(error, 'Failed to delete contact.'),
   });
 
   const handleEdit = (contact) => {
@@ -620,15 +630,19 @@ export default function Contacts() {
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => handleEdit(contact)}>
-                                    Edit
+                                    {canManage ? 'Edit' : 'View'}
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem>Log Activity</DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-red-600"
-                                    onClick={() => deleteMutation.mutate(contact.id)}
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
+                                  {canManage && (
+                                    <>
+                                      <DropdownMenuItem>Log Activity</DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="text-red-600"
+                                        onClick={() => deleteMutation.mutate(contact.id)}
+                                      >
+                                        Delete
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
@@ -752,6 +766,7 @@ export default function Contacts() {
         contact={selectedContact}
         onSubmit={(data) => updateMutation.mutate({ id: selectedContact.id, data })}
         isLoading={updateMutation.isPending}
+        readOnly={!canManage}
       />
 
       <EditContactDialog

@@ -3,8 +3,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
 import { PBX_PAGES } from '@/lib/permissions';
+import { canViewPbxDomains } from '@/lib/permissions';
 import { PBX_PAGES_NO_DOMAIN_BAR } from '@/lib/navConfig';
 import { domainsMatch, findDomainRecord } from '@/lib/pbxDomain';
+import { usePermissions } from '@/hooks/usePermissions';
 
 const STORAGE_KEY = 'pbx_selected_domain';
 
@@ -12,7 +14,9 @@ const PbxDomainContext = createContext(null);
 
 export function PbxDomainProvider({ children, currentPageName }) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { permissions } = usePermissions();
   const isPbxPage = PBX_PAGES.includes(currentPageName);
+  const canListDomains = canViewPbxDomains(permissions);
   const syncDomainToUrl = isPbxPage && !PBX_PAGES_NO_DOMAIN_BAR.has(currentPageName);
 
   const urlDomain = searchParams.get('domain') || '';
@@ -28,7 +32,7 @@ export function PbxDomainProvider({ children, currentPageName }) {
     queryKey: ['pbx-domains'],
     queryFn: () => pbxApi.domains(),
     staleTime: 5 * 60 * 1000,
-    enabled: isPbxPage,
+    enabled: isPbxPage && canListDomains,
   });
 
   const setDomain = useCallback(
@@ -54,7 +58,7 @@ export function PbxDomainProvider({ children, currentPageName }) {
   }, [urlDomain, domain]);
 
   useEffect(() => {
-    if (!domains.length) return;
+    if (!canListDomains || !domains.length) return;
     const exists = findDomainRecord(domains, domain);
     if (!domain || !exists) {
       const urlMatch = urlDomain ? findDomainRecord(domains, urlDomain) : null;
@@ -62,11 +66,11 @@ export function PbxDomainProvider({ children, currentPageName }) {
       if (next && !domainsMatch(next, domain))
         setDomain(next, { updateUrl: syncDomainToUrl && !urlDomain });
     }
-  }, [domains, domain, urlDomain, setDomain, syncDomainToUrl]);
+  }, [canListDomains, domains, domain, urlDomain, setDomain, syncDomainToUrl]);
 
   const value = useMemo(
-    () => ({ domain, setDomain, domains, isLoading, error, isPbxPage }),
-    [domain, setDomain, domains, isLoading, error, isPbxPage]
+    () => ({ domain, setDomain, domains, isLoading, error, isPbxPage, canListDomains }),
+    [domain, setDomain, domains, isLoading, error, isPbxPage, canListDomains]
   );
 
   return <PbxDomainContext.Provider value={value}>{children}</PbxDomainContext.Provider>;

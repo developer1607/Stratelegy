@@ -134,12 +134,13 @@ function validateRequired(entityName, data) {
   }
 }
 
-function pickWritable(entityName, data, { forCreate = false } = {}) {
+function pickWritable(entityName, data, { forCreate = false, forUpdate = false } = {}) {
   const def = getEntityDef(entityName);
   const writable = getWritableColumns(entityName);
   const picked = {};
 
   for (const col of writable) {
+    if (forUpdate && col === 'created_by') continue;
     if (data[col] === undefined) {
       if (forCreate && def.columns[col]?.default !== undefined) {
         picked[col] = coerceValue(def.columns[col], def.columns[col].default);
@@ -150,6 +151,49 @@ function pickWritable(entityName, data, { forCreate = false } = {}) {
   }
 
   return picked;
+}
+
+const ACTIVITY_RELATION_ENTITIES = {
+  Contact: 'contacts',
+  Account: 'accounts',
+  Opportunity: 'opportunities',
+  Lead: 'leads',
+};
+
+async function resolveActivityRelations(data, oldRecord = null) {
+  const relatedType = data.related_to_type ?? oldRecord?.related_to_type;
+  const relatedName = data.related_to_name ?? oldRecord?.related_to_name;
+  if (!relatedType || !relatedName) return data;
+  if (data.related_to_id || oldRecord?.related_to_id) return data;
+
+  const table = ACTIVITY_RELATION_ENTITIES[relatedType];
+  if (!table) return data;
+
+  const row = await queryOne(`SELECT id FROM \`${table}\` WHERE name = ? LIMIT 1`, [
+    relatedName,
+  ]);
+  if (row?.id) {
+    return { ...data, related_to_id: row.id };
+  }
+  return data;
+}
+
+async function syncContactLastActivity(activity) {
+  if (activity.related_to_type !== 'Contact') return;
+
+  let contactId = activity.related_to_id;
+  if (!contactId && activity.related_to_name) {
+    const row = await queryOne('SELECT id FROM contacts WHERE name = ? LIMIT 1', [
+      activity.related_to_name,
+    ]);
+    contactId = row?.id;
+  }
+  if (!contactId || !activity.date) return;
+
+  await execute(
+    'UPDATE contacts SET last_activity_date = ?, updated_date = NOW() WHERE id = ?',
+    [activity.date, contactId]
+  );
 }
 
 function buildFilterClause(entityName, filterQuery) {
@@ -197,6 +241,29 @@ export async function listEntities(entityName, sort, limit) {
   return rows.map((row) => rowToEntity(entityName, row));
 }
 
+export async function listEntitiesPage(entityName, sort, limit, offset) {
+  assertSaasEntity(entityName);
+  const def = getEntityDef(entityName);
+  const { field, desc } = parseSort(entityName, sort);
+  const dir = desc ? 'DESC' : 'ASC';
+  const lim = clampLimit(limit ?? 25);
+  const off = Math.max(0, parseInt(offset, 10) || 0);
+
+  const countRow = await queryOne(`SELECT COUNT(*) AS total FROM \`${def.table}\``);
+  const total = Number(countRow?.total ?? 0);
+
+  const rows = await query(
+    `SELECT * FROM \`${def.table}\` ORDER BY \`${field}\` ${dir} LIMIT ${lim} OFFSET ${off}`
+  );
+
+  return {
+    items: rows.map((row) => rowToEntity(entityName, row)),
+    total,
+    limit: lim,
+    offset: off,
+  };
+}
+
 export async function getEntity(entityName, id) {
   assertSaasEntity(entityName);
   const def = getEntityDef(entityName);
@@ -227,7 +294,10 @@ export async function createEntity(entityName, data) {
   assertSaasEntity(entityName);
   const def = getEntityDef(entityName);
   const id = data.id || uuidv4();
-  const normalized = normalizeInput(entityName, data);
+  let normalized = normalizeInput(entityName, data);
+  if (entityName === 'Activity') {
+    normalized = await resolveActivityRelations(normalized);
+  }
   validateRequired(entityName, normalized);
   const values = pickWritable(entityName, normalized, { forCreate: true });
 
@@ -241,6 +311,9 @@ export async function createEntity(entityName, data) {
   );
 
   const record = await getEntity(entityName, id);
+  if (entityName === 'Activity') {
+    await syncContactLastActivity(record);
+  }
   notifyEntityChange(entityName, record);
   return record;
 }
@@ -250,8 +323,11 @@ export async function updateEntity(entityName, id, data) {
   const def = getEntityDef(entityName);
   const oldRecord = await getEntity(entityName, id);
 
-  const normalized = normalizeInput(entityName, data);
-  const values = pickWritable(entityName, normalized);
+  let normalized = normalizeInput(entityName, data);
+  if (entityName === 'Activity') {
+    normalized = await resolveActivityRelations(normalized, oldRecord);
+  }
+  const values = pickWritable(entityName, normalized, { forUpdate: true });
   const keys = Object.keys(values);
   if (keys.length === 0) return oldRecord;
 
@@ -262,6 +338,9 @@ export async function updateEntity(entityName, id, data) {
   ]);
 
   const record = await getEntity(entityName, id);
+  if (entityName === 'Activity') {
+    await syncContactLastActivity(record);
+  }
   notifyEntityChange(entityName, record, oldRecord);
   return record;
 }

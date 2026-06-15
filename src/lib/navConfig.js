@@ -21,6 +21,7 @@ import {
   PhoneForwarded,
   Settings,
   Mail,
+  LineChart,
 } from "lucide-react";
 
 /** Sidebar navigation — permissions resolved via canAccessPage(page). */
@@ -74,6 +75,13 @@ export const PBX_NAV_GROUPS = [
     ],
   },
   {
+    label: "Reports",
+    items: [
+      { name: "Report catalog", icon: BarChart3, path: "PBXReports" },
+      { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
+    ],
+  },
+  {
     label: "Monitoring",
     items: [
       { name: "Call Logs", icon: Phone, path: "CallLogs" },
@@ -93,6 +101,8 @@ export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "PBXDomains",
   "E911Review",
   "E911Reports",
+  "PBXReports",
+  "PBXMosScores",
   "CallLogs",
   "SIPTrunks",
   "PBXMakeCall",

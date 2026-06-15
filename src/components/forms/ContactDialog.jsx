@@ -3,6 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { showError } from '@/lib/toast';
+import { validateContactForm, showValidationErrors } from '@/lib/crmFormValidation';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogForm,
+  formDialogFooter,
+} from '@/lib/formDialog';
 import {
   Dialog,
   DialogContent,
@@ -99,6 +107,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!showValidationErrors(validateContactForm(formData))) return;
     onSubmit(formData);
     setFormData({
       name: '',
@@ -122,12 +131,13 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className={formDialogContent('sm')}>
+        <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create New Contact</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-6 py-4">
+        <form onSubmit={handleSubmit} className={formDialogForm}>
+          <div className={formDialogBody}>
+            <div className="grid gap-6">
             {/* Photo + Name Section */}
             <div className="flex flex-col items-center gap-4 pb-4 border-b">
               <div className="relative">
@@ -174,7 +184,6 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
                 <Label htmlFor="name">Name *</Label>
                 <Input
                   id="name"
-                  required
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -193,7 +202,6 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
                 <Input
                   id="email"
                   type="email"
-                  required
                   placeholder="john@company.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -246,7 +254,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
                   <SelectItem value="call">📞 Phone Call</SelectItem>
                   <SelectItem value="email">✉️ Email</SelectItem>
                   <SelectItem value="website">🌐 Website</SelectItem>
@@ -255,8 +263,9 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
                 </SelectContent>
               </Select>
             </div>
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className={formDialogFooter}>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

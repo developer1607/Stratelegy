@@ -24,6 +24,7 @@ import {
   Line,
 } from 'recharts';
 import { differenceInDays, parseISO, format } from 'date-fns';
+import { activityMatchesOpportunity } from '@/lib/crmHelpers';
 import TableExportButtons from './TableExportButtons';
 
 export default function PipelineForecastTab({ filteredOpportunities, filteredActivities }) {
@@ -74,7 +75,7 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
     return openOpps
       .filter((opp) => {
         const lastActivity = filteredActivities
-          .filter((a) => a.related_to_id === opp.id)
+          .filter((a) => activityMatchesOpportunity(a, opp))
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
         const daysSinceActivity = lastActivity

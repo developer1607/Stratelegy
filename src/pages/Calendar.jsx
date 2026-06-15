@@ -37,12 +37,14 @@ import {
   startOfDay,
   endOfDay,
   addDays,
-  parseISO,
   isSameMonth,
 } from 'date-fns';
 import CalendarKPICard from '../components/calendar/CalendarKPICard';
 import CalendarFilters from '../components/calendar/CalendarFilters';
 import EventDialog from '../components/calendar/EventDialog';
+import { safeParseDate } from '@/lib/crmHelpers';
+import { showError, showSuccess } from '@/lib/toast';
+import PermissionGate from '@/components/PermissionGate';
 
 export default function Calendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -67,7 +69,9 @@ export default function Calendar() {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setDialogOpen(false);
       setSelectedEvent(null);
+      showSuccess('Event created.');
     },
+    onError: (error) => showError(error, 'Failed to create event.'),
   });
 
   const updateMutation = useMutation({
@@ -76,14 +80,18 @@ export default function Calendar() {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
       setDialogOpen(false);
       setSelectedEvent(null);
+      showSuccess('Event updated.');
     },
+    onError: (error) => showError(error, 'Failed to update event.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.entities.CalendarEvent.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['calendarEvents'] });
+      showSuccess('Event deleted.');
     },
+    onError: (error) => showError(error, 'Failed to delete event.'),
   });
 
   const monthStart = startOfMonth(currentDate);
@@ -105,7 +113,8 @@ export default function Calendar() {
 
       let matchDate = true;
       if (filters.dateRange) {
-        const eventDate = parseISO(event.start_date);
+        const eventDate = safeParseDate(event.start_date);
+        if (!eventDate) return false;
         const today = startOfDay(new Date());
 
         if (filters.dateRange === 'today') {
@@ -138,24 +147,27 @@ export default function Calendar() {
     const weekEnd = endOfWeek(today);
 
     const todayEvents = events.filter((e) => {
-      const eventDate = parseISO(e.start_date);
-      return isWithinInterval(eventDate, { start: today, end: todayEnd });
+      const eventDate = safeParseDate(e.start_date);
+      return eventDate && isWithinInterval(eventDate, { start: today, end: todayEnd });
     }).length;
 
     const totalEvents = events.length;
 
     const meetingsThisWeek = events.filter((e) => {
-      const eventDate = parseISO(e.start_date);
+      const eventDate = safeParseDate(e.start_date);
       return (
+        eventDate &&
         e.event_type === 'meeting' &&
         isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
       );
     }).length;
 
     const callsThisWeek = events.filter((e) => {
-      const eventDate = parseISO(e.start_date);
+      const eventDate = safeParseDate(e.start_date);
       return (
-        e.event_type === 'call' && isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
+        eventDate &&
+        e.event_type === 'call' &&
+        isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
       );
     }).length;
 
@@ -165,8 +177,8 @@ export default function Calendar() {
   // Get events for a specific day
   const getEventsForDay = (day) => {
     return filteredEvents.filter((event) => {
-      const eventDate = parseISO(event.start_date);
-      return isSameDay(eventDate, day);
+      const eventDate = safeParseDate(event.start_date);
+      return eventDate && isSameDay(eventDate, day);
     });
   };
 
@@ -176,8 +188,8 @@ export default function Calendar() {
     const nextWeek = addDays(today, 7);
     return filteredEvents
       .filter((e) => {
-        const eventDate = parseISO(e.start_date);
-        return eventDate >= today && eventDate <= nextWeek && e.status === 'scheduled';
+        const eventDate = safeParseDate(e.start_date);
+        return eventDate && eventDate >= today && eventDate <= nextWeek && e.status === 'scheduled';
       })
       .slice(0, 5);
   }, [filteredEvents]);
@@ -232,16 +244,18 @@ export default function Calendar() {
               className="pl-9 h-9"
             />
           </div>
-          <Button
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => {
-              setSelectedEvent(null);
-              setDialogOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            New Event
-          </Button>
+          <PermissionGate entity="CalendarEvent">
+            <Button
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => {
+                setSelectedEvent(null);
+                setDialogOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Event
+            </Button>
+          </PermissionGate>
         </div>
       </div>
 
@@ -389,7 +403,9 @@ export default function Calendar() {
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-gray-900 truncate">{event.title}</p>
                           <p className="text-sm text-gray-600">
-                            {format(parseISO(event.start_date), 'MMM d, h:mm a')}
+                            {safeParseDate(event.start_date)
+                              ? format(safeParseDate(event.start_date), 'MMM d, h:mm a')
+                              : '—'}
                           </p>
                           {event.related_to_name && (
                             <p className="text-xs text-gray-500">
@@ -441,7 +457,9 @@ export default function Calendar() {
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">{event.title}</p>
                         <p className="text-sm text-gray-600">
-                          {format(parseISO(event.start_date), 'EEEE, MMM d • h:mm a')}
+                          {safeParseDate(event.start_date)
+                            ? format(safeParseDate(event.start_date), 'EEEE, MMM d • h:mm a')
+                            : '—'}
                         </p>
                         {event.description && (
                           <p className="text-xs text-gray-500 mt-1 line-clamp-2">

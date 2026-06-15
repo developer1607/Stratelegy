@@ -7,7 +7,7 @@ import { assignPortalRole } from '../services/permissions.js';
 import { updateUserSupportRouting } from '../services/users.js';
 import { assertPasswordValid } from '../utils/passwordValidation.js';
 
-/** One account per seeded portal role — dev/staging only. */
+/** One account per module role — dev/staging only. Admin is seeded separately. */
 const DEMO_USERS = [
   { email: 'crmuser@test.com', fullName: 'CRM Demo', roleSlug: 'crm' },
   {
@@ -16,19 +16,7 @@ const DEMO_USERS = [
     roleSlug: 'support',
     departments: 'support,billing',
   },
-  {
-    email: 'supportviewer@test.com',
-    fullName: 'Support Viewer Demo',
-    roleSlug: 'support_viewer',
-    departments: 'support',
-  },
   { email: 'pbxuser@test.com', fullName: 'PBX Demo', roleSlug: 'pbx' },
-  {
-    email: 'fullportal@test.com',
-    fullName: 'Full Portal Demo',
-    roleSlug: 'full_portal',
-    departments: 'support,sales,billing,number_porting_team',
-  },
 ];
 
 /** Optional demo accounts for local role testing — never runs in production. */
@@ -38,14 +26,32 @@ export async function seedDemoUsers() {
   assertPasswordValid(config.demoUserPassword);
 
   let created = 0;
+  let synced = 0;
   for (const demo of DEMO_USERS) {
     const email = demo.email.toLowerCase();
-    const existing = await queryOne('SELECT id FROM users WHERE email = ?', [email]);
-    if (existing) continue;
-
     const roleId = getSeededRoleId(demo.roleSlug);
     if (!roleId) {
       console.warn(`[db] Demo role not seeded yet: ${demo.roleSlug}`);
+      continue;
+    }
+
+    const existing = await queryOne('SELECT id, full_name FROM users WHERE email = ?', [email]);
+    if (existing) {
+      await assignPortalRole({
+        userId: existing.id,
+        userEmail: email,
+        userName: existing.full_name || demo.fullName,
+        roleId,
+      });
+
+      if (demo.departments || demo.categories) {
+        await updateUserSupportRouting(existing.id, {
+          departments: demo.departments,
+          categories: demo.categories,
+        });
+      }
+
+      synced++;
       continue;
     }
 
@@ -74,7 +80,9 @@ export async function seedDemoUsers() {
     created++;
   }
 
-  if (created > 0) {
-    console.log(`[db] Seeded ${created} demo portal user(s) — password from DEMO_USER_PASSWORD`);
+  if (created > 0 || synced > 0) {
+    console.log(
+      `[db] Demo portal users — created ${created}, role-synced ${synced} (password from DEMO_USER_PASSWORD)`
+    );
   }
 }

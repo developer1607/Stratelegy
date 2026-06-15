@@ -15,7 +15,9 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Search, Filter, MoreHorizontal, Plus, Download } from 'lucide-react';
+import { format } from 'date-fns';
 import { formatCurrency } from '@/utils';
+import { recentMonthLabels, safeParseDate } from '@/lib/crmHelpers';
 import {
   BarChart,
   Bar,
@@ -38,13 +40,13 @@ export default function Dashboard() {
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads', 'dashboard'],
-    queryFn: () => api.entities.Lead.list('-created_date', 100),
+    queryFn: () => api.entities.Lead.list('-created_date'),
     staleTime: 60_000,
   });
 
   const { data: opportunities = [] } = useQuery({
     queryKey: ['opportunities', 'dashboard'],
-    queryFn: () => api.entities.Opportunity.list('-created_date', 100),
+    queryFn: () => api.entities.Opportunity.list('-created_date'),
     staleTime: 60_000,
   });
 
@@ -78,10 +80,13 @@ export default function Dashboard() {
     const dealsClosedValue = closedDeals.reduce((sum, o) => sum + (o.amount || 0), 0);
 
     const currentMonth = new Date().getMonth();
+    const currentYear = new Date().getFullYear();
     const revenueThisMonth = filteredOpportunities
-      .filter(
-        (o) => o.stage === 'closed_won' && new Date(o.updated_date).getMonth() === currentMonth
-      )
+      .filter((o) => {
+        if (o.stage !== 'closed_won') return false;
+        const closeDate = safeParseDate(o.close_date) || safeParseDate(o.updated_date);
+        return closeDate && closeDate.getMonth() === currentMonth && closeDate.getFullYear() === currentYear;
+      })
       .reduce((sum, o) => sum + (o.amount || 0), 0);
 
     const salesTarget = Number(defaultSettings?.monthly_sales_target) || 0;
@@ -129,24 +134,24 @@ export default function Dashboard() {
   }, [filteredOpportunities]);
 
   const revenueOverTime = useMemo(() => {
-    const months = ['Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May'];
-    const currentMonth = new Date().getMonth();
+    const months = recentMonthLabels(6);
 
-    return months.map((month, idx) => {
+    return months.map(({ key, label }) => {
       const monthRevenue = opportunities
         .filter((o) => {
-          const oppMonth = new Date(o.updated_date).getMonth();
-          return oppMonth === (currentMonth - 6 + idx + 12) % 12 && o.stage === 'closed_won';
+          if (o.stage !== 'closed_won') return false;
+          const closeDate = safeParseDate(o.close_date) || safeParseDate(o.updated_date);
+          return closeDate && format(closeDate, 'yyyy-MM') === key;
         })
         .reduce((sum, o) => sum + (o.amount || 0), 0);
 
       return {
-        month,
+        month: label,
         won: monthRevenue,
-        target: 55000 + Math.random() * 10000,
+        target: Number(defaultSettings?.monthly_sales_target) || 0,
       };
     });
-  }, [opportunities]);
+  }, [opportunities, defaultSettings]);
 
   const topPerformers = useMemo(() => {
     const performerMap = {};

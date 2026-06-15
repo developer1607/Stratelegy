@@ -12,6 +12,13 @@ import {
   hasPermissionKey,
   hasModuleMaster,
 } from '@shared/permissionRegistry.js';
+import {
+  canAccessPbxDataScope,
+  canViewPbxDomains,
+  canViewPbxConnectionStatus,
+  filterPbxSummaryFields,
+  PBX_SUMMARY_STAT_SCOPES,
+} from '@shared/pbxDataAccess.js';
 
 export { PERMISSION_KEYS, CRM_MODULE_KEYS, SUPPORT_MODULE_KEYS, PBX_MODULE_KEYS, PBX_ACTION_KEYS };
 
@@ -150,3 +157,11 @@ export function getModuleForPage(pageName) {
 }
 
 export { hasPermissionKey };
+
+export {
+  canAccessPbxDataScope,
+  canViewPbxDomains,
+  canViewPbxConnectionStatus,
+  filterPbxSummaryFields,
+  PBX_SUMMARY_STAT_SCOPES,
+};

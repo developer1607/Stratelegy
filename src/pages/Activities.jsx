@@ -13,8 +13,13 @@ import ActivitiesAnalytics from '../components/activities/ActivitiesAnalytics';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { filterByDateRange } from '@/lib/listFilters';
+import { showError, showSuccess } from '@/lib/toast';
+import PermissionGate from '@/components/PermissionGate';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Activities() {
+  const { canWriteEntity } = usePermissions();
+  const canManage = canWriteEntity('Activity');
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [activityType, setActivityType] = useState(null);
@@ -35,16 +40,21 @@ export default function Activities() {
     mutationFn: (data) => api.entities.Activity.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
       setDialogOpen(false);
       setActivityType(null);
+      showSuccess('Activity logged.');
     },
+    onError: (error) => showError(error, 'Failed to log activity.'),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.entities.Activity.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      showSuccess('Activity updated.');
     },
+    onError: (error) => showError(error, 'Failed to update activity.'),
   });
 
   const handleQuickLog = (type) => {
@@ -53,6 +63,7 @@ export default function Activities() {
   };
 
   const handleMarkComplete = (id) => {
+    if (!canManage) return;
     updateMutation.mutate({ id, data: { completed: true } });
   };
 
@@ -144,28 +155,30 @@ export default function Activities() {
               className="pl-9 bg-white"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => handleQuickLog('Call')}>
-              <Phone className="w-4 h-4 mr-2" />
-              Log Call
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => handleQuickLog('Email')}>
-              <Mail className="w-4 h-4 mr-2" />
-              Log Email
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => handleQuickLog('Meeting')}>
-              <CalendarIcon className="w-4 h-4 mr-2" />
-              Log Meeting
-            </Button>
-            <Button
-              size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700"
-              onClick={() => handleQuickLog('Note')}
-            >
-              <ClipboardCheck className="w-4 h-4 mr-2" />
-              Log Task/Note
-            </Button>
-          </div>
+          <PermissionGate entity="Activity">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={() => handleQuickLog('Call')}>
+                <Phone className="w-4 h-4 mr-2" />
+                Log Call
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleQuickLog('Email')}>
+                <Mail className="w-4 h-4 mr-2" />
+                Log Email
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => handleQuickLog('Meeting')}>
+                <CalendarIcon className="w-4 h-4 mr-2" />
+                Log Meeting
+              </Button>
+              <Button
+                size="sm"
+                className="bg-emerald-600 hover:bg-emerald-700"
+                onClick={() => handleQuickLog('Note')}
+              >
+                <ClipboardCheck className="w-4 h-4 mr-2" />
+                Log Task/Note
+              </Button>
+            </div>
+          </PermissionGate>
         </div>
       </div>
 

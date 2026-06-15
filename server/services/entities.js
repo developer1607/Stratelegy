@@ -1,4 +1,5 @@
 import { listUsers, getUserById } from './users.js';
+import { clampLimit } from '../utils/sql.js';
 import * as ticketStore from './ticketStore.js';
 import * as saasStore from './saasStore.js';
 import { onTicketCreated } from './tickets.js';
@@ -24,6 +25,21 @@ export async function listEntities(entityName, sort, limit) {
   }
 
   return saasStore.listEntities(entityName, sort, limit);
+}
+
+export async function listEntitiesPage(entityName, sort, limit, offset) {
+  if (TICKET_ENTITIES.has(entityName) || entityName === USER_ENTITY) {
+    const all = await listEntities(entityName, sort);
+    const lim = clampLimit(limit ?? 25);
+    const off = Math.max(0, parseInt(offset, 10) || 0);
+    return {
+      items: all.slice(off, off + lim),
+      total: all.length,
+      limit: lim,
+      offset: off,
+    };
+  }
+  return saasStore.listEntitiesPage(entityName, sort, limit, offset);
 }
 
 export async function getEntity(entityName, id) {

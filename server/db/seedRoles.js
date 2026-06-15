@@ -1,56 +1,32 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne, execute } from './query.js';
-import { expandPermissionKeys, PBX_READ_KEYS } from '../constants/permissionRegistry.js';
+import { expandPermissionKeys } from '../constants/permissionRegistry.js';
 
-/** Portal roles aligned with sidebar modules (CRM, Support, PBX). */
+/** Portal roles — one per module. Admin is a separate account type (users.role = admin). */
 export const SEEDED_ROLES = [
   {
     slug: 'crm',
     name: 'CRM',
-    description: 'Sales module — accounts, contacts, leads, opportunities, calendar, activities, reports.',
+    description:
+      'Sales module. Turn on permission toggles below to add Support or PBX access, or to restrict screens.',
     sort_order: 10,
     permissions: expandPermissionKeys(['can_access_crm']),
   },
   {
     slug: 'support',
     name: 'Support',
-    description: 'Support desk — tickets, knowledge base, assign, and close.',
+    description:
+      'Support desk. Turn on permission toggles below to add CRM or PBX access, or to restrict screens.',
     sort_order: 20,
     permissions: expandPermissionKeys(['can_access_support']),
   },
   {
-    slug: 'support_viewer',
-    name: 'Support Viewer',
-    description: 'Read tickets and KB; add comments only.',
-    sort_order: 25,
-    permissions: expandPermissionKeys([
-      'can_view_support_dashboard',
-      'can_view_tickets_page',
-      'can_view_tickets',
-      'can_comment_tickets',
-      'can_view_kb_page',
-      'can_view_kb',
-    ]),
-  },
-  {
     slug: 'pbx',
     name: 'PBX',
-    description: 'Full PBX module — all screens and management actions.',
+    description:
+      'PBX module. Turn on permission toggles below to add CRM or Support access, or to restrict screens.',
     sort_order: 30,
     permissions: expandPermissionKeys(['can_access_pbx']),
-  },
-  {
-    slug: 'full_portal',
-    name: 'Full Portal',
-    description: 'CRM, support, and PBX with export and ticket delete.',
-    sort_order: 40,
-    permissions: expandPermissionKeys([
-      'can_access_crm',
-      'can_access_support',
-      'can_access_pbx',
-      'can_export_data',
-      'can_delete_tickets',
-    ]),
   },
 ];
 
@@ -60,11 +36,24 @@ const SLUG_TO_ID = {};
 const RETIRED_ROLE_SLUGS = {
   crm_user: 'crm',
   support_agent: 'support',
-  support_limited: 'support_viewer',
+  support_limited: 'support',
+  support_viewer: 'support',
   pbx_operator: 'pbx',
   pbx_viewer: 'pbx',
-  crm_support: 'full_portal',
+  pbx_limited: 'pbx',
+  crm_support: 'crm',
+  full_portal: 'crm',
 };
+
+/** Retired roles with partial permissions — keep stored flags via custom toggles. */
+const RETIRE_PRESERVE_CUSTOM_FLAGS = new Set([
+  'support_limited',
+  'support_viewer',
+  'pbx_limited',
+  'pbx_viewer',
+  'full_portal',
+  'crm_support',
+]);
 
 export function getSeededRoleId(slug) {
   return SLUG_TO_ID[slug] || null;
@@ -79,10 +68,17 @@ async function retireObsoleteSystemRoles(activeSlugs) {
     const replacementId = replacementSlug ? SLUG_TO_ID[replacementSlug] : null;
 
     if (replacementId) {
-      await execute('UPDATE user_permissions SET role_id = ? WHERE role_id = ?', [
-        replacementId,
-        row.id,
-      ]);
+      if (RETIRE_PRESERVE_CUSTOM_FLAGS.has(row.slug)) {
+        await execute(
+          `UPDATE user_permissions SET role_id = ?, use_custom_permissions = 1 WHERE role_id = ?`,
+          [replacementId, row.id]
+        );
+      } else {
+        await execute('UPDATE user_permissions SET role_id = ? WHERE role_id = ?', [
+          replacementId,
+          row.id,
+        ]);
+      }
     }
 
     await execute('DELETE FROM role_permissions WHERE role_id = ?', [row.id]);

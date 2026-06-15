@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,6 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { validateAccountForm, showValidationErrors } from '@/lib/crmFormValidation';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogGrid,
+  formDialogField,
+  formDialogForm,
+  formDialogFooter,
+} from '@/lib/formDialog';
 
 export default function EditAccountDialog({
   open,
@@ -48,6 +64,7 @@ export default function EditAccountDialog({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
+    if (!showValidationErrors(validateAccountForm(formData))) return;
 
     const dataToSubmit = {
       ...formData,
@@ -59,105 +76,112 @@ export default function EditAccountDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className={formDialogContent('md')}>
+        <DialogHeader className={formDialogHeader}>
           <DialogTitle>{readOnly ? 'Account Details' : 'Edit Account'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Account Name *</Label>
+        <form onSubmit={handleSubmit} className={formDialogForm}>
+          <div className={formDialogBody}>
+            <div className={formDialogGrid}>
+              <div className={formDialogField}>
+                <Label htmlFor="edit-account-name">Account Name *</Label>
+                <Input
+                  id="edit-account-name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className={formDialogField}>
+                <Label htmlFor="edit-account-industry">Industry</Label>
+                <Input
+                  id="edit-account-industry"
+                  value={formData.industry}
+                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className={formDialogField}>
+                <Label htmlFor="edit-account-phone">Phone</Label>
+                <Input
+                  id="edit-account-phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className={formDialogField}>
+                <Label htmlFor="edit-account-email">Email</Label>
+                <Input
+                  id="edit-account-email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+
+            <div className={formDialogField}>
+              <Label htmlFor="edit-account-website">Website</Label>
               <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                required
+                id="edit-account-website"
+                type="url"
+                placeholder="https://example.com"
+                value={formData.website}
+                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 disabled={readOnly}
               />
             </div>
-            <div>
-              <Label>Industry</Label>
-              <Input
-                value={formData.industry}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+
+            <div className={formDialogGrid}>
+              <div className={formDialogField}>
+                <Label htmlFor="edit-account-revenue">Annual Revenue</Label>
+                <Input
+                  id="edit-account-revenue"
+                  type="number"
+                  min="0"
+                  placeholder="100000"
+                  value={formData.annual_revenue}
+                  onChange={(e) => setFormData({ ...formData, annual_revenue: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+              <div className={formDialogField}>
+                <Label htmlFor="edit-account-employees">Employees</Label>
+                <Input
+                  id="edit-account-employees"
+                  type="number"
+                  min="0"
+                  placeholder="50"
+                  value={formData.employees}
+                  onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+
+            <div className={formDialogField}>
+              <Label htmlFor="edit-account-status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData({ ...formData, status: value })}
                 disabled={readOnly}
-              />
+              >
+                <SelectTrigger id="edit-account-status">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="prospect">Prospect</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Phone</Label>
-              <Input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>Website</Label>
-            <Input
-              type="url"
-              placeholder="https://example.com"
-              value={formData.website}
-              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
-              disabled={readOnly}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Annual Revenue</Label>
-              <Input
-                type="number"
-                placeholder="100000"
-                value={formData.annual_revenue}
-                onChange={(e) => setFormData({ ...formData, annual_revenue: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label>Employees</Label>
-              <Input
-                type="number"
-                placeholder="50"
-                value={formData.employees}
-                onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-          </div>
-
-          <div>
-            <Label>Status</Label>
-            <Select
-              value={formData.status}
-              onValueChange={(value) => setFormData({ ...formData, status: value })}
-              disabled={readOnly}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="prospect">Prospect</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
+          <DialogFooter className={formDialogFooter}>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {readOnly ? 'Close' : 'Cancel'}
             </Button>
@@ -166,7 +190,7 @@ export default function EditAccountDialog({
                 {isLoading ? 'Saving...' : 'Save Changes'}
               </Button>
             )}
-          </div>
+          </DialogFooter>
         </form>
       </DialogContent>
     </Dialog>

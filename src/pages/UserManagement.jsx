@@ -130,6 +130,11 @@ export default function UserManagement({ embedded = false }) {
     [portalRoles]
   );
 
+  const systemModuleRoles = useMemo(
+    () => portalRoles.filter((role) => role.is_system),
+    [portalRoles]
+  );
+
   const sortedUsers = useMemo(() => {
     return [...users].sort((a, b) => {
       if (a.role === 'admin' && b.role !== 'admin') return -1;
@@ -140,7 +145,7 @@ export default function UserManagement({ embedded = false }) {
     });
   }, [users]);
 
-  const defaultPortalRoleId = portalRoles[0]?.id || '';
+  const defaultPortalRoleId = systemModuleRoles[0]?.id || '';
 
   useEffect(() => {
     if (defaultPortalRoleId && !addForm.portalRoleId) {
@@ -284,8 +289,10 @@ export default function UserManagement({ embedded = false }) {
 
   const handleMasterToggle = (user, group, value) => {
     const updates = { [group.masterKey]: value };
-    for (const key of group.allKeys || []) {
-      updates[key] = value;
+    if (value) {
+      for (const key of group.allKeys || []) {
+        updates[key] = true;
+      }
     }
     updatePermissionMutation.mutate({ userId: user.id, updates });
   };
@@ -321,8 +328,10 @@ export default function UserManagement({ embedded = false }) {
 
   const handleRoleMasterToggle = (group, value) => {
     const updates = { [group.masterKey]: value };
-    for (const key of group.allKeys || []) {
-      updates[key] = value;
+    if (value) {
+      for (const key of group.allKeys || []) {
+        updates[key] = true;
+      }
     }
     setRoleForm((prev) => ({
       ...prev,
@@ -517,15 +526,16 @@ export default function UserManagement({ embedded = false }) {
 
         <Card className="mb-6">
           <CardContent className="py-4">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <p className="text-sm font-medium text-gray-900">Portal roles</p>
-              <Button size="sm" variant="outline" onClick={openCreateRoleDialog}>
-                <Plus className="w-4 h-4 mr-2" />
-                Create role
-              </Button>
+            <div className="mb-3">
+              <p className="text-sm font-medium text-gray-900">Module roles</p>
+              <p className="text-xs text-gray-500 mt-1">
+                CRM, Support, and PBX — pick one per user, then adjust individual permissions below.
+                Choose <span className="font-medium">Administrator</span> when creating an account for
+                full access without toggles.
+              </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-gray-600">
-              {portalRoles.map((role) => (
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-gray-600">
+              {systemModuleRoles.map((role) => (
                 <div
                   key={role.id}
                   className="rounded border bg-white px-3 py-2 flex items-start justify-between gap-2"
@@ -533,49 +543,21 @@ export default function UserManagement({ embedded = false }) {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-gray-800">{role.name}</span>
-                      {role.is_system ? (
-                        <Badge variant="secondary" className="text-[10px]">
-                          System
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px]">
-                          Custom
-                        </Badge>
-                      )}
                     </div>
                     {role.description ? (
                       <p className="mt-0.5 leading-snug">{role.description}</p>
                     ) : null}
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7"
-                      onClick={() => openEditRoleDialog(role)}
-                      title={role.is_system ? 'View role permissions' : 'Edit role'}
-                    >
-                      <Pencil className="w-3.5 h-3.5" />
-                    </Button>
-                    {!role.is_system && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-red-600 hover:text-red-700"
-                        disabled={deleteRoleMutation.isPending}
-                        onClick={() => {
-                          if (window.confirm(`Delete role "${role.name}"?`)) {
-                            deleteRoleMutation.mutate(role.id);
-                          }
-                        }}
-                        title="Delete role"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    )}
-                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0"
+                    onClick={() => openEditRoleDialog(role)}
+                    title="View role permissions"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </Button>
                 </div>
               ))}
             </div>
@@ -755,7 +737,7 @@ export default function UserManagement({ embedded = false }) {
                                 <SelectItem value="none" disabled>
                                   Select a portal role
                                 </SelectItem>
-                                {portalRoles.map((role) => (
+                                {systemModuleRoles.map((role) => (
                                   <SelectItem key={role.id} value={role.id}>
                                     {role.name}
                                   </SelectItem>
@@ -859,11 +841,13 @@ export default function UserManagement({ embedded = false }) {
 
                         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                           {permissionGroups.map((group) => {
-                            const masterEnabled = group.masterKey ? !!perms[group.masterKey] : true;
+                            const hasFullModuleAccess = group.masterKey
+                              ? Boolean(perms[group.masterKey])
+                              : false;
                             return (
                               <div
                                 key={group.id}
-                                className={`rounded-lg border p-4 bg-white ${!masterEnabled ? 'opacity-60' : ''}`}
+                                className="rounded-lg border p-4 bg-white"
                               >
                                 <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                                   <div className="flex items-center gap-2">
@@ -886,9 +870,7 @@ export default function UserManagement({ embedded = false }) {
                                           variant="outline"
                                           size="sm"
                                           className="h-7 text-xs"
-                                          disabled={
-                                            !masterEnabled || updatePermissionMutation.isPending
-                                          }
+                                          disabled={updatePermissionMutation.isPending}
                                           onClick={() =>
                                             handleBatchToggle(user, group.screenKeys, true)
                                           }
@@ -900,9 +882,7 @@ export default function UserManagement({ embedded = false }) {
                                           variant="outline"
                                           size="sm"
                                           className="h-7 text-xs"
-                                          disabled={
-                                            !masterEnabled || updatePermissionMutation.isPending
-                                          }
+                                          disabled={updatePermissionMutation.isPending}
                                           onClick={() =>
                                             handleBatchToggle(user, group.screenKeys, false)
                                           }
@@ -918,9 +898,7 @@ export default function UserManagement({ embedded = false }) {
                                           variant="outline"
                                           size="sm"
                                           className="h-7 text-xs"
-                                          disabled={
-                                            !masterEnabled || updatePermissionMutation.isPending
-                                          }
+                                          disabled={updatePermissionMutation.isPending}
                                           onClick={() =>
                                             handleBatchToggle(user, group.actionKeys, true)
                                           }
@@ -932,9 +910,7 @@ export default function UserManagement({ embedded = false }) {
                                           variant="outline"
                                           size="sm"
                                           className="h-7 text-xs"
-                                          disabled={
-                                            !masterEnabled || updatePermissionMutation.isPending
-                                          }
+                                          disabled={updatePermissionMutation.isPending}
                                           onClick={() =>
                                             handleBatchToggle(user, group.actionKeys, false)
                                           }
@@ -954,6 +930,13 @@ export default function UserManagement({ embedded = false }) {
                                     ) : null}
                                   </div>
                                 </div>
+                                {group.masterKey ? (
+                                  <p className="text-[11px] text-gray-500 mb-3 leading-snug">
+                                    {hasFullModuleAccess
+                                      ? 'Full module access is on — all screens and actions below are enabled.'
+                                      : 'Turn on full access for everything, or pick individual screens and actions below.'}
+                                  </p>
+                                ) : null}
                                 <div className="space-y-4 pl-1 max-h-[420px] overflow-y-auto pr-1">
                                   {group.sections?.map((section) => (
                                     <div key={section.label}>
@@ -971,9 +954,7 @@ export default function UserManagement({ embedded = false }) {
                                             </Label>
                                             <Switch
                                               checked={Boolean(perms[perm.key])}
-                                              disabled={
-                                                !masterEnabled || updatePermissionMutation.isPending
-                                              }
+                                              disabled={updatePermissionMutation.isPending}
                                               onCheckedChange={(val) =>
                                                 handleToggle(user, perm.key, val)
                                               }
@@ -1114,7 +1095,7 @@ export default function UserManagement({ embedded = false }) {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {portalRoles.map((role) => (
+                    {systemModuleRoles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
                         {role.name}
                       </SelectItem>
@@ -1185,11 +1166,11 @@ export default function UserManagement({ embedded = false }) {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {permissionGroups.map((group) => {
-                const masterEnabled = group.masterKey
-                  ? Boolean(roleForm.permissions[group.masterKey])
-                  : true;
                 const isSystemRole =
                   editingRoleId && portalRoles.find((r) => r.id === editingRoleId)?.is_system;
+                const hasFullModuleAccess = group.masterKey
+                  ? Boolean(roleForm.permissions[group.masterKey])
+                  : false;
                 return (
                   <div key={group.id} className="rounded-lg border p-3 bg-gray-50/50">
                     <div className="flex items-center justify-between mb-2 gap-2">
@@ -1201,6 +1182,13 @@ export default function UserManagement({ embedded = false }) {
                         />
                       ) : null}
                     </div>
+                    {group.masterKey && !isSystemRole ? (
+                      <p className="text-[10px] text-gray-500 mb-2 leading-snug">
+                        {hasFullModuleAccess
+                          ? 'Full module access — all permissions enabled.'
+                          : 'Pick individual permissions, or enable full access.'}
+                      </p>
+                    ) : null}
                     <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
                       {group.sections?.map((section) => (
                         <div key={section.label}>
@@ -1218,7 +1206,7 @@ export default function UserManagement({ embedded = false }) {
                                 </Label>
                                 <Switch
                                   checked={Boolean(roleForm.permissions[perm.key])}
-                                  disabled={!masterEnabled || isSystemRole}
+                                  disabled={isSystemRole}
                                   onCheckedChange={(val) =>
                                     handleRolePermissionToggle(perm.key, val)
                                   }
@@ -1297,7 +1285,7 @@ export default function UserManagement({ embedded = false }) {
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
                   <SelectContent>
-                    {portalRoles.map((role) => (
+                    {systemModuleRoles.map((role) => (
                       <SelectItem key={role.id} value={role.id}>
                         {role.name}
                       </SelectItem>

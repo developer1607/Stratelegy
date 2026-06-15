@@ -1,10 +1,23 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Scan, Upload, Loader2 } from 'lucide-react';
 import { api } from '@/api/client';
 import { showError } from '@/lib/toast';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogForm,
+  formDialogFooter,
+} from '@/lib/formDialog';
 
 export default function BusinessCardScanner({ open, onOpenChange, onContactExtracted }) {
   const [isScanning, setIsScanning] = useState(false);
@@ -18,14 +31,15 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
   };
 
   const handleScan = async () => {
-    if (!file) return;
+    if (!file) {
+      showError(null, 'Please select an image to scan.');
+      return;
+    }
 
     setIsScanning(true);
     try {
-      // Upload the file first
       const { file_url } = await api.integrations.Core.UploadFile({ file });
 
-      // Extract data from the business card image
       const result = await api.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
         json_schema: {
@@ -45,10 +59,7 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
         onOpenChange(false);
         setFile(null);
       } else {
-        showError(
-          null,
-          'Card not readable. Enter details manually.'
-        );
+        showError(null, 'Card not readable. Enter details manually.');
       }
     } catch (error) {
       console.error('Error scanning business card:', error);
@@ -60,43 +71,47 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className={formDialogContent('sm')}>
+        <DialogHeader className={formDialogHeader}>
           <DialogTitle>Scan Business Card</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-            <Scan className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-sm text-gray-600 mb-4">
-              Upload a photo or image of the business card
-            </p>
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="max-w-xs mx-auto"
-            />
-            {file && <p className="text-sm text-green-600 mt-2">Selected: {file.name}</p>}
+        <div className={formDialogForm}>
+          <div className={formDialogBody}>
+            <div className="rounded-lg border-2 border-dashed border-gray-300 p-6 text-center sm:p-8">
+              <Scan className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+              <p className="mb-4 text-sm text-gray-600">
+                Upload a photo or image of the business card
+              </p>
+              <Input
+                type="file"
+                accept="image/*"
+                onChange={handleFileChange}
+                className="mx-auto max-w-full sm:max-w-xs"
+              />
+              {file && (
+                <p className="mt-2 truncate text-sm text-green-600">Selected: {file.name}</p>
+              )}
+            </div>
           </div>
 
-          <div className="flex justify-end gap-3">
+          <DialogFooter className={formDialogFooter}>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button onClick={handleScan} disabled={!file || isScanning}>
               {isScanning ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Scanning...
                 </>
               ) : (
                 <>
-                  <Upload className="w-4 h-4 mr-2" />
+                  <Upload className="mr-2 h-4 w-4" />
                   Scan Card
                 </>
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </div>
       </DialogContent>
     </Dialog>

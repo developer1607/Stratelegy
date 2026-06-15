@@ -13,6 +13,7 @@ import {
 } from "../services/ticketPermissions.js";
 import {
   listEntities,
+  listEntitiesPage,
   getEntity,
   filterEntities,
   createEntity,
@@ -70,7 +71,23 @@ router.get("/:entityName", async (req, res, next) => {
         .status(403)
         .json({ message: "You do not have permission to view this data" });
     }
-    const { sort, limit } = req.query;
+    const { sort, limit, offset } = req.query;
+    if (offset !== undefined) {
+      const result = await listEntitiesPage(
+        entityName,
+        sort,
+        limit,
+        offset,
+      );
+      if (entityName === 'TicketComment') {
+        result.items = filterCommentsForViewer(
+          result.items,
+          req.user,
+          req.permissions,
+        );
+      }
+      return res.json(result);
+    }
     let rows = await listEntities(entityName, sort, limit);
     if (entityName === "TicketComment") {
       rows = filterCommentsForViewer(rows, req.user, req.permissions);

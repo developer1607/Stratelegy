@@ -43,8 +43,12 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, CheckCircle, XCircle, Percent, Calendar } from 'lucide-react';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { showError, showSuccess } from '@/lib/toast';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Leads() {
+  const { canWriteEntity } = usePermissions();
+  const canManage = canWriteEntity('Lead');
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -83,7 +87,9 @@ export default function Leads() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       setDialogOpen(false);
+      showSuccess('Lead created.');
     },
+    onError: (error) => showError(error, 'Failed to create lead.'),
   });
 
   const updateMutation = useMutation({
@@ -92,14 +98,18 @@ export default function Leads() {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
       setEditDialogOpen(false);
       setSelectedLead(null);
+      showSuccess('Lead updated.');
     },
+    onError: (error) => showError(error, 'Failed to update lead.'),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id) => api.entities.Lead.delete(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leads'] });
+      showSuccess('Lead deleted.');
     },
+    onError: (error) => showError(error, 'Failed to delete lead.'),
   });
 
   const handleEdit = (lead) => {
@@ -452,14 +462,20 @@ export default function Leads() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(lead)}>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Convert to Opportunity</DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => deleteMutation.mutate(lead.id)}
-                          >
-                            Delete
+                          <DropdownMenuItem onClick={() => handleEdit(lead)}>
+                            {canManage ? 'Edit' : 'View'}
                           </DropdownMenuItem>
+                          {canManage && (
+                            <>
+                              <DropdownMenuItem>Convert to Opportunity</DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => deleteMutation.mutate(lead.id)}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            </>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -494,6 +510,7 @@ export default function Leads() {
         lead={selectedLead}
         onSubmit={(data) => updateMutation.mutate({ id: selectedLead.id, data })}
         isLoading={updateMutation.isPending}
+        readOnly={!canManage}
       />
     </div>
   );

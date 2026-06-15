@@ -260,6 +260,7 @@ function moduleForPage(pageName) {
       'Accounts',
       'Contacts',
       'Leads',
+      'Opportunities',
       'Calendar',
       'Activities',
       'Reports',
@@ -288,6 +289,8 @@ function moduleForPage(pageName) {
       'SIPALG',
       'E911Review',
       'E911Reports',
+      'PBXReports',
+      'PBXMosScores',
       'Troubleshooting',
       'SIPTrunks',
     ].includes(pageName)

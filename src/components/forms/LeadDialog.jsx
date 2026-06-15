@@ -16,6 +16,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { LEAD_STATUSES } from '@/lib/crmHelpers';
+import { validateLeadForm, showValidationErrors } from '@/lib/crmFormValidation';
+import {
+  formDialogContent,
+  formDialogHeader,
+  formDialogBody,
+  formDialogGrid,
+  formDialogField,
+  formDialogForm,
+  formDialogFooter,
+} from '@/lib/formDialog';
 
 export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) {
   const [formData, setFormData] = useState({
@@ -26,10 +37,13 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
     status: 'new',
     source: 'email',
     value: '',
+    next_follow_up: '',
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    if (!showValidationErrors(validateLeadForm(formData))) return;
+
     const data = {
       ...formData,
       value: formData.value ? parseFloat(formData.value) : undefined,
@@ -43,27 +57,28 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
       status: 'new',
       source: 'email',
       value: '',
+      next_follow_up: '',
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
+      <DialogContent className={formDialogContent('sm')}>
+        <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create New Lead</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+        <form onSubmit={handleSubmit} className={formDialogForm}>
+          <div className={formDialogBody}>
+            <div className="space-y-4">
+              <div className={formDialogField}>
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
-                required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className={formDialogField}>
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -72,7 +87,7 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className={formDialogField}>
               <Label htmlFor="phone">Phone</Label>
               <Input
                 id="phone"
@@ -80,7 +95,7 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className={formDialogField}>
               <Label htmlFor="company">Company</Label>
               <Input
                 id="company"
@@ -88,7 +103,7 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 onChange={(e) => setFormData({ ...formData, company: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className={formDialogField}>
               <Label htmlFor="value">Estimated Value</Label>
               <Input
                 id="value"
@@ -97,34 +112,44 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 onChange={(e) => setFormData({ ...formData, value: e.target.value })}
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className={formDialogField}>
+              <Label htmlFor="next_follow_up">Next Follow-up</Label>
+              <Input
+                id="next_follow_up"
+                type="date"
+                value={formData.next_follow_up}
+                onChange={(e) => setFormData({ ...formData, next_follow_up: e.target.value })}
+              />
+            </div>
+            <div className={formDialogGrid}>
+              <div className={formDialogField}>
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => setFormData({ ...formData, status: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="status">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">New</SelectItem>
-                    <SelectItem value="contacted">Contacted</SelectItem>
-                    <SelectItem value="qualified">Qualified</SelectItem>
-                    <SelectItem value="unqualified">Unqualified</SelectItem>
+                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
+                    {LEAD_STATUSES.map((status) => (
+                      <SelectItem key={status.value} value={status.value}>
+                        {status.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className={formDialogField}>
                 <Label htmlFor="source">Source</Label>
                 <Select
                   value={formData.source}
                   onValueChange={(value) => setFormData({ ...formData, source: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger id="source">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
                     <SelectItem value="call">Call</SelectItem>
                     <SelectItem value="email">Email</SelectItem>
                     <SelectItem value="website">Website</SelectItem>
@@ -133,8 +158,9 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 </Select>
               </div>
             </div>
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className={formDialogFooter}>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>

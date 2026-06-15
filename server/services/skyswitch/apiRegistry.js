@@ -334,6 +334,30 @@ export const SKYSWITCH_API_REGISTRY = [
     scope: 'log',
     implemented: true,
   },
+  {
+    portal: 'GET /api/pbx/endpoint-control/overview',
+    skyswitch: 'GET /accounts/{id}/pbx/subscribers + messaging + sip-alg',
+    scope: 'pbx|messaging',
+    implemented: true,
+  },
+  {
+    portal: 'GET /api/pbx/e911/review-overview',
+    skyswitch: 'GET e911/endpoints + pbx/subscribers',
+    scope: 'e911|pbx',
+    implemented: true,
+  },
+  {
+    portal: 'GET /api/pbx/offline-endpoints/overview',
+    skyswitch: 'GET fax-atas + pbx/subscribers',
+    scope: 'pbx|routing',
+    implemented: true,
+  },
+  {
+    portal: 'GET /api/pbx/mos-scores',
+    skyswitch: 'GET /accounts/{id}/journals (filtered)',
+    scope: 'log',
+    implemented: true,
+  },
 ];
 
 /** SkySwitch areas documented but intentionally not proxied (admin/back-office tooling). */

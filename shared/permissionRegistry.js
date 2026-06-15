@@ -134,11 +134,25 @@ export const PERMISSION_DEFS = [
     entityWrite: 'Opportunity',
   },
   {
+    key: 'can_view_calendar_events',
+    label: 'View calendar events',
+    module: 'crm',
+    section: 'Data',
+    entityRead: 'CalendarEvent',
+  },
+  {
     key: 'can_manage_calendar',
     label: 'Manage calendar',
     module: 'crm',
     section: 'Data',
     entityWrite: 'CalendarEvent',
+  },
+  {
+    key: 'can_view_activities',
+    label: 'View activities',
+    module: 'crm',
+    section: 'Data',
+    entityRead: 'Activity',
   },
   {
     key: 'can_manage_activities',
@@ -315,6 +329,20 @@ export const PERMISSION_DEFS = [
     page: 'E911Reports',
   },
   {
+    key: 'can_view_pbx_reports_page',
+    label: 'PBX reports',
+    module: 'pbx',
+    section: 'Screens',
+    page: 'PBXReports',
+  },
+  {
+    key: 'can_view_mos_scores_page',
+    label: 'MOS scores',
+    module: 'pbx',
+    section: 'Screens',
+    page: 'PBXMosScores',
+  },
+  {
     key: 'can_view_call_logs_page',
     label: 'Call logs',
     module: 'pbx',
@@ -409,6 +437,16 @@ export const LEGACY_PERMISSION_EXPAND = {
     'can_view_opportunities_page',
     'can_view_opportunities',
     'can_manage_opportunities',
+  ],
+  can_manage_activities: [
+    'can_view_activities_page',
+    'can_view_activities',
+    'can_manage_activities',
+  ],
+  can_manage_calendar: [
+    'can_view_calendar_page',
+    'can_view_calendar_events',
+    'can_manage_calendar',
   ],
   can_manage_tickets: [
     'can_access_support',

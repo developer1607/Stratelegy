@@ -57,6 +57,14 @@ function createEntityClient(entityName) {
       const qs = params.toString();
       return request("GET", `/api/entities/${entityName}${qs ? `?${qs}` : ""}`);
     },
+    listPage: (sort, limit, offset) => {
+      const params = new URLSearchParams();
+      if (sort) params.set("sort", sort);
+      if (limit != null) params.set("limit", String(limit));
+      if (offset != null) params.set("offset", String(offset));
+      const qs = params.toString();
+      return request("GET", `/api/entities/${entityName}?${qs}`);
+    },
     get: (id) => request("GET", `/api/entities/${entityName}/${id}`),
     filter: (query, sort) =>
       request("POST", `/api/entities/${entityName}/filter`, { query, sort }),

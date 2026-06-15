@@ -4,7 +4,7 @@ import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
-import UcConfigSheet from '@/components/pbx/endpoints/UcConfigSheet';
+import SubscriberDetailSheet from '@/components/pbx/endpoints/SubscriberDetailSheet';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
@@ -20,7 +20,7 @@ export default function Extensions() {
 function ExtensionsContent({ domain }) {
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('all');
-  const [ucExt, setUcExt] = useState(null);
+  const [detailSub, setDetailSub] = useState(null);
 
   const {
     data = [],
@@ -59,6 +59,15 @@ function ExtensionsContent({ domain }) {
 
   const extensionColumns = useMemo(
     () => [
+      {
+        key: 'actions',
+        label: '',
+        render: (row) => (
+          <Button type="button" variant="outline" size="sm" onClick={() => setDetailSub(row)}>
+            Detail
+          </Button>
+        ),
+      },
       { key: 'user', label: 'Extension' },
       { key: 'name', label: 'Name' },
       { key: 'subscriber_login', label: 'Login' },
@@ -66,13 +75,8 @@ function ExtensionsContent({ domain }) {
       { key: 'email_address', label: 'Email' },
       { key: 'group', label: 'Group' },
       {
-        key: 'actions',
-        label: 'UC config',
-        render: (row) => (
-          <Button type="button" variant="outline" size="sm" onClick={() => setUcExt(row.user)}>
-            View
-          </Button>
-        ),
+        key: 'scope',
+        label: 'Scope',
       },
     ],
     []
@@ -144,11 +148,11 @@ function ExtensionsContent({ domain }) {
         </TabsContent>
       </Tabs>
 
-      <UcConfigSheet
+      <SubscriberDetailSheet
         domain={domain}
-        subscriber={ucExt}
-        open={!!ucExt}
-        onOpenChange={(open) => !open && setUcExt(null)}
+        subscriber={detailSub}
+        open={!!detailSub}
+        onOpenChange={(open) => !open && setDetailSub(null)}
       />
     </div>
   );

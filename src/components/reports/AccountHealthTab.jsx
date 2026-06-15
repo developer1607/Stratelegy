@@ -22,6 +22,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { differenceInDays, parseISO } from 'date-fns';
+import { activityMatchesAccount } from '@/lib/crmHelpers';
 
 export default function AccountHealthTab({
   filteredAccounts,
@@ -31,7 +32,9 @@ export default function AccountHealthTab({
   // Account Health Score
   const accountHealth = React.useMemo(() => {
     return filteredAccounts.map((account) => {
-      const accountActivities = filteredActivities.filter((a) => a.related_to_id === account.id);
+      const accountActivities = filteredActivities.filter((a) =>
+        activityMatchesAccount(a, account)
+      );
       const accountOpps = filteredOpportunities.filter((o) => o.account_name === account.name);
 
       const lastActivity = accountActivities.sort(

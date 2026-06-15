@@ -10,9 +10,12 @@ import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function PBXDomains() {
   const { domain: selectedDomain, setDomain, domains, isLoading, error } = usePbxDomain();
+  const { canAccessPage } = usePermissions();
+  const canOpenDashboard = canAccessPage('PBXDashboard');
   const [search, setSearch] = useState('');
   const [resellerFilter, setResellerFilter] = useState('all');
 
@@ -100,15 +103,17 @@ export default function PBXDomains() {
               'Select domain'
             )}
           </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link
-              to={`${createPageUrl('PBXDashboard')}?domain=${encodeURIComponent(row.domain)}`}
-              onClick={() => !row.isSelected && setDomain(row.domain)}
-            >
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Dashboard
-            </Link>
-          </Button>
+          {canOpenDashboard ? (
+            <Button asChild size="sm" variant="outline">
+              <Link
+                to={`${createPageUrl('PBXDashboard')}?domain=${encodeURIComponent(row.domain)}`}
+                onClick={() => !row.isSelected && setDomain(row.domain)}
+              >
+                <ExternalLink className="h-4 w-4 mr-1" />
+                Dashboard
+              </Link>
+            </Button>
+          ) : null}
         </div>
       ),
     },
@@ -158,13 +163,15 @@ export default function PBXDomains() {
                     </p>
                   ) : null}
                 </div>
-                <Button asChild className="bg-[#F07020] hover:bg-[#e06518] shrink-0">
-                  <Link
-                    to={`${createPageUrl('PBXDashboard')}?domain=${encodeURIComponent(selectedRecord.domain)}`}
-                  >
-                    Open PBX dashboard
-                  </Link>
-                </Button>
+                {canOpenDashboard ? (
+                  <Button asChild className="bg-[#F07020] hover:bg-[#e06518] shrink-0">
+                    <Link
+                      to={`${createPageUrl('PBXDashboard')}?domain=${encodeURIComponent(selectedRecord.domain)}`}
+                    >
+                      Open PBX dashboard
+                    </Link>
+                  </Button>
+                ) : null}
               </CardContent>
             </Card>
           ) : (

@@ -59,7 +59,7 @@ export default function ActivityProductivityTab({ filteredActivities, filteredOp
 
   // Overdue Activities
   const overdueActivities = filteredActivities
-    .filter((a) => a.date && isAfter(new Date(), parseISO(a.date)) && a.type !== 'Note')
+    .filter((a) => a.date && isAfter(new Date(), parseISO(a.date)) && !a.completed)
     .slice(0, 20);
 
   // Activities by Owner
