@@ -186,7 +186,9 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                 <FieldError message={validation.fieldError('related_to_type')} />
               </div>
               <div className={formDialogField}>
-                <Label htmlFor="activity-related-record">Related To (Record)</Label>
+                <Label htmlFor="activity-related-record">
+                  Related To (Record){formData.related_to_type ? ' *' : ''}
+                </Label>
                 {formData.related_to_type ? (
                   <Select
                     value={formData.related_to_id || 'none'}

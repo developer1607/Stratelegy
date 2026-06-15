@@ -83,14 +83,17 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 />
                 <FieldError message={validation.fieldError('name')} />
               </div>
+              <p className="text-xs text-muted-foreground -mb-2">Email or phone is required</p>
               <div className={formDialogField}>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => validation.updateField('email', e.target.value, formData, setFormData)}
-                  onBlur={() => validation.touchField('email', formData)}
+                  onChange={(e) =>
+                    validation.updateField('email', e.target.value, formData, setFormData, ['phone'])
+                  }
+                  onBlur={() => validation.touchField('email', formData, ['phone'])}
                   className={validation.inputClassName('email')}
                   aria-invalid={Boolean(validation.fieldError('email'))}
                 />
@@ -100,9 +103,12 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 <Label htmlFor="phone">Phone</Label>
                 <Input
                   id="phone"
+                  type="tel"
                   value={formData.phone}
-                  onChange={(e) => validation.updateField('phone', e.target.value, formData, setFormData)}
-                  onBlur={() => validation.touchField('phone', formData)}
+                  onChange={(e) =>
+                    validation.updateField('phone', e.target.value, formData, setFormData, ['email'])
+                  }
+                  onBlur={() => validation.touchField('phone', formData, ['email'])}
                   className={validation.inputClassName('phone')}
                   aria-invalid={Boolean(validation.fieldError('phone'))}
                 />

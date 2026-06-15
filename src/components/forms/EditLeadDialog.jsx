@@ -106,14 +106,47 @@ export default function EditLeadDialog({
                 <Input id="edit-lead-name" value={formData.name} disabled={readOnly} {...bind('name')} />
                 {!readOnly && <FieldError message={validation.fieldError('name')} />}
               </div>
+              {!readOnly && (
+                <p className="text-xs text-muted-foreground col-span-full -mb-2">
+                  Email or phone is required
+                </p>
+              )}
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-email">Email</Label>
-                <Input id="edit-lead-email" type="email" value={formData.email} disabled={readOnly} {...bind('email')} />
+                <Input
+                  id="edit-lead-email"
+                  type="email"
+                  value={formData.email}
+                  disabled={readOnly}
+                  {...(readOnly
+                    ? {}
+                    : {
+                        onChange: (e) =>
+                          validation.updateField('email', e.target.value, formData, setFormData, ['phone']),
+                        onBlur: () => validation.touchField('email', formData, ['phone']),
+                        className: validation.inputClassName('email'),
+                        'aria-invalid': Boolean(validation.fieldError('email')),
+                      })}
+                />
                 {!readOnly && <FieldError message={validation.fieldError('email')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-phone">Phone</Label>
-                <Input id="edit-lead-phone" type="tel" value={formData.phone} disabled={readOnly} {...bind('phone')} />
+                <Input
+                  id="edit-lead-phone"
+                  type="tel"
+                  value={formData.phone}
+                  disabled={readOnly}
+                  {...(readOnly
+                    ? {}
+                    : {
+                        onChange: (e) =>
+                          validation.updateField('phone', e.target.value, formData, setFormData, ['email']),
+                        onBlur: () => validation.touchField('phone', formData, ['email']),
+                        className: validation.inputClassName('phone'),
+                        'aria-invalid': Boolean(validation.fieldError('phone')),
+                      })}
+                />
                 {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
               <div className={formDialogField}>

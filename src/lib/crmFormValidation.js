@@ -86,6 +86,14 @@ function oneOf(value, allowed, label) {
   return null;
 }
 
+function requireEmailOrPhone(errors, email, phone) {
+  if (isEmpty(email) && isEmpty(phone)) {
+    const message = 'Email or phone is required.';
+    collect(errors, 'email', message);
+    collect(errors, 'phone', message);
+  }
+}
+
 /** Returns true when there are no validation errors. */
 export function isFormValid(errors) {
   return Object.keys(errors).length === 0;
@@ -147,6 +155,7 @@ export function validateLeadForm(data) {
   const leadStatusValues = LEAD_STATUSES.map((s) => s.value);
   collect(errors, 'name', requiredField(data.name, 'Name'));
   collect(errors, 'name', maxLen(data.name, 255, 'Name'));
+  requireEmailOrPhone(errors, data.email, data.phone);
   collect(errors, 'email', emailField(data.email, 'Email'));
   collect(errors, 'phone', phoneField(data.phone, 'Phone'));
   collect(errors, 'company', maxLen(data.company, 255, 'Company'));

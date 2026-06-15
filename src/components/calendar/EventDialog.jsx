@@ -221,7 +221,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
 
               {formData.related_to_type && (
                 <div className={formDialogField}>
-                  <Label htmlFor="event-related-name">Name</Label>
+                  <Label htmlFor="event-related-name">Name *</Label>
                   <Input
                     id="event-related-name"
                     value={formData.related_to_name}
