@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { api } from '@/api/client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,14 +10,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Filter, MoreHorizontal, Plus, Download } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, Plus, Download, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/utils';
 import { recentMonthLabels, safeParseDate } from '@/lib/crmHelpers';
+import { showError, showSuccess } from '@/lib/toast';
+import PermissionGate from '@/components/PermissionGate';
+import LeadDialog from '@/components/forms/LeadDialog';
+import ContactDialog from '@/components/forms/ContactDialog';
+import OpportunityDialog from '@/components/forms/OpportunityDialog';
+import ActivityDialog from '@/components/forms/ActivityDialog';
 import {
   BarChart,
   Bar,
@@ -34,9 +46,11 @@ import {
 } from 'recharts';
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const [ownerFilter] = useState('all');
   const [stageFilter, setStageFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [activeDialog, setActiveDialog] = useState(null);
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads', 'dashboard'],
@@ -208,6 +222,85 @@ export default function Dashboard() {
     closed_lost: 'bg-red-100 text-red-800',
   };
 
+  const invalidateDashboard = () => {
+    queryClient.invalidateQueries({ queryKey: ['leads', 'dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['opportunities', 'dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['activities', 'dashboard'] });
+  };
+
+  const createLeadMutation = useMutation({
+    mutationFn: (data) => api.entities.Lead.create(data),
+    onSuccess: () => {
+      invalidateDashboard();
+      setActiveDialog(null);
+      showSuccess('Lead created.');
+    },
+    onError: (error) => showError(error, 'Failed to create lead.'),
+  });
+
+  const createContactMutation = useMutation({
+    mutationFn: (data) => api.entities.Contact.create(data),
+    onSuccess: () => {
+      invalidateDashboard();
+      setActiveDialog(null);
+      showSuccess('Contact created.');
+    },
+    onError: (error) => showError(error, 'Failed to create contact.'),
+  });
+
+  const createOpportunityMutation = useMutation({
+    mutationFn: (data) => api.entities.Opportunity.create(data),
+    onSuccess: () => {
+      invalidateDashboard();
+      setActiveDialog(null);
+      showSuccess('Opportunity created.');
+    },
+    onError: (error) => showError(error, 'Failed to create opportunity.'),
+  });
+
+  const createActivityMutation = useMutation({
+    mutationFn: (data) => api.entities.Activity.create(data),
+    onSuccess: () => {
+      invalidateDashboard();
+      setActiveDialog(null);
+      showSuccess('Activity logged.');
+    },
+    onError: (error) => showError(error, 'Failed to log activity.'),
+  });
+
+  const exportToCSV = () => {
+    const headers = ['Name', 'Account', 'Amount', 'Stage', 'Owner', 'Close Date'];
+    const rows = recentDeals.map((deal) => {
+      const closeDate = safeParseDate(deal.close_date);
+      return [
+        deal.name || '',
+        deal.account_name || '',
+        deal.amount || 0,
+        deal.stage || '',
+        deal.owner || '',
+        closeDate ? format(closeDate, 'yyyy-MM-dd') : '',
+      ];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard_deals_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const formatCloseDate = (value) => {
+    const date = safeParseDate(value);
+    return date ? date.toLocaleDateString() : '—';
+  };
+
   return (
     <div className="p-4 sm:p-8 bg-gray-50 min-h-screen">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
@@ -215,18 +308,41 @@ export default function Dashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard</h1>
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" size="sm">
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Add</span>
-          </Button>
-          <Button variant="outline" size="sm">
-            <Download className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Export</span>
-          </Button>
-          <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
+          <PermissionGate permission="can_export_data">
+            <Button variant="outline" size="sm" onClick={exportToCSV}>
+              <Download className="w-4 h-4 mr-2" />
+              Export
+            </Button>
+          </PermissionGate>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Add
+                <ChevronDown className="w-4 h-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <PermissionGate entity="Lead">
+                <DropdownMenuItem onClick={() => setActiveDialog('lead')}>New Lead</DropdownMenuItem>
+              </PermissionGate>
+              <PermissionGate entity="Contact">
+                <DropdownMenuItem onClick={() => setActiveDialog('contact')}>
+                  New Contact
+                </DropdownMenuItem>
+              </PermissionGate>
+              <PermissionGate entity="Opportunity">
+                <DropdownMenuItem onClick={() => setActiveDialog('opportunity')}>
+                  New Opportunity
+                </DropdownMenuItem>
+              </PermissionGate>
+              <PermissionGate entity="Activity">
+                <DropdownMenuItem onClick={() => setActiveDialog('activity')}>
+                  Log Activity
+                </DropdownMenuItem>
+              </PermissionGate>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
@@ -559,7 +675,12 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-base sm:text-lg">Lead Sources</CardTitle>
-              <Button variant="ghost" size="sm" className="text-blue-600 h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-blue-600 h-8"
+                onClick={() => setActiveDialog('lead')}
+              >
                 <Plus className="w-4 h-4 mr-1" />
                 Add
               </Button>
@@ -587,7 +708,12 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-base sm:text-lg">Upcoming Activities</CardTitle>
-              <Button variant="ghost" size="sm" className="text-blue-600 h-8">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-blue-600 h-8"
+                onClick={() => setActiveDialog('activity')}
+              >
                 <Plus className="w-4 h-4 mr-1" />
                 Add
               </Button>
@@ -671,9 +797,7 @@ export default function Dashboard() {
                         <span className="text-sm">{deal.owner}</span>
                       </div>
                     </td>
-                    <td className="text-sm text-gray-600">
-                      {new Date(deal.close_date).toLocaleDateString()}
-                    </td>
+                    <td className="text-sm text-gray-600">{formatCloseDate(deal.close_date)}</td>
                     <td>
                       <Badge variant="outline" className="text-xs">
                         {deal.stage === 'closed_won'
@@ -695,6 +819,31 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+
+      <LeadDialog
+        open={activeDialog === 'lead'}
+        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onSubmit={(data) => createLeadMutation.mutate(data)}
+        isLoading={createLeadMutation.isPending}
+      />
+      <ContactDialog
+        open={activeDialog === 'contact'}
+        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onSubmit={(data) => createContactMutation.mutate(data)}
+        isLoading={createContactMutation.isPending}
+      />
+      <OpportunityDialog
+        open={activeDialog === 'opportunity'}
+        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onSubmit={(data) => createOpportunityMutation.mutate(data)}
+        isLoading={createOpportunityMutation.isPending}
+      />
+      <ActivityDialog
+        open={activeDialog === 'activity'}
+        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onSubmit={(data) => createActivityMutation.mutate(data)}
+        isLoading={createActivityMutation.isPending}
+      />
     </div>
   );
 }

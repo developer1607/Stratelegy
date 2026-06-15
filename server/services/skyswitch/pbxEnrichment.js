@@ -115,6 +115,28 @@ export function indexSubscribersByExtension(subscribers) {
   return map;
 }
 
+export function filterE911ForDomain(subscribers, e911Endpoints) {
+  const keys = new Set();
+  for (const sub of normalizeSubscriberList(subscribers)) {
+    const key = normalizePhoneKey(sub.caller_id);
+    if (key) keys.add(key);
+  }
+  if (!keys.size) return [];
+  return toArray(e911Endpoints).filter((item) => {
+    const key = normalizePhoneKey(item.phone_number);
+    return key && keys.has(key);
+  });
+}
+
+export function filterTrunkGroupsForDomain(trunkGroups, domain) {
+  const rows = toArray(trunkGroups);
+  if (!domain) return rows;
+  const withDomain = rows.filter((item) => item?.domain != null && item.domain !== '');
+  if (!withDomain.length) return [];
+  const target = String(domain).trim().toLowerCase();
+  return rows.filter((item) => String(item.domain || '').trim().toLowerCase() === target);
+}
+
 /** Merge subscriber + E911 for domain-scoped operational review. */
 export function buildE911DomainReview(subscribers, e911Endpoints, domain) {
   const e911ByPhone = indexE911ByPhone(e911Endpoints);

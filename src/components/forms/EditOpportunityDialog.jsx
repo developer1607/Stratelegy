@@ -16,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateOpportunityForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateOpportunityForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -54,6 +56,12 @@ export default function EditOpportunityDialog({
     owner: '',
     source: '',
   });
+  const validation = useCrmFormValidation(validateOpportunityForm);
+  const { resetValidation, validateSubmit } = validation;
+
+  useEffect(() => {
+    if (open) resetValidation();
+  }, [open, resetValidation]);
 
   useEffect(() => {
     if (opportunity) {
@@ -67,13 +75,14 @@ export default function EditOpportunityDialog({
         owner: opportunity.owner || '',
         source: opportunity.source || '',
       });
+      resetValidation();
     }
-  }, [opportunity]);
+  }, [opportunity, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
-    if (!showValidationErrors(validateOpportunityForm(formData))) return;
+    if (!validateSubmit(formData)) return;
 
     onSubmit({
       ...formData,
@@ -81,6 +90,16 @@ export default function EditOpportunityDialog({
       probability: formData.probability !== '' ? Number(formData.probability) : undefined,
     });
   };
+
+  const bind = (field) =>
+    readOnly
+      ? {}
+      : {
+          onChange: (e) => validation.updateField(field, e.target.value, formData, setFormData),
+          onBlur: () => validation.touchField(field, formData),
+          className: validation.inputClassName(field),
+          'aria-invalid': Boolean(validation.fieldError(field)),
+        };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -93,21 +112,13 @@ export default function EditOpportunityDialog({
             <div className="space-y-4">
               <div className={formDialogField}>
                 <Label htmlFor="edit-opp-name">Name *</Label>
-                <Input
-                  id="edit-opp-name"
-                  disabled={readOnly}
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
+                <Input id="edit-opp-name" disabled={readOnly} value={formData.name} {...bind('name')} />
+                {!readOnly && <FieldError message={validation.fieldError('name')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-opp-account">Account</Label>
-                <Input
-                  id="edit-opp-account"
-                  disabled={readOnly}
-                  value={formData.account_name}
-                  onChange={(e) => setFormData({ ...formData, account_name: e.target.value })}
-                />
+                <Input id="edit-opp-account" disabled={readOnly} value={formData.account_name} {...bind('account_name')} />
+                {!readOnly && <FieldError message={validation.fieldError('account_name')} />}
               </div>
               <div className={formDialogGrid}>
                 <div className={formDialogField}>
@@ -119,17 +130,18 @@ export default function EditOpportunityDialog({
                     step="0.01"
                     disabled={readOnly}
                     value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                    {...bind('amount')}
                   />
+                  {!readOnly && <FieldError message={validation.fieldError('amount')} />}
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="edit-opp-stage">Stage</Label>
                   <Select
                     disabled={readOnly}
                     value={formData.stage}
-                    onValueChange={(stage) => setFormData({ ...formData, stage })}
+                    onValueChange={(stage) => validation.updateField('stage', stage, formData, setFormData)}
                   >
-                    <SelectTrigger id="edit-opp-stage">
+                    <SelectTrigger id="edit-opp-stage" className={validation.inputClassName('stage')}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -140,6 +152,7 @@ export default function EditOpportunityDialog({
                       ))}
                     </SelectContent>
                   </Select>
+                  {!readOnly && <FieldError message={validation.fieldError('stage')} />}
                 </div>
               </div>
               <div className={formDialogGrid}>
@@ -152,8 +165,9 @@ export default function EditOpportunityDialog({
                     max="100"
                     disabled={readOnly}
                     value={formData.probability}
-                    onChange={(e) => setFormData({ ...formData, probability: e.target.value })}
+                    {...bind('probability')}
                   />
+                  {!readOnly && <FieldError message={validation.fieldError('probability')} />}
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="edit-opp-close">Close date</Label>
@@ -162,28 +176,21 @@ export default function EditOpportunityDialog({
                     type="date"
                     disabled={readOnly}
                     value={formData.close_date}
-                    onChange={(e) => setFormData({ ...formData, close_date: e.target.value })}
+                    {...bind('close_date')}
                   />
+                  {!readOnly && <FieldError message={validation.fieldError('close_date')} />}
                 </div>
               </div>
               <div className={formDialogGrid}>
                 <div className={formDialogField}>
                   <Label htmlFor="edit-opp-owner">Owner</Label>
-                  <Input
-                    id="edit-opp-owner"
-                    disabled={readOnly}
-                    value={formData.owner}
-                    onChange={(e) => setFormData({ ...formData, owner: e.target.value })}
-                  />
+                  <Input id="edit-opp-owner" disabled={readOnly} value={formData.owner} {...bind('owner')} />
+                  {!readOnly && <FieldError message={validation.fieldError('owner')} />}
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="edit-opp-source">Source</Label>
-                  <Input
-                    id="edit-opp-source"
-                    disabled={readOnly}
-                    value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                  />
+                  <Input id="edit-opp-source" disabled={readOnly} value={formData.source} {...bind('source')} />
+                  {!readOnly && <FieldError message={validation.fieldError('source')} />}
                 </div>
               </div>
             </div>

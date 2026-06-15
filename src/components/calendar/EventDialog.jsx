@@ -18,7 +18,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { calendarEventToForm, calendarFormToPayload } from '@/lib/crmHelpers';
-import { validateCalendarEventForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateCalendarEventForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -45,6 +47,8 @@ const selectContentProps = { position: 'popper', className: 'max-h-[min(16rem,50
 
 export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, event }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const validation = useCrmFormValidation(validateCalendarEventForm);
+  const { resetValidation, validateSubmit, revalidate } = validation;
 
   useEffect(() => {
     if (!open) return;
@@ -53,12 +57,23 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
     } else {
       setFormData(EMPTY_FORM);
     }
-  }, [event, open]);
+    resetValidation();
+  }, [event, open, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!showValidationErrors(validateCalendarEventForm(formData))) return;
+    if (!validateSubmit(formData)) return;
     onSubmit(calendarFormToPayload(formData));
+  };
+
+  const handleRelatedTypeChange = (value) => {
+    const newData = {
+      ...formData,
+      related_to_type: value === 'none' ? '' : value,
+      related_to_name: '',
+    };
+    setFormData(newData);
+    revalidate(newData, 'related_to_type');
   };
 
   return (
@@ -74,8 +89,12 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
               <Input
                 id="event-title"
                 value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                onChange={(e) => validation.updateField('title', e.target.value, formData, setFormData)}
+                onBlur={() => validation.touchField('title', formData)}
+                className={validation.inputClassName('title')}
+                aria-invalid={Boolean(validation.fieldError('title'))}
               />
+              <FieldError message={validation.fieldError('title')} />
             </div>
 
             <div className={formDialogField}>
@@ -83,9 +102,12 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
               <Textarea
                 id="event-description"
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => validation.updateField('description', e.target.value, formData, setFormData)}
+                onBlur={() => validation.touchField('description', formData)}
+                className={validation.inputClassName('description')}
                 rows={3}
               />
+              <FieldError message={validation.fieldError('description')} />
             </div>
 
             <div className={formDialogGrid}>
@@ -93,9 +115,9 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                 <Label htmlFor="event-type">Event Type *</Label>
                 <Select
                   value={formData.event_type}
-                  onValueChange={(value) => setFormData({ ...formData, event_type: value })}
+                  onValueChange={(value) => validation.updateField('event_type', value, formData, setFormData)}
                 >
-                  <SelectTrigger id="event-type">
+                  <SelectTrigger id="event-type" className={validation.inputClassName('event_type')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent {...selectContentProps}>
@@ -107,15 +129,16 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                     <SelectItem value="appointment">Appointment</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={validation.fieldError('event_type')} />
               </div>
 
               <div className={formDialogField}>
                 <Label htmlFor="event-status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
                 >
-                  <SelectTrigger id="event-status">
+                  <SelectTrigger id="event-status" className={validation.inputClassName('status')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent {...selectContentProps}>
@@ -124,6 +147,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                     <SelectItem value="cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={validation.fieldError('status')} />
               </div>
             </div>
 
@@ -134,8 +158,14 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                   id="event-start"
                   type="datetime-local"
                   value={formData.start_date}
-                  onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                  onChange={(e) =>
+                    validation.updateField('start_date', e.target.value, formData, setFormData, ['end_date'])
+                  }
+                  onBlur={() => validation.touchField('start_date', formData, ['end_date'])}
+                  className={validation.inputClassName('start_date')}
+                  aria-invalid={Boolean(validation.fieldError('start_date'))}
                 />
+                <FieldError message={validation.fieldError('start_date')} />
               </div>
 
               <div className={formDialogField}>
@@ -144,8 +174,14 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                   id="event-end"
                   type="datetime-local"
                   value={formData.end_date}
-                  onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                  onChange={(e) =>
+                    validation.updateField('end_date', e.target.value, formData, setFormData, ['start_date'])
+                  }
+                  onBlur={() => validation.touchField('end_date', formData, ['start_date'])}
+                  className={validation.inputClassName('end_date')}
+                  aria-invalid={Boolean(validation.fieldError('end_date'))}
                 />
+                <FieldError message={validation.fieldError('end_date')} />
               </div>
             </div>
 
@@ -154,9 +190,12 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
               <Input
                 id="event-location"
                 value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                onChange={(e) => validation.updateField('location', e.target.value, formData, setFormData)}
+                onBlur={() => validation.touchField('location', formData)}
+                className={validation.inputClassName('location')}
                 placeholder="Enter location or meeting link"
               />
+              <FieldError message={validation.fieldError('location')} />
             </div>
 
             <div className={formDialogGrid}>
@@ -164,15 +203,9 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                 <Label htmlFor="event-related-type">Related To</Label>
                 <Select
                   value={formData.related_to_type || 'none'}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      related_to_type: value === 'none' ? '' : value,
-                      related_to_name: '',
-                    })
-                  }
+                  onValueChange={handleRelatedTypeChange}
                 >
-                  <SelectTrigger id="event-related-type">
+                  <SelectTrigger id="event-related-type" className={validation.inputClassName('related_to_type')}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent {...selectContentProps}>
@@ -183,6 +216,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                     <SelectItem value="Lead">Lead</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={validation.fieldError('related_to_type')} />
               </div>
 
               {formData.related_to_type && (
@@ -191,9 +225,15 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                   <Input
                     id="event-related-name"
                     value={formData.related_to_name}
-                    onChange={(e) => setFormData({ ...formData, related_to_name: e.target.value })}
+                    onChange={(e) =>
+                      validation.updateField('related_to_name', e.target.value, formData, setFormData)
+                    }
+                    onBlur={() => validation.touchField('related_to_name', formData)}
+                    className={validation.inputClassName('related_to_name')}
                     placeholder={`Enter ${formData.related_to_type} name`}
+                    aria-invalid={Boolean(validation.fieldError('related_to_name'))}
                   />
+                  <FieldError message={validation.fieldError('related_to_name')} />
                 </div>
               )}
             </div>

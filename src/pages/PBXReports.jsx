@@ -9,6 +9,7 @@ import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import { flattenReportTypes, filterReportTypes, describeReportFields } from '@/lib/reportTypes';
 import { createPageUrl } from '@/utils';
 import { uniqueFieldValues } from '@/lib/listFilters';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function PBXReports() {
   return (
@@ -25,10 +26,13 @@ export default function PBXReports() {
 function ReportsHub() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const { isPbxDomainRestricted, isLoading: permissionsLoading } = usePermissions();
+  const canUseAccountReports = !isPbxDomainRestricted;
 
   const reportsQuery = useQuery({
     queryKey: ['pbx-report-types'],
     queryFn: () => pbxApi.reportTypes(),
+    enabled: canUseAccountReports && !permissionsLoading,
   });
 
   const allRows = useMemo(() => flattenReportTypes(reportsQuery.data), [reportsQuery.data]);
@@ -45,6 +49,17 @@ function ReportsHub() {
       parameters: describeReportFields(row.fields),
     }));
   }, [allRows, search, categoryFilter]);
+
+  if (permissionsLoading) return <PbxLoading />;
+
+  if (!canUseAccountReports) {
+    return (
+      <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+        Account-wide PBX report exports are not available for domain-scoped users. Use domain
+        screens such as E911 Review for operational data on your assigned domain(s).
+      </p>
+    );
+  }
 
   if (reportsQuery.isLoading) return <PbxLoading />;
   if (reportsQuery.error) return <PbxError error={reportsQuery.error} />;

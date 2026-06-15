@@ -3,6 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
+import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
+import { isPbxDomainRestricted } from '@/lib/permissions';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { daysAgo, todayInput } from '@/lib/listFilters';
@@ -23,11 +26,22 @@ function MosContent() {
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState(daysAgo(7));
   const [endDate, setEndDate] = useState(todayInput());
+  const { domain } = usePbxDomain();
+  const { permissions } = usePermissions();
+  const domainRestricted = isPbxDomainRestricted(permissions);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['pbx-mos-scores', startDate, endDate],
-    queryFn: () => pbxApi.mosScores({ start_date: startDate, end_date: endDate, per_page: 100 }),
+    queryKey: ['pbx-mos-scores', startDate, endDate, domain],
+    queryFn: () =>
+      pbxApi.mosScores({
+        start_date: startDate,
+        end_date: endDate,
+        per_page: 100,
+        domain,
+        identifier: domain,
+      }),
     retry: false,
+    enabled: !domainRestricted || !!domain,
   });
 
   const rows = useMemo(() => {
@@ -40,6 +54,14 @@ function MosContent() {
         .some((part) => String(part).toLowerCase().includes(q))
     );
   }, [data?.rows, search]);
+
+  if (domainRestricted && !domain) {
+    return (
+      <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Select an assigned domain in the bar above to load MOS scores for that domain.
+      </p>
+    );
+  }
 
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;

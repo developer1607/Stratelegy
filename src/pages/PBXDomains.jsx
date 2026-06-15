@@ -11,10 +11,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePermissions } from '@/hooks/usePermissions';
+import { isPbxDomainRestricted, getAssignedPbxDomains } from '@/lib/permissions';
 
 export default function PBXDomains() {
-  const { domain: selectedDomain, setDomain, domains, isLoading, error } = usePbxDomain();
-  const { canAccessPage } = usePermissions();
+  const { domain: selectedDomain, setDomain, domains, isLoading, error, isDomainRestricted } =
+    usePbxDomain();
+  const { canAccessPage, permissions } = usePermissions();
+  const assignedCount = getAssignedPbxDomains(permissions).length;
   const canOpenDashboard = canAccessPage('PBXDashboard');
   const [search, setSearch] = useState('');
   const [resellerFilter, setResellerFilter] = useState('all');
@@ -122,7 +125,11 @@ export default function PBXDomains() {
   return (
     <PbxShell
       title="PBX Domains"
-      description={`${domains.length} domain(s)`}
+      description={
+        isDomainRestricted
+          ? `${domains.length} assigned domain(s) of ${assignedCount}`
+          : `${domains.length} domain(s)`
+      }
       requiresDomain={false}
     >
       {isLoading ? (
@@ -136,14 +143,25 @@ export default function PBXDomains() {
         <Card>
           <CardContent className="py-12 text-center">
             <Globe className="h-10 w-10 text-gray-300 mx-auto mb-3" />
-            <p className="font-medium text-gray-900">No PBX domains found</p>
+            <p className="font-medium text-gray-900">
+              {isDomainRestricted ? 'No assigned PBX domains' : 'No PBX domains found'}
+            </p>
             <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
-              No domains on this account.
+              {isDomainRestricted
+                ? 'Ask an admin to assign one or more PBX domains to your account in Portal Users.'
+                : 'No domains on this account.'}
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-4">
+          {isDomainRestricted && (
+            <Card className="border-blue-200 bg-blue-50">
+              <CardContent className="py-3 text-sm text-blue-900">
+                You only see domains assigned to your account. Contact an admin to change assignments.
+              </CardContent>
+            </Card>
+          )}
           {selectedRecord ? (
             <Card className="border-[#F07020]/40 bg-gradient-to-r from-orange-50 to-white shadow-sm">
               <CardContent className="py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

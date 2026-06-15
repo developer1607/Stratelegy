@@ -35,6 +35,11 @@ async function syncUserPermissionRoleColumns() {
     'use_custom_permissions',
     '`use_custom_permissions` TINYINT(1) NOT NULL DEFAULT 0 AFTER `role_id`'
   );
+  await addColumnIfMissing(
+    'user_permissions',
+    'pbx_domains',
+    '`pbx_domains` TEXT NULL AFTER `use_custom_permissions`'
+  );
 
   if (!(await columnExists('user_permissions', 'role_id'))) return;
   const indexes = await query(

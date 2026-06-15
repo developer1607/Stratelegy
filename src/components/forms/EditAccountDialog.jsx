@@ -16,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateAccountForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateAccountForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -45,6 +47,12 @@ export default function EditAccountDialog({
     employees: '',
     status: 'active',
   });
+  const validation = useCrmFormValidation(validateAccountForm);
+  const { resetValidation, validateSubmit } = validation;
+
+  useEffect(() => {
+    if (open) resetValidation();
+  }, [open, resetValidation]);
 
   useEffect(() => {
     if (account) {
@@ -58,21 +66,31 @@ export default function EditAccountDialog({
         employees: account.employees || '',
         status: account.status || 'active',
       });
+      resetValidation();
     }
-  }, [account]);
+  }, [account, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
-    if (!showValidationErrors(validateAccountForm(formData))) return;
+    if (!validateSubmit(formData)) return;
 
-    const dataToSubmit = {
+    onSubmit({
       ...formData,
       annual_revenue: formData.annual_revenue ? Number(formData.annual_revenue) : undefined,
       employees: formData.employees ? Number(formData.employees) : undefined,
-    };
-    onSubmit(dataToSubmit);
+    });
   };
+
+  const bind = (field) =>
+    readOnly
+      ? {}
+      : {
+          onChange: (e) => validation.updateField(field, e.target.value, formData, setFormData),
+          onBlur: () => validation.touchField(field, formData),
+          className: validation.inputClassName(field),
+          'aria-invalid': Boolean(validation.fieldError(field)),
+        };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -85,41 +103,23 @@ export default function EditAccountDialog({
             <div className={formDialogGrid}>
               <div className={formDialogField}>
                 <Label htmlFor="edit-account-name">Account Name *</Label>
-                <Input
-                  id="edit-account-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-account-name" value={formData.name} disabled={readOnly} {...bind('name')} />
+                {!readOnly && <FieldError message={validation.fieldError('name')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-account-industry">Industry</Label>
-                <Input
-                  id="edit-account-industry"
-                  value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-account-industry" value={formData.industry} disabled={readOnly} {...bind('industry')} />
+                {!readOnly && <FieldError message={validation.fieldError('industry')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-account-phone">Phone</Label>
-                <Input
-                  id="edit-account-phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-account-phone" type="tel" value={formData.phone} disabled={readOnly} {...bind('phone')} />
+                {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-account-email">Email</Label>
-                <Input
-                  id="edit-account-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-account-email" type="email" value={formData.email} disabled={readOnly} {...bind('email')} />
+                {!readOnly && <FieldError message={validation.fieldError('email')} />}
               </div>
             </div>
 
@@ -130,9 +130,10 @@ export default function EditAccountDialog({
                 type="url"
                 placeholder="https://example.com"
                 value={formData.website}
-                onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                 disabled={readOnly}
+                {...bind('website')}
               />
+              {!readOnly && <FieldError message={validation.fieldError('website')} />}
             </div>
 
             <div className={formDialogGrid}>
@@ -144,9 +145,10 @@ export default function EditAccountDialog({
                   min="0"
                   placeholder="100000"
                   value={formData.annual_revenue}
-                  onChange={(e) => setFormData({ ...formData, annual_revenue: e.target.value })}
                   disabled={readOnly}
+                  {...bind('annual_revenue')}
                 />
+                {!readOnly && <FieldError message={validation.fieldError('annual_revenue')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-account-employees">Employees</Label>
@@ -156,9 +158,10 @@ export default function EditAccountDialog({
                   min="0"
                   placeholder="50"
                   value={formData.employees}
-                  onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
                   disabled={readOnly}
+                  {...bind('employees')}
                 />
+                {!readOnly && <FieldError message={validation.fieldError('employees')} />}
               </div>
             </div>
 
@@ -166,10 +169,10 @@ export default function EditAccountDialog({
               <Label htmlFor="edit-account-status">Status</Label>
               <Select
                 value={formData.status}
-                onValueChange={(value) => setFormData({ ...formData, status: value })}
+                onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
                 disabled={readOnly}
               >
-                <SelectTrigger id="edit-account-status">
+                <SelectTrigger id="edit-account-status" className={validation.inputClassName('status')}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -178,6 +181,7 @@ export default function EditAccountDialog({
                   <SelectItem value="prospect">Prospect</SelectItem>
                 </SelectContent>
               </Select>
+              {!readOnly && <FieldError message={validation.fieldError('status')} />}
             </div>
           </div>
 

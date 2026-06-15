@@ -54,6 +54,8 @@ import PasswordRequirements from '@/components/PasswordRequirements';
 import { formatPasswordErrors, validatePassword } from '@/lib/passwordValidation';
 import { TICKET_DEPARTMENTS, TICKET_CATEGORIES } from '@/lib/ticketConstants';
 import { parseRoutingList, toggleRoutingItem } from '@/lib/userRouting';
+import { pbxApi } from '@/api/pbx';
+import { parsePbxDomains, domainsMatch } from '@shared/pbxDomainAccess.js';
 
 export default function UserManagement({ embedded = false }) {
   const { user: currentUser, isLoadingAuth, isAuthenticated } = useAuth();
@@ -233,6 +235,22 @@ export default function UserManagement({ embedded = false }) {
     onError: (error) => showError(error, 'Failed to update ticket routing'),
   });
 
+  const pbxDomainsMutation = useMutation({
+    mutationFn: ({ userId, domains }) => api.users.updatePbxDomains(userId, domains),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userPermissions'] });
+      showSuccess('PBX domains updated.');
+    },
+    onError: (error) => showError(error, 'Failed to update PBX domains'),
+  });
+
+  const { data: pbxDomainCatalog = [] } = useQuery({
+    queryKey: ['pbx-domains-admin-catalog'],
+    queryFn: () => pbxApi.domains(),
+    enabled: isAdmin && !isLoadingAuth,
+    staleTime: 5 * 60 * 1000,
+  });
+
   const deleteUserMutation = useMutation({
     mutationFn: (userId) => api.users.delete(userId),
     onSuccess: (_data, userId) => {
@@ -269,6 +287,13 @@ export default function UserManagement({ embedded = false }) {
   };
 
   const getRawRecord = (userId) => allPermissions.find((p) => p.user_id === userId) || null;
+
+  const togglePbxDomain = (list, domainName) => {
+    const current = parsePbxDomains(list);
+    const exists = current.some((d) => domainsMatch(d, domainName));
+    if (exists) return current.filter((d) => !domainsMatch(d, domainName));
+    return [...current, domainName];
+  };
 
   const getEffectivePermissions = (userId) => {
     const record = getRawRecord(userId);
@@ -836,6 +861,61 @@ export default function UserManagement({ embedded = false }) {
                                 </div>
                               </div>
                             </div>
+                          </div>
+                        )}
+
+                        {(assignedRole?.slug === 'pbx_domain' ||
+                          perms.can_access_pbx_domain_scoped) && (
+                          <div className="p-4 rounded-lg border bg-white space-y-3">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">PBX domains</p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                Assign one or more SkySwitch domains this user can access. They
+                                will only see data for selected domains across PBX screens.
+                              </p>
+                            </div>
+                            {pbxDomainCatalog.length === 0 ? (
+                              <p className="text-sm text-gray-500">
+                                No domains loaded. Check SkySwitch connection or assign domains
+                                after PBX is configured.
+                              </p>
+                            ) : (
+                              <div className="flex flex-wrap gap-2">
+                                {pbxDomainCatalog.map((entry) => {
+                                  const name = entry.domain || entry;
+                                  const selected = parsePbxDomains(raw?.pbx_domains).some((d) =>
+                                    domainsMatch(d, name)
+                                  );
+                                  return (
+                                    <button
+                                      key={name}
+                                      type="button"
+                                      className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                                        selected
+                                          ? 'bg-purple-100 border-purple-300 text-purple-900'
+                                          : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                                      }`}
+                                      disabled={pbxDomainsMutation.isPending}
+                                      onClick={() => {
+                                        const next = togglePbxDomain(raw?.pbx_domains, name);
+                                        pbxDomainsMutation.mutate({
+                                          userId: user.id,
+                                          domains: next,
+                                        });
+                                      }}
+                                    >
+                                      {name}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                            {parsePbxDomains(raw?.pbx_domains).length === 0 && (
+                              <p className="text-xs text-amber-700">
+                                Select at least one domain — this user cannot access PBX data
+                                until a domain is assigned.
+                              </p>
+                            )}
                           </div>
                         )}
 

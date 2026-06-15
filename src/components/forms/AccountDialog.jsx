@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateAccountForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateAccountForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -27,38 +29,37 @@ import {
   formDialogFooter,
 } from '@/lib/formDialog';
 
+const EMPTY_FORM = {
+  name: '',
+  industry: '',
+  website: '',
+  phone: '',
+  email: '',
+  annual_revenue: '',
+  employees: '',
+  status: 'active',
+};
+
 export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    industry: '',
-    website: '',
-    phone: '',
-    email: '',
-    annual_revenue: '',
-    employees: '',
-    status: 'active',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const validation = useCrmFormValidation(validateAccountForm);
+  const { resetValidation, validateSubmit } = validation;
+
+  useEffect(() => {
+    if (open) resetValidation();
+  }, [open, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!showValidationErrors(validateAccountForm(formData))) return;
+    if (!validateSubmit(formData)) return;
 
-    const data = {
+    onSubmit({
       ...formData,
       annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : undefined,
       employees: formData.employees ? parseInt(formData.employees) : undefined,
-    };
-    onSubmit(data);
-    setFormData({
-      name: '',
-      industry: '',
-      website: '',
-      phone: '',
-      email: '',
-      annual_revenue: '',
-      employees: '',
-      status: 'active',
     });
+    setFormData(EMPTY_FORM);
+    resetValidation();
   };
 
   return (
@@ -75,16 +76,23 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => validation.updateField('name', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('name', formData)}
+                  className={validation.inputClassName('name')}
+                  aria-invalid={Boolean(validation.fieldError('name'))}
                 />
+                <FieldError message={validation.fieldError('name')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="industry">Industry</Label>
                 <Input
                   id="industry"
                   value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  onChange={(e) => validation.updateField('industry', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('industry', formData)}
+                  className={validation.inputClassName('industry')}
                 />
+                <FieldError message={validation.fieldError('industry')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="email">Email</Label>
@@ -92,8 +100,12 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => validation.updateField('email', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('email', formData)}
+                  className={validation.inputClassName('email')}
+                  aria-invalid={Boolean(validation.fieldError('email'))}
                 />
+                <FieldError message={validation.fieldError('email')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="phone">Phone</Label>
@@ -101,8 +113,12 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                   id="phone"
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => validation.updateField('phone', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('phone', formData)}
+                  className={validation.inputClassName('phone')}
+                  aria-invalid={Boolean(validation.fieldError('phone'))}
                 />
+                <FieldError message={validation.fieldError('phone')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="website">Website</Label>
@@ -110,8 +126,12 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                   id="website"
                   type="url"
                   value={formData.website}
-                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  onChange={(e) => validation.updateField('website', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('website', formData)}
+                  className={validation.inputClassName('website')}
+                  aria-invalid={Boolean(validation.fieldError('website'))}
                 />
+                <FieldError message={validation.fieldError('website')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="revenue">Annual Revenue</Label>
@@ -120,8 +140,12 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                   type="number"
                   min="0"
                   value={formData.annual_revenue}
-                  onChange={(e) => setFormData({ ...formData, annual_revenue: e.target.value })}
+                  onChange={(e) => validation.updateField('annual_revenue', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('annual_revenue', formData)}
+                  className={validation.inputClassName('annual_revenue')}
+                  aria-invalid={Boolean(validation.fieldError('annual_revenue'))}
                 />
+                <FieldError message={validation.fieldError('annual_revenue')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="employees">Employees</Label>
@@ -130,16 +154,20 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                   type="number"
                   min="0"
                   value={formData.employees}
-                  onChange={(e) => setFormData({ ...formData, employees: e.target.value })}
+                  onChange={(e) => validation.updateField('employees', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('employees', formData)}
+                  className={validation.inputClassName('employees')}
+                  aria-invalid={Boolean(validation.fieldError('employees'))}
                 />
+                <FieldError message={validation.fieldError('employees')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
                 >
-                  <SelectTrigger id="status">
+                  <SelectTrigger id="status" className={validation.inputClassName('status')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -148,6 +176,7 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                     <SelectItem value="prospect">Prospect</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={validation.fieldError('status')} />
               </div>
             </div>
           </div>

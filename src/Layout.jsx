@@ -6,7 +6,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import PbxNavGroup from "@/components/pbx/PbxNavGroup";
 import { PbxDomainProvider } from "@/hooks/usePbxDomain";
 import PbxDomainBar from "@/components/pbx/domain/PbxDomainBar";
-import { CRM_PAGES, SUPPORT_PAGES, PBX_PAGES, canViewPbxDomains } from "@/lib/permissions";
+import { CRM_PAGES, SUPPORT_PAGES, PBX_PAGES, canViewPbxDomains, isPbxDomainRestricted } from "@/lib/permissions";
 import {
   CRM_NAV,
   SUPPORT_NAV,
@@ -110,9 +110,10 @@ export default function Layout({ children, currentPageName }) {
 
   const showPbxDomainBar =
     hasPbxAccess &&
-    canViewPbxDomains(permissions) &&
     PBX_PAGES.includes(currentPageName) &&
-    !PBX_PAGES_NO_DOMAIN_BAR.has(currentPageName);
+    (canViewPbxDomains(permissions) || isPbxDomainRestricted(permissions)) &&
+    (!PBX_PAGES_NO_DOMAIN_BAR.has(currentPageName) ||
+      (isPbxDomainRestricted(permissions) && currentPageName !== "PBXDashboard"));
 
   const layoutBody = (
     <div className="flex h-screen bg-gray-50">

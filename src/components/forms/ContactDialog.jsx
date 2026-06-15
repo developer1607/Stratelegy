@@ -1,9 +1,12 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { showError } from '@/lib/toast';
-import { validateContactForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateContactForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
+import { cn } from '@/lib/utils';
 import {
   formDialogContent,
   formDialogHeader,
@@ -28,24 +31,33 @@ import {
 import { api } from '@/api/client';
 import { Camera, X, User } from 'lucide-react';
 
+const EMPTY_FORM = {
+  name: '',
+  email: '',
+  phone: '',
+  company: '',
+  position: '',
+  role: '',
+  priority: 'Standard',
+  status: 'active',
+  source: 'email',
+  engagement_level: 'Medium',
+  company_size: '',
+  last_activity_date: '',
+  photo_url: '',
+};
+
 export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading, initialData }) {
   const fileInputRef = useRef(null);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    company: '',
-    position: '',
-    role: '',
-    priority: 'Standard',
-    status: 'active',
-    source: 'email',
-    engagement_level: 'Medium',
-    company_size: '',
-    last_activity_date: '',
-    photo_url: '',
-  });
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const validate = useCallback((data) => validateContactForm(data, { requireEmail: true }), []);
+  const validation = useCrmFormValidation(validate);
+  const { resetValidation, validateSubmit } = validation;
+
+  useEffect(() => {
+    if (open) resetValidation();
+  }, [open, resetValidation]);
 
   React.useEffect(() => {
     if (initialData) {
@@ -64,8 +76,9 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
         last_activity_date: '',
         photo_url: initialData.photo_url || '',
       });
+      resetValidation();
     }
-  }, [initialData]);
+  }, [initialData, resetValidation]);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -107,23 +120,10 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!showValidationErrors(validateContactForm(formData))) return;
+    if (!validateSubmit(formData)) return;
     onSubmit(formData);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      position: '',
-      role: '',
-      priority: 'Standard',
-      status: 'active',
-      source: 'email',
-      engagement_level: 'Medium',
-      company_size: '',
-      last_activity_date: '',
-      photo_url: '',
-    });
+    setFormData(EMPTY_FORM);
+    resetValidation();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -138,131 +138,145 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
         <form onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className="grid gap-6">
-            {/* Photo + Name Section */}
-            <div className="flex flex-col items-center gap-4 pb-4 border-b">
-              <div className="relative">
-                <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
-                  {formData.photo_url ? (
-                    <img
-                      src={formData.photo_url}
-                      alt={formData.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-white font-bold text-3xl">
-                      {getInitials(formData.name) || <User className="w-10 h-10 text-white/80" />}
-                    </span>
+              <div className="flex flex-col items-center gap-4 pb-4 border-b">
+                <div className="relative">
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg">
+                    {formData.photo_url ? (
+                      <img
+                        src={formData.photo_url}
+                        alt={formData.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-white font-bold text-3xl">
+                        {getInitials(formData.name) || <User className="w-10 h-10 text-white/80" />}
+                      </span>
+                    )}
+                  </div>
+                  {formData.photo_url && (
+                    <button
+                      type="button"
+                      onClick={handleRemovePhoto}
+                      className="absolute -top-1 -right-1 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                    >
+                      <X className="w-4 h-4 text-white" />
+                    </button>
                   )}
-                </div>
-                {formData.photo_url && (
                   <button
                     type="button"
-                    onClick={handleRemovePhoto}
-                    className="absolute -top-1 -right-1 w-7 h-7 bg-red-500 rounded-full flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingPhoto}
+                    className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors border-2 border-blue-500"
                   >
-                    <X className="w-4 h-4 text-white" />
+                    <Camera className="w-4 h-4 text-blue-600" />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingPhoto}
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md hover:bg-gray-50 transition-colors border-2 border-blue-500"
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/jpg"
+                    onChange={handlePhotoUpload}
+                    className="hidden"
+                  />
+                </div>
+                {uploadingPhoto && <p className="text-xs text-gray-500">Uploading photo...</p>}
+                <div className="w-full space-y-2">
+                  <Label htmlFor="name">Name *</Label>
+                  <Input
+                    id="name"
+                    placeholder="John Doe"
+                    value={formData.name}
+                    onChange={(e) => validation.updateField('name', e.target.value, formData, setFormData)}
+                    onBlur={() => validation.touchField('name', formData)}
+                    className={cn('text-center font-medium', validation.inputClassName('name'))}
+                    aria-invalid={Boolean(validation.fieldError('name'))}
+                  />
+                  <FieldError message={validation.fieldError('name')} />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  Contact Details
+                </h3>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="john@company.com"
+                    value={formData.email}
+                    onChange={(e) => validation.updateField('email', e.target.value, formData, setFormData)}
+                    onBlur={() => validation.touchField('email', formData)}
+                    className={validation.inputClassName('email')}
+                    aria-invalid={Boolean(validation.fieldError('email'))}
+                  />
+                  <FieldError message={validation.fieldError('email')} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.phone}
+                    onChange={(e) => validation.updateField('phone', e.target.value, formData, setFormData)}
+                    onBlur={() => validation.touchField('phone', formData)}
+                    className={validation.inputClassName('phone')}
+                    aria-invalid={Boolean(validation.fieldError('phone'))}
+                  />
+                  <FieldError message={validation.fieldError('phone')} />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
+                  Professional Details
+                </h3>
+                <div className="space-y-2">
+                  <Label htmlFor="company">Company</Label>
+                  <Input
+                    id="company"
+                    placeholder="Acme Inc."
+                    value={formData.company}
+                    onChange={(e) => validation.updateField('company', e.target.value, formData, setFormData)}
+                    onBlur={() => validation.touchField('company', formData)}
+                    className={validation.inputClassName('company')}
+                  />
+                  <FieldError message={validation.fieldError('company')} />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="position">Position</Label>
+                  <Input
+                    id="position"
+                    placeholder="Sales Manager"
+                    value={formData.position}
+                    onChange={(e) => validation.updateField('position', e.target.value, formData, setFormData)}
+                    onBlur={() => validation.touchField('position', formData)}
+                    className={validation.inputClassName('position')}
+                  />
+                  <FieldError message={validation.fieldError('position')} />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="source">How did you meet?</Label>
+                <Select
+                  value={formData.source}
+                  onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
                 >
-                  <Camera className="w-4 h-4 text-blue-600" />
-                </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/jpeg,image/png,image/jpg"
-                  onChange={handlePhotoUpload}
-                  className="hidden"
-                />
+                  <SelectTrigger id="source" className={validation.inputClassName('source')}>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
+                    <SelectItem value="call">📞 Phone Call</SelectItem>
+                    <SelectItem value="email">✉️ Email</SelectItem>
+                    <SelectItem value="website">🌐 Website</SelectItem>
+                    <SelectItem value="partner">🤝 Partner Referral</SelectItem>
+                    <SelectItem value="referral">👥 Personal Referral</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FieldError message={validation.fieldError('source')} />
               </div>
-              {uploadingPhoto && <p className="text-xs text-gray-500">Uploading photo...</p>}
-              <div className="w-full space-y-2">
-                <Label htmlFor="name">Name *</Label>
-                <Input
-                  id="name"
-                  placeholder="John Doe"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="text-center font-medium"
-                />
-              </div>
-            </div>
-
-            {/* Contact Details Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                Contact Details
-              </h3>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="john@company.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+1 (555) 000-0000"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Professional Details Section */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-                Professional Details
-              </h3>
-              <div className="space-y-2">
-                <Label htmlFor="company">Company</Label>
-                <Input
-                  id="company"
-                  placeholder="Acme Inc."
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="position">Position</Label>
-                <Input
-                  id="position"
-                  placeholder="Sales Manager"
-                  value={formData.position}
-                  onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                />
-              </div>
-            </div>
-
-            {/* Source */}
-            <div className="space-y-2">
-              <Label htmlFor="source">How did you meet?</Label>
-              <Select
-                value={formData.source}
-                onValueChange={(value) => setFormData({ ...formData, source: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                  <SelectItem value="call">📞 Phone Call</SelectItem>
-                  <SelectItem value="email">✉️ Email</SelectItem>
-                  <SelectItem value="website">🌐 Website</SelectItem>
-                  <SelectItem value="partner">🤝 Partner Referral</SelectItem>
-                  <SelectItem value="referral">👥 Personal Referral</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             </div>
           </div>
           <DialogFooter className={formDialogFooter}>

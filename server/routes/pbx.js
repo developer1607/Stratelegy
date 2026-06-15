@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { attachPermissions } from '../middleware/permissions.js';
-import { requireAnyPbxPermission, requirePbxPermission } from '../middleware/pbxAccess.js';
+import { requireAnyPbxPermission, requirePbxPermission, blockPbxDomainScopedWrite } from '../middleware/pbxAccess.js';
 import * as pbx from '../services/skyswitch/pbx.js';
 import {
   SKYSWITCH_API_REGISTRY,
@@ -14,6 +14,13 @@ import {
 import {
   domainListFallbackAllowed,
 } from '../../shared/pbxDataAccess.js';
+import {
+  assertDomainAllowed,
+  filterDomainsForUser,
+  resolveAllowedPbxDomain,
+  isPbxDomainRestricted,
+  getAssignedPbxDomains,
+} from '../../shared/pbxDomainAccess.js';
 import { config } from '../config.js';
 import { requireAdmin } from '../middleware/auth.js';
 
@@ -23,11 +30,62 @@ function pbxDomainOpts(req) {
   if (req.user?.role === 'admin') return { allowDomainListFallback: true };
   const perms = req.permissions || {};
   if (perms.isAdmin || perms.can_access_pbx) return { allowDomainListFallback: true };
+  if (isPbxDomainRestricted(perms) && getAssignedPbxDomains(perms).length) {
+    return { allowDomainListFallback: true };
+  }
   return { allowDomainListFallback: domainListFallbackAllowed(perms) };
 }
 
 async function domainFromRequest(req) {
-  return pbx.resolveDomain(req.query.domain, pbxDomainOpts(req));
+  const perms = req.permissions || {};
+  const fallback = getAssignedPbxDomains(perms)[0] || null;
+  const requested = req.query.domain || null;
+  const allowed = resolveAllowedPbxDomain(perms, requested, fallback);
+  const resolved = await pbx.resolveDomain(allowed, pbxDomainOpts(req));
+  if (resolved) assertDomainAllowed(perms, resolved);
+  return resolved;
+}
+
+async function requireDomainFromRequest(req) {
+  const domain = await domainFromRequest(req);
+  if (!domain && isPbxDomainRestricted(req.permissions)) {
+    const err = new Error('Select an assigned PBX domain to view this data');
+    err.status = 403;
+    throw err;
+  }
+  return domain;
+}
+
+async function journalIdentifierFromRequest(req) {
+  if (!isPbxDomainRestricted(req.permissions)) {
+    return req.query.identifier || undefined;
+  }
+  return await requireDomainFromRequest(req);
+}
+
+async function assertPhoneInAssignedDomain(req, phoneNumber) {
+  if (!isPbxDomainRestricted(req.permissions)) return;
+  const domain = await requireDomainFromRequest(req);
+  const numbers = await pbx.listPbxPhoneNumbers(domain);
+  const target = String(phoneNumber).replace(/\D/g, '');
+  const allowed = (Array.isArray(numbers) ? numbers : []).some((item) => {
+    const value = String(item.phone_number || item.number || item.did || '').replace(/\D/g, '');
+    return value === target || value.endsWith(target.slice(-10));
+  });
+  if (!allowed) {
+    const err = new Error('Phone number is not in your assigned domain');
+    err.status = 403;
+    throw err;
+  }
+}
+
+function denyDomainScopedAccountWide(req, res) {
+  if (!isPbxDomainRestricted(req.permissions)) return false;
+  res.status(403).json({
+    error: 'Account-wide PBX logs and reports are not available for domain-scoped users',
+    code: 'pbx_domain_scope_required',
+  });
+  return true;
 }
 
 function scopeErr(err, feature, res, next) {
@@ -64,9 +122,15 @@ router.use(
     'can_manage_route_by_ani',
     'can_manage_e911',
     'can_manage_pbx_endpoints',
-    'can_make_pbx_calls'
+    'can_make_pbx_calls',
+    'can_access_pbx_domain_scoped'
   )
 );
+
+router.use(async (req, res, next) => {
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  return blockPbxDomainScopedWrite(req, res, next);
+});
 
 router.get('/status', requirePbxPermission('can_view_troubleshooting'), async (_req, res, next) => {
   try {
@@ -78,10 +142,11 @@ router.get('/status', requirePbxPermission('can_view_troubleshooting'), async (_
 
 router.get(
   '/domains',
-  requirePbxPermission('can_view_pbx_domains_page'),
-  async (_req, res, next) => {
+  requireAnyPbxPermission('can_view_pbx_domains_page', 'can_access_pbx_domain_scoped'),
+  async (req, res, next) => {
     try {
-      res.json(await pbx.listDomains());
+      const all = await pbx.listDomains();
+      res.json(filterDomainsForUser(req.permissions, all));
     } catch (err) {
       next(err);
     }
@@ -110,9 +175,7 @@ router.get(
 
 router.get('/dashboard', requirePbxPermission('can_view_pbx_dashboard'), async (req, res, next) => {
   try {
-    res.json(
-      await pbx.getDashboardSummary(req.query.domain, req.permissions, pbxDomainOpts(req))
-    );
+    res.json(await pbx.getDashboardSummary(null, req.permissions, pbxDomainOpts(req)));
   } catch (err) {
     next(err);
   }
@@ -136,7 +199,11 @@ router.get(
   requirePbxPermission('can_view_e911_review'),
   async (req, res, next) => {
     try {
-      const domain = req.query.domain ? await domainFromRequest(req) : null;
+      const domain = isPbxDomainRestricted(req.permissions)
+        ? await requireDomainFromRequest(req)
+        : req.query.domain
+          ? await domainFromRequest(req)
+          : null;
       res.json(await pbx.getE911ReviewOverview(domain, pbxDomainOpts(req)));
     } catch (err) {
       next(err);
@@ -162,6 +229,7 @@ router.get(
   requirePbxPermission('can_view_mos_scores_page'),
   async (req, res, next) => {
     try {
+      const identifier = await journalIdentifierFromRequest(req);
       res.json(
         await pbx.getMosScores({
           startDate: req.query.start_date,
@@ -170,6 +238,7 @@ router.get(
           perPage: Number(req.query.per_page) || 50,
           module: req.query.module,
           type: req.query.type,
+          identifier,
         })
       );
     } catch (err) {
@@ -266,8 +335,14 @@ router.get(
 router.get(
   '/e911',
   requirePbxPermission('can_view_e911_review'),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
+      if (isPbxDomainRestricted(req.permissions)) {
+        const domain = await requireDomainFromRequest(req);
+        const overview = await pbx.getE911ReviewOverview(domain, pbxDomainOpts(req));
+        res.json(overview.provisioned);
+        return;
+      }
       res.json(await pbx.listE911Endpoints());
     } catch (err) {
       next(err);
@@ -308,6 +383,7 @@ router.get(
   requirePbxPermission('can_view_e911_review'),
   async (req, res, next) => {
     try {
+      await assertPhoneInAssignedDomain(req, req.params.phoneNumber);
       res.json(await pbx.getE911ForPhone(req.params.phoneNumber));
     } catch (err) {
       next(err);
@@ -318,9 +394,14 @@ router.get(
 router.get(
   '/trunk-groups',
   requirePbxPermission('can_view_sip_trunks'),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
-      res.json(await pbx.listTrunkGroups());
+      const domain = isPbxDomainRestricted(req.permissions)
+        ? await requireDomainFromRequest(req)
+        : req.query.domain
+          ? await domainFromRequest(req)
+          : null;
+      res.json(await pbx.listTrunkGroups(domain));
     } catch (err) {
       next(err);
     }
@@ -354,6 +435,7 @@ router.get(
   requirePbxPermission('can_view_call_routing_page'),
   async (req, res, next) => {
     try {
+      await assertPhoneInAssignedDomain(req, req.params.phoneNumber);
       res.json(await pbx.getPhoneRoute(req.params.phoneNumber));
     } catch (err) {
       next(err);
@@ -442,8 +524,9 @@ router.get(
 router.get(
   '/audit-logs/resource-actions',
   requirePbxPermission('can_view_call_logs_page'),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
+      if (denyDomainScopedAccountWide(req, res)) return;
       res.json(await pbx.listAuditActions());
     } catch (err) {
       return scopeErr(err, 'log', res, next);
@@ -471,6 +554,7 @@ router.get(
       const end = req.query.end_date || new Date().toISOString().slice(0, 10);
       const start =
         req.query.start_date || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+      const identifier = await journalIdentifierFromRequest(req);
       res.json(
         await pbx.listJournals({
           startDate: start,
@@ -480,7 +564,7 @@ router.get(
           module: req.query.module,
           type: req.query.type,
           action: req.query.action,
-          identifier: req.query.identifier,
+          identifier,
         })
       );
     } catch (err) {
@@ -494,6 +578,7 @@ router.get(
   requirePbxPermission('can_view_call_logs_page'),
   async (req, res, next) => {
     try {
+      if (denyDomainScopedAccountWide(req, res)) return;
       const end = req.query.end_date || new Date().toISOString().slice(0, 10);
       const start =
         req.query.start_date || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
@@ -513,8 +598,9 @@ router.get(
 router.get(
   '/reports/types',
   requirePbxPermission('can_view_e911_reports'),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
+      if (denyDomainScopedAccountWide(req, res)) return;
       res.json(await pbx.listReportTypes());
     } catch (err) {
       return scopeErr(err, 'report', res, next);
@@ -524,6 +610,7 @@ router.get(
 
 router.get('/reports', requirePbxPermission('can_view_e911_reports'), async (req, res, next) => {
   try {
+    if (denyDomainScopedAccountWide(req, res)) return;
     res.json(
       await pbx.listReports({
         page: Number(req.query.page) || 1,
@@ -581,12 +668,9 @@ router.get(
   requirePbxPermission('can_view_troubleshooting'),
   async (req, res, next) => {
     try {
+      const domain = await domainFromRequest(req);
       res.json(
-        await pbx.getTroubleshootingSnapshot(
-          req.query.domain,
-          req.permissions,
-          pbxDomainOpts(req)
-        )
+        await pbx.getTroubleshootingSnapshot(domain, req.permissions, pbxDomainOpts(req))
       );
     } catch (err) {
       next(err);

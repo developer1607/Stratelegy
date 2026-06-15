@@ -31,6 +31,7 @@ export default function PbxCompletedExports({
   title = 'Completed exports',
   description = 'Download finished report files queued in SkySwitch back-office.',
   reportTypeMatch = null,
+  enabled = true,
 }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
@@ -41,7 +42,9 @@ export default function PbxCompletedExports({
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['pbx-generated-reports', page],
     queryFn: () => pbxApi.listReports(page),
+    enabled,
     refetchInterval: (query) => {
+      if (!enabled) return false;
       const list = query.state.data?.data || [];
       const hasQueued = list.some((item) => /queued|pending/i.test(String(item.status || '')));
       return hasQueued ? 15000 : false;

@@ -98,6 +98,7 @@ export const PBX_NAV_GROUPS = [
 
 /** Account-wide PBX screens — no global domain selector (domain is picked on-page or not needed). */
 export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
+  "PBXDashboard",
   "PBXDomains",
   "E911Review",
   "E911Reports",

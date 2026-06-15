@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import {
@@ -19,7 +19,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateActivityForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateActivityForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -41,8 +43,20 @@ const EMPTY_FORM = {
 
 const selectContentProps = { position: 'popper', className: 'max-h-[min(16rem,50dvh)]' };
 
+function toPayload(formData) {
+  return {
+    ...formData,
+    related_to_type: formData.related_to_type || undefined,
+    related_to_id: formData.related_to_id || undefined,
+    related_to_name: formData.related_to_name || undefined,
+  };
+}
+
 export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading, defaultType }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
+  const validate = useCallback((data) => validateActivityForm(toPayload(data)), []);
+  const validation = useCrmFormValidation(validate);
+  const { resetValidation, validateSubmit, revalidate } = validation;
 
   useEffect(() => {
     if (!open) return;
@@ -51,7 +65,8 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
       type: defaultType || 'Call',
       date: new Date().toISOString().slice(0, 16),
     });
-  }, [open, defaultType]);
+    resetValidation();
+  }, [open, defaultType, resetValidation]);
 
   const { data: relatedEntities = [] } = useQuery({
     queryKey: ['crm-related-entities', formData.related_to_type],
@@ -62,23 +77,37 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const payload = {
-      ...formData,
-      related_to_type: formData.related_to_type || undefined,
-      related_to_id: formData.related_to_id || undefined,
-      related_to_name: formData.related_to_name || undefined,
-    };
-    if (!showValidationErrors(validateActivityForm(payload))) return;
+    const payload = toPayload(formData);
+    if (!validateSubmit(payload)) return;
     onSubmit(payload);
   };
 
   const handleRelatedEntityChange = (entityId) => {
     const entity = relatedEntities.find((item) => item.id === entityId);
-    setFormData({
+    const newData = {
       ...formData,
       related_to_id: entity?.id || '',
       related_to_name: entity?.name || '',
-    });
+    };
+    setFormData(newData);
+    revalidate(toPayload(newData), 'related_to_name');
+  };
+
+  const handleRelatedTypeChange = (value) => {
+    const newData = {
+      ...formData,
+      related_to_type: value === 'none' ? '' : value,
+      related_to_id: '',
+      related_to_name: '',
+    };
+    setFormData(newData);
+    revalidate(toPayload(newData), 'related_to_type');
+  };
+
+  const handleRelatedClear = () => {
+    const newData = { ...formData, related_to_id: '', related_to_name: '' };
+    setFormData(newData);
+    revalidate(toPayload(newData), 'related_to_name');
   };
 
   return (
@@ -94,9 +123,9 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                 <Label htmlFor="activity-type">Activity Type *</Label>
                 <Select
                   value={formData.type}
-                  onValueChange={(value) => setFormData({ ...formData, type: value })}
+                  onValueChange={(value) => validation.updateField('type', value, formData, setFormData)}
                 >
-                  <SelectTrigger id="activity-type">
+                  <SelectTrigger id="activity-type" className={validation.inputClassName('type')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent {...selectContentProps}>
@@ -107,6 +136,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                     <SelectItem value="Note">Note</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={validation.fieldError('type')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="activity-date">Date & Time *</Label>
@@ -114,8 +144,12 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                   id="activity-date"
                   type="datetime-local"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(e) => validation.updateField('date', e.target.value, formData, setFormData)}
+                  onBlur={() => validation.touchField('date', formData)}
+                  className={validation.inputClassName('date')}
+                  aria-invalid={Boolean(validation.fieldError('date'))}
                 />
+                <FieldError message={validation.fieldError('date')} />
               </div>
             </div>
 
@@ -125,26 +159,20 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                 id="activity-description"
                 placeholder="Enter activity details..."
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => validation.updateField('description', e.target.value, formData, setFormData)}
+                onBlur={() => validation.touchField('description', formData)}
+                className={validation.inputClassName('description')}
+                aria-invalid={Boolean(validation.fieldError('description'))}
                 rows={4}
               />
+              <FieldError message={validation.fieldError('description')} />
             </div>
 
             <div className={formDialogGrid}>
               <div className={formDialogField}>
                 <Label htmlFor="activity-related-type">Related To (Type)</Label>
-                <Select
-                  value={formData.related_to_type || 'none'}
-                  onValueChange={(value) =>
-                    setFormData({
-                      ...formData,
-                      related_to_type: value === 'none' ? '' : value,
-                      related_to_id: '',
-                      related_to_name: '',
-                    })
-                  }
-                >
-                  <SelectTrigger id="activity-related-type">
+                <Select value={formData.related_to_type || 'none'} onValueChange={handleRelatedTypeChange}>
+                  <SelectTrigger id="activity-related-type" className={validation.inputClassName('related_to_type')}>
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent {...selectContentProps}>
@@ -155,6 +183,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                     <SelectItem value="Lead">Lead</SelectItem>
                   </SelectContent>
                 </Select>
+                <FieldError message={validation.fieldError('related_to_type')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="activity-related-record">Related To (Record)</Label>
@@ -162,12 +191,13 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                   <Select
                     value={formData.related_to_id || 'none'}
                     onValueChange={(value) =>
-                      value === 'none'
-                        ? setFormData({ ...formData, related_to_id: '', related_to_name: '' })
-                        : handleRelatedEntityChange(value)
+                      value === 'none' ? handleRelatedClear() : handleRelatedEntityChange(value)
                     }
                   >
-                    <SelectTrigger id="activity-related-record">
+                    <SelectTrigger
+                      id="activity-related-record"
+                      className={validation.inputClassName('related_to_name')}
+                    >
                       <SelectValue placeholder={`Select ${formData.related_to_type}`} />
                     </SelectTrigger>
                     <SelectContent {...selectContentProps}>
@@ -182,6 +212,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
                 ) : (
                   <Input id="activity-related-record" placeholder="Select a type first" disabled />
                 )}
+                <FieldError message={validation.fieldError('related_to_name')} />
               </div>
             </div>
           </div>

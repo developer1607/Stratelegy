@@ -1,6 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne, execute } from './query.js';
-import { expandPermissionKeys } from '../constants/permissionRegistry.js';
+import { expandPermissionKeys, PBX_READ_KEYS } from '../constants/permissionRegistry.js';
+
+/** All PBX screen/view permissions except Make Call (domain role is read-only). */
+const PBX_DOMAIN_VIEW_KEYS = PBX_READ_KEYS.filter((key) => key !== 'can_view_make_call_page');
 
 /** Portal roles — one per module. Admin is a separate account type (users.role = admin). */
 export const SEEDED_ROLES = [
@@ -27,6 +30,17 @@ export const SEEDED_ROLES = [
       'PBX module. Turn on permission toggles below to add CRM or Support access, or to restrict screens.',
     sort_order: 30,
     permissions: expandPermissionKeys(['can_access_pbx']),
+  },
+  {
+    slug: 'pbx_domain',
+    name: 'PBX Domain',
+    description:
+      'Full PBX read access limited to admin-assigned domain(s). View-only — no routing, E911, or endpoint changes.',
+    sort_order: 35,
+    permissions: expandPermissionKeys([
+      'can_access_pbx_domain_scoped',
+      ...PBX_DOMAIN_VIEW_KEYS,
+    ]),
   },
 ];
 

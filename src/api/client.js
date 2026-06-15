@@ -97,11 +97,13 @@ function createEntityClient(entityName) {
           });
 
           if (!res.ok || !res.body) {
-            console.error(
-              "Realtime subscribe failed:",
-              res.status,
-              res.statusText,
-            );
+            if (res.status !== 403) {
+              console.error(
+                "Realtime subscribe failed:",
+                res.status,
+                res.statusText,
+              );
+            }
             return;
           }
 
@@ -239,6 +241,8 @@ export const api = {
         departments,
         categories,
       }),
+    updatePbxDomains: (userId, domains) =>
+      request("PATCH", `/api/users/${userId}/pbx-domains`, { domains }),
     setPassword: (userId, password) =>
       request("PATCH", `/api/users/${userId}/password`, { password }),
     delete: (userId) => request("DELETE", `/api/users/${userId}`),

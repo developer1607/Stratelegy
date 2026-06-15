@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateContactForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateContactForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -49,6 +51,13 @@ export default function EditContactDialog({
     company_size: '',
     last_activity_date: '',
   });
+  const validate = useCallback((data) => validateContactForm(data, { requireEmail: true }), []);
+  const validation = useCrmFormValidation(validate);
+  const { resetValidation, validateSubmit } = validation;
+
+  useEffect(() => {
+    if (open) resetValidation();
+  }, [open, resetValidation]);
 
   useEffect(() => {
     if (contact) {
@@ -66,15 +75,26 @@ export default function EditContactDialog({
         company_size: contact.company_size || '',
         last_activity_date: contact.last_activity_date || '',
       });
+      resetValidation();
     }
-  }, [contact]);
+  }, [contact, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
-    if (!showValidationErrors(validateContactForm(formData))) return;
+    if (!validateSubmit(formData)) return;
     onSubmit(formData);
   };
+
+  const bind = (field) =>
+    readOnly
+      ? {}
+      : {
+          onChange: (e) => validation.updateField(field, e.target.value, formData, setFormData),
+          onBlur: () => validation.touchField(field, formData),
+          className: validation.inputClassName(field),
+          'aria-invalid': Boolean(validation.fieldError(field)),
+        };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -87,52 +107,30 @@ export default function EditContactDialog({
             <div className={formDialogGrid}>
               <div className={formDialogField}>
                 <Label htmlFor="edit-contact-name">Name *</Label>
-                <Input
-                  id="edit-contact-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-contact-name" value={formData.name} disabled={readOnly} {...bind('name')} />
+                {!readOnly && <FieldError message={validation.fieldError('name')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-contact-email">Email *</Label>
-                <Input
-                  id="edit-contact-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-contact-email" type="email" value={formData.email} disabled={readOnly} {...bind('email')} />
+                {!readOnly && <FieldError message={validation.fieldError('email')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-contact-phone">Phone</Label>
-                <Input
-                  id="edit-contact-phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-contact-phone" type="tel" value={formData.phone} disabled={readOnly} {...bind('phone')} />
+                {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-contact-company">Company</Label>
-                <Input
-                  id="edit-contact-company"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-contact-company" value={formData.company} disabled={readOnly} {...bind('company')} />
+                {!readOnly && <FieldError message={validation.fieldError('company')} />}
               </div>
             </div>
 
             <div className={formDialogField}>
               <Label htmlFor="edit-contact-position">Position</Label>
-              <Input
-                id="edit-contact-position"
-                value={formData.position}
-                onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-                disabled={readOnly}
-              />
+              <Input id="edit-contact-position" value={formData.position} disabled={readOnly} {...bind('position')} />
+              {!readOnly && <FieldError message={validation.fieldError('position')} />}
             </div>
 
             <div className={formDialogGrid}>
@@ -140,10 +138,10 @@ export default function EditContactDialog({
                 <Label htmlFor="edit-contact-status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
                   disabled={readOnly}
                 >
-                  <SelectTrigger id="edit-contact-status">
+                  <SelectTrigger id="edit-contact-status" className={validation.inputClassName('status')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -151,15 +149,16 @@ export default function EditContactDialog({
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
+                {!readOnly && <FieldError message={validation.fieldError('status')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-contact-source">Source</Label>
                 <Select
                   value={formData.source}
-                  onValueChange={(value) => setFormData({ ...formData, source: value })}
+                  onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
                   disabled={readOnly}
                 >
-                  <SelectTrigger id="edit-contact-source">
+                  <SelectTrigger id="edit-contact-source" className={validation.inputClassName('source')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -170,6 +169,7 @@ export default function EditContactDialog({
                     <SelectItem value="referral">Referral</SelectItem>
                   </SelectContent>
                 </Select>
+                {!readOnly && <FieldError message={validation.fieldError('source')} />}
               </div>
             </div>
           </div>

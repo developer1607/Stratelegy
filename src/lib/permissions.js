@@ -19,6 +19,7 @@ import {
   filterPbxSummaryFields,
   PBX_SUMMARY_STAT_SCOPES,
 } from '@shared/pbxDataAccess.js';
+import { isPbxDomainReadOnly, isPbxDomainRestricted, getAssignedPbxDomains } from '@shared/pbxDomainAccess.js';
 
 export { PERMISSION_KEYS, CRM_MODULE_KEYS, SUPPORT_MODULE_KEYS, PBX_MODULE_KEYS, PBX_ACTION_KEYS };
 
@@ -67,9 +68,12 @@ export function resolvePermissions(user, storedPermissions) {
 
   if (!storedPermissions) return denied;
 
-  const out = { ...denied, isAdmin: false };
+  const out = { ...denied, isAdmin: false, pbx_domains: [] };
   for (const key of PERMISSION_KEYS) {
     out[key] = Boolean(storedPermissions[key]);
+  }
+  if (Array.isArray(storedPermissions.pbx_domains)) {
+    out.pbx_domains = storedPermissions.pbx_domains;
   }
   return out;
 }
@@ -115,6 +119,7 @@ export function canTicketAction(permissions, action) {
 export function canPbxAction(permissions, action) {
   if (!permissions) return false;
   if (permissions.isAdmin) return true;
+  if (isPbxDomainReadOnly(permissions)) return false;
   if (hasModuleMaster(permissions, 'pbx')) return true;
   const key = PBX_ACTION_KEYS_MAP[action];
   return key ? hasPermissionKey(permissions, key) : false;
@@ -135,6 +140,7 @@ export function hasSupportModuleAccess(permissions) {
 export function hasPbxModuleAccess(permissions) {
   if (!permissions) return false;
   if (permissions.isAdmin) return true;
+  if (permissions.can_access_pbx_domain_scoped) return true;
   return hasModuleMaster(permissions, 'pbx') || hasAnyKey(permissions, PBX_MODULE_KEYS);
 }
 
@@ -165,3 +171,5 @@ export {
   filterPbxSummaryFields,
   PBX_SUMMARY_STAT_SCOPES,
 };
+
+export { isPbxDomainReadOnly, isPbxDomainRestricted, getAssignedPbxDomains };

@@ -25,6 +25,14 @@ export const PERMISSION_DEFS = [
     section: 'Module',
     master: true,
   },
+  {
+    key: 'can_access_pbx_domain_scoped',
+    label: 'PBX domain-scoped access',
+    module: 'pbx',
+    section: 'Module',
+    master: true,
+    domainScoped: true,
+  },
 
   {
     key: 'can_view_dashboard',

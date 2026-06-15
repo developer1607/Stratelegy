@@ -1,4 +1,5 @@
 import { hasPermissionKey, hasModuleMaster } from './permissionRegistry.js';
+import { isPbxDomainRestricted } from './pbxDomainAccess.js';
 
 /** PBX data scopes → permission keys that grant read access. */
 export const PBX_DATA_SCOPES = {
@@ -59,7 +60,10 @@ export function filterPbxSummaryFields(permissions, summary) {
   if (!permissions || permissions.isAdmin || permissions.can_access_pbx) return summary;
 
   const out = {};
-  if (canViewPbxDomains(permissions) && summary.domain != null) {
+  if (
+    (canViewPbxDomains(permissions) || isPbxDomainRestricted(permissions)) &&
+    summary.domain != null
+  ) {
     out.domain = summary.domain;
   }
   for (const [field, scope] of Object.entries(PBX_SUMMARY_STAT_SCOPES)) {
@@ -67,8 +71,20 @@ export function filterPbxSummaryFields(permissions, summary) {
       out[field] = summary[field];
     }
   }
-  if (canViewPbxDomains(permissions) && summary.domainList) {
+  if (
+    (canViewPbxDomains(permissions) || isPbxDomainRestricted(permissions)) &&
+    summary.domainList
+  ) {
     out.domainList = summary.domainList;
+  }
+  if (isPbxDomainRestricted(permissions) && Array.isArray(summary.assignedDomains)) {
+    out.assignedDomains = summary.assignedDomains;
+  }
+  if (!isPbxDomainRestricted(permissions) && Array.isArray(summary.scopeDomains)) {
+    out.scopeDomains = summary.scopeDomains;
+  }
+  if (summary.scope) {
+    out.scope = summary.scope;
   }
   if (canViewPbxConnectionStatus(permissions) && summary.status) {
     out.status = summary.status;

@@ -17,7 +17,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { LEAD_STATUSES, toDateInputValue } from '@/lib/crmHelpers';
-import { validateLeadForm, showValidationErrors } from '@/lib/crmFormValidation';
+import { validateLeadForm } from '@/lib/crmFormValidation';
+import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
+import FieldError from '@/components/forms/FieldError';
 import {
   formDialogContent,
   formDialogHeader,
@@ -46,6 +48,12 @@ export default function EditLeadDialog({
     value: '',
     next_follow_up: '',
   });
+  const validation = useCrmFormValidation(validateLeadForm);
+  const { resetValidation, validateSubmit } = validation;
+
+  useEffect(() => {
+    if (open) resetValidation();
+  }, [open, resetValidation]);
 
   useEffect(() => {
     if (lead) {
@@ -59,19 +67,30 @@ export default function EditLeadDialog({
         value: lead.value || '',
         next_follow_up: toDateInputValue(lead.next_follow_up),
       });
+      resetValidation();
     }
-  }, [lead]);
+  }, [lead, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (readOnly) return;
-    if (!showValidationErrors(validateLeadForm(formData))) return;
+    if (!validateSubmit(formData)) return;
 
     onSubmit({
       ...formData,
       value: formData.value ? Number(formData.value) : undefined,
     });
   };
+
+  const bind = (field) =>
+    readOnly
+      ? {}
+      : {
+          onChange: (e) => validation.updateField(field, e.target.value, formData, setFormData),
+          onBlur: () => validation.touchField(field, formData),
+          className: validation.inputClassName(field),
+          'aria-invalid': Boolean(validation.fieldError(field)),
+        };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -84,41 +103,23 @@ export default function EditLeadDialog({
             <div className={formDialogGrid}>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-name">Name *</Label>
-                <Input
-                  id="edit-lead-name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-lead-name" value={formData.name} disabled={readOnly} {...bind('name')} />
+                {!readOnly && <FieldError message={validation.fieldError('name')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-email">Email</Label>
-                <Input
-                  id="edit-lead-email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-lead-email" type="email" value={formData.email} disabled={readOnly} {...bind('email')} />
+                {!readOnly && <FieldError message={validation.fieldError('email')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-phone">Phone</Label>
-                <Input
-                  id="edit-lead-phone"
-                  type="tel"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-lead-phone" type="tel" value={formData.phone} disabled={readOnly} {...bind('phone')} />
+                {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-company">Company</Label>
-                <Input
-                  id="edit-lead-company"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  disabled={readOnly}
-                />
+                <Input id="edit-lead-company" value={formData.company} disabled={readOnly} {...bind('company')} />
+                {!readOnly && <FieldError message={validation.fieldError('company')} />}
               </div>
             </div>
 
@@ -127,10 +128,10 @@ export default function EditLeadDialog({
                 <Label htmlFor="edit-lead-status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
+                  onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
                   disabled={readOnly}
                 >
-                  <SelectTrigger id="edit-lead-status">
+                  <SelectTrigger id="edit-lead-status" className={validation.inputClassName('status')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -141,15 +142,16 @@ export default function EditLeadDialog({
                     ))}
                   </SelectContent>
                 </Select>
+                {!readOnly && <FieldError message={validation.fieldError('status')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-source">Source</Label>
                 <Select
                   value={formData.source}
-                  onValueChange={(value) => setFormData({ ...formData, source: value })}
+                  onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
                   disabled={readOnly}
                 >
-                  <SelectTrigger id="edit-lead-source">
+                  <SelectTrigger id="edit-lead-source" className={validation.inputClassName('source')}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
@@ -159,6 +161,7 @@ export default function EditLeadDialog({
                     <SelectItem value="partner">Partner</SelectItem>
                   </SelectContent>
                 </Select>
+                {!readOnly && <FieldError message={validation.fieldError('source')} />}
               </div>
             </div>
 
@@ -171,9 +174,10 @@ export default function EditLeadDialog({
                   min="0"
                   placeholder="50000"
                   value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
                   disabled={readOnly}
+                  {...bind('value')}
                 />
+                {!readOnly && <FieldError message={validation.fieldError('value')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-follow-up">Next Follow-up</Label>
@@ -181,9 +185,10 @@ export default function EditLeadDialog({
                   id="edit-lead-follow-up"
                   type="date"
                   value={formData.next_follow_up}
-                  onChange={(e) => setFormData({ ...formData, next_follow_up: e.target.value })}
                   disabled={readOnly}
+                  {...bind('next_follow_up')}
                 />
+                {!readOnly && <FieldError message={validation.fieldError('next_follow_up')} />}
               </div>
             </div>
           </div>

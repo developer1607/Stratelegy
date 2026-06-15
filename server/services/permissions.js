@@ -15,6 +15,7 @@ import { getRolePermissionObject, getPortalRoleById } from './roles.js';
 import { createEntity, filterEntities, updateEntity } from './entities.js';
 import { ROLE_DEFAULT_DEPARTMENTS } from '../constants/ticketRouting.js';
 import { execute } from '../db/query.js';
+import { parsePbxDomains, serializePbxDomains } from '../../shared/pbxDomainAccess.js';
 
 const PAGE_PERMISSION_KEYS = buildPagePermissionMap();
 const ENTITY_READ_RULES = buildEntityReadMap();
@@ -46,6 +47,7 @@ function normalizePermissionRecord(record) {
     user_name: record.user_name,
     role_id: record.role_id || null,
     use_custom_permissions: Boolean(record.use_custom_permissions),
+    pbx_domains: parsePbxDomains(record.pbx_domains),
     ...perms,
     created_date: record.created_date,
     updated_date: record.updated_date,
@@ -81,7 +83,15 @@ export async function getMyPermissions(userId) {
 
 export async function getPermissionsForUser(user) {
   const stored = await getMyPermissions(user.id);
-  return getEffectivePermissions(user, stored);
+  const effective = getEffectivePermissions(user, stored);
+  if (user.role === 'admin') {
+    return { ...effective, pbx_domains: [] };
+  }
+  const raw = await getUserPermissionRecord(user.id);
+  return {
+    ...effective,
+    pbx_domains: parsePbxDomains(raw?.pbx_domains),
+  };
 }
 
 export async function getUserPermissionRecord(userId) {
@@ -228,6 +238,18 @@ export async function setUserPermissionFlags({
     permissionUpdates: updates,
   });
   return resolveStoredPermissionRecord(record);
+}
+
+export async function setUserPbxDomains({ userId, userEmail, userName, domains }) {
+  const list = parsePbxDomains(domains);
+  const record = await upsertUserPermissions({
+    userId,
+    userEmail,
+    userName,
+    permissionUpdates: { pbx_domains: serializePbxDomains(list) },
+  });
+  const resolved = await resolveStoredPermissionRecord(record);
+  return { ...resolved, pbx_domains: list };
 }
 
 export async function applyPortalRoleOnUserCreate({ userId, userEmail, userName, portalRoleId }) {

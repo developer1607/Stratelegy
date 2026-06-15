@@ -512,6 +512,12 @@ export const ENTITY_REGISTRY = {
         optional: true,
       },
       use_custom_permissions: { type: "bool", writable: true, default: false },
+      pbx_domains: {
+        type: "string",
+        writable: true,
+        optional: true,
+        maxLength: 2000,
+      },
       ...PERMISSION_COLUMNS,
       created_date: { type: "datetime", writable: false },
       updated_date: { type: "datetime", writable: false },

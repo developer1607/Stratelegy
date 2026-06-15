@@ -12,6 +12,7 @@ import {
   assignPortalRole,
   setUserPermissionFlags,
   getUserPermissionsAdminView,
+  setUserPbxDomains,
 } from '../services/permissions.js';
 import { PERMISSION_KEYS } from '../constants/permissions.js';
 
@@ -116,6 +117,30 @@ router.patch('/:id/password', requireAdmin, async (req, res, next) => {
     if (!password) return res.status(400).json({ message: 'password is required' });
     const updated = await setUserPasswordAdmin(user.id, password);
     res.json({ user: updated, message: 'Password updated' });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.patch('/:id/pbx-domains', requireAdmin, async (req, res, next) => {
+  try {
+    const user = await getUserById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'Admin users are not domain-scoped' });
+    }
+    const { domains, pbx_domains } = req.body || {};
+    const list = domains ?? pbx_domains;
+    if (list == null) {
+      return res.status(400).json({ message: 'domains array is required' });
+    }
+    const permission = await setUserPbxDomains({
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.full_name,
+      domains: list,
+    });
+    res.json({ permission });
   } catch (e) {
     next(e);
   }

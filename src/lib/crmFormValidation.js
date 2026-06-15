@@ -1,4 +1,3 @@
-import { showError } from '@/lib/toast';
 import { LEAD_STATUSES } from '@/lib/crmHelpers';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -41,7 +40,8 @@ function phoneField(value, label) {
   const v = trim(value);
   if (!v) return null;
   if (v.length > 64) return `${label} must be 64 characters or fewer.`;
-  if (!PHONE_RE.test(v)) return `${label} must be a valid phone number.`;
+  if (/[^\d\s+().-]/.test(v)) return `${label} must be a valid phone number.`;
+  if (v.length >= 7 && !PHONE_RE.test(v)) return `${label} must be a valid phone number.`;
   return null;
 }
 
@@ -86,14 +86,9 @@ function oneOf(value, allowed, label) {
   return null;
 }
 
-/** Show a toast for each validation error. Returns true when valid. */
-export function showValidationErrors(errors) {
-  const messages = Object.values(errors).filter(Boolean);
-  if (messages.length === 0) return true;
-  for (const message of messages) {
-    showError(null, message);
-  }
-  return false;
+/** Returns true when there are no validation errors. */
+export function isFormValid(errors) {
+  return Object.keys(errors).length === 0;
 }
 
 const ACCOUNT_STATUSES = ['active', 'inactive', 'prospect'];

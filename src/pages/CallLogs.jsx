@@ -18,6 +18,9 @@ import {
   daysAgo,
   todayInput,
 } from "@/lib/listFilters";
+import { usePbxDomain } from "@/components/pbx/domain/PbxDomainContext";
+import { isPbxDomainRestricted } from "@/lib/permissions";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CallLogs() {
   return (
@@ -158,15 +161,22 @@ function AuditTab({ search, startDate, endDate }) {
   );
 }
 
-function JournalTab({ search, startDate, endDate }) {
+function JournalTab({ search, startDate, endDate, domain, domainRestricted }) {
   const [moduleFilter, setModuleFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
 
   const journalQ = useQuery({
-    queryKey: ["pbx-journals", startDate, endDate],
+    queryKey: ["pbx-journals", startDate, endDate, domain],
     queryFn: () =>
-      pbxApi.journals({ start_date: startDate, end_date: endDate, page: 1 }),
+      pbxApi.journals({
+        start_date: startDate,
+        end_date: endDate,
+        page: 1,
+        domain,
+        identifier: domain,
+      }),
     retry: false,
+    enabled: !domainRestricted || !!domain,
   });
 
   const typesQ = useQuery({
@@ -265,18 +275,23 @@ function LogsContent() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState(daysAgo(7));
   const [endDate, setEndDate] = useState(todayInput());
+  const { domain } = usePbxDomain();
+  const { permissions } = usePermissions();
+  const domainRestricted = isPbxDomainRestricted(permissions);
 
   return (
-    <Tabs defaultValue="audit" className="space-y-4">
+    <Tabs defaultValue={domainRestricted ? "journals" : "audit"} className="space-y-4">
       <TabsList>
-        <TabsTrigger value="audit">Audit logs</TabsTrigger>
+        {!domainRestricted && <TabsTrigger value="audit">Audit logs</TabsTrigger>}
         <TabsTrigger value="journals">Journals</TabsTrigger>
       </TabsList>
 
       <PbxListToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder="Search resource, action, user, IP…"
+        searchPlaceholder={
+          domainRestricted ? "Search module, action, identifier…" : "Search resource, action, user, IP…"
+        }
       >
         <DateRange
           startDate={startDate}
@@ -286,12 +301,26 @@ function LogsContent() {
         />
       </PbxListToolbar>
 
-      <TabsContent value="audit">
-        <AuditTab search={search} startDate={startDate} endDate={endDate} />
-      </TabsContent>
+      {domainRestricted && !domain && (
+        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Select an assigned domain in the bar above to load journal entries for that domain.
+        </p>
+      )}
+
+      {!domainRestricted && (
+        <TabsContent value="audit">
+          <AuditTab search={search} startDate={startDate} endDate={endDate} />
+        </TabsContent>
+      )}
 
       <TabsContent value="journals">
-        <JournalTab search={search} startDate={startDate} endDate={endDate} />
+        <JournalTab
+          search={search}
+          startDate={startDate}
+          endDate={endDate}
+          domain={domain}
+          domainRestricted={domainRestricted}
+        />
       </TabsContent>
     </Tabs>
   );

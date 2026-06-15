@@ -28,7 +28,7 @@ export const pbxApi = {
   pbxUserPhoneNumbers: (domain, user, opts) =>
     pbxGet("/messaging/aliases/pbxuser", { domain, user, ...opts }),
   offlineEndpoints: (domain) => pbxGet("/offline-endpoints", { domain }),
-  e911: () => pbxGet("/e911"),
+  e911: (domain) => pbxGet('/e911', domain ? { domain } : undefined),
   e911Countries: () => pbxGet("/e911/countries"),
   e911States: () => pbxGet("/e911/states"),
   e911Detail: (phoneNumber) =>
@@ -38,7 +38,7 @@ export const pbxApi = {
     pbxRequest("PUT", `/e911/${encodeURIComponent(phoneNumber)}`, body),
   unprovisionE911: (phoneNumber) =>
     pbxRequest("DELETE", `/e911/${encodeURIComponent(phoneNumber)}`),
-  trunkGroups: () => pbxGet("/trunk-groups"),
+  trunkGroups: (domain) => pbxGet('/trunk-groups', domain ? { domain } : undefined),
   sipAlg: (domain) => pbxGet("/sip-alg", { domain }),
   callRouting: (domain) => pbxGet("/call-routing", { domain }),
   getRoute: (phoneNumber) =>
@@ -106,5 +106,5 @@ export const pbxApi = {
   e911ReviewOverview: (domain) =>
     pbxGet("/e911/review-overview", domain ? { domain } : undefined),
   offlineEndpointsOverview: (domain) => pbxGet("/offline-endpoints/overview", { domain }),
-  mosScores: (params) => pbxGet("/mos-scores", params),
+  mosScores: (params) => pbxGet('/mos-scores', params),
 };

@@ -14,6 +14,7 @@ import {
   hasSupportModuleAccess,
   hasPbxModuleAccess,
 } from '@/lib/permissions';
+import { isPbxDomainReadOnly, isPbxDomainRestricted } from '@shared/pbxDomainAccess.js';
 
 export function usePermissions() {
   const { user, isAuthenticated } = useAuth();
@@ -36,7 +37,7 @@ export function usePermissions() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || user.role !== 'admin') return;
     const unsubscribe = api.entities.UserPermissions.subscribe((event) => {
       if (event.data?.user_id === user.id || event.old_data?.user_id === user.id) {
         refetch();
@@ -61,6 +62,8 @@ export function usePermissions() {
     hasCrmAccess: hasCrmModuleAccess(permissions),
     hasSupportAccess: hasSupportModuleAccess(permissions),
     hasPbxAccess: hasPbxModuleAccess(permissions),
+    isPbxDomainReadOnly: isPbxDomainReadOnly(permissions),
+    isPbxDomainRestricted: isPbxDomainRestricted(permissions),
     defaultHomePage: getDefaultHomePage(permissions),
     refetchPermissions: refetch,
   };
