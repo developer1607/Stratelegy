@@ -1,31 +1,34 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   buildCommandPaletteGroups,
   buildPalettePageUrl,
   filterCommandPaletteGroups,
-} from '@/lib/commandPaletteNav';
+} from "@/lib/commandPaletteNav";
 
 export default function CommandPalette({ canAccessPage, isAdmin }) {
   const navigate = useNavigate();
   const rootRef = useRef(null);
   const inputRef = useRef(null);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
 
   const groups = useMemo(
     () => buildCommandPaletteGroups({ canAccessPage, isAdmin }),
-    [canAccessPage, isAdmin]
+    [canAccessPage, isAdmin],
   );
 
-  const filteredGroups = useMemo(() => filterCommandPaletteGroups(groups, query), [groups, query]);
+  const filteredGroups = useMemo(
+    () => filterCommandPaletteGroups(groups, query),
+    [groups, query],
+  );
 
   const hasResults = filteredGroups.some((group) => group.items.length > 0);
 
   const goTo = (path) => {
-    setQuery('');
+    setQuery("");
     setOpen(false);
     inputRef.current?.blur();
     navigate(buildPalettePageUrl(path));
@@ -33,18 +36,18 @@ export default function CommandPalette({ canAccessPage, isAdmin }) {
 
   useEffect(() => {
     const onKeyDown = (event) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         inputRef.current?.focus();
         setOpen(true);
       }
-      if (event.key === 'Escape') {
+      if (event.key === "Escape") {
         setOpen(false);
         inputRef.current?.blur();
       }
     };
-    document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, []);
 
   useEffect(() => {
@@ -53,8 +56,8 @@ export default function CommandPalette({ canAccessPage, isAdmin }) {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
   }, []);
 
   return (
@@ -71,7 +74,7 @@ export default function CommandPalette({ canAccessPage, isAdmin }) {
         }}
         onFocus={() => setOpen(true)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && hasResults) {
+          if (e.key === "Enter" && hasResults) {
             e.preventDefault();
             goTo(filteredGroups[0].items[0].path);
           }
@@ -87,7 +90,9 @@ export default function CommandPalette({ canAccessPage, isAdmin }) {
       {open && (
         <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-[min(360px,50vh)] overflow-y-auto rounded-md border border-gray-200 bg-white shadow-lg">
           {!hasResults ? (
-            <p className="px-4 py-6 text-center text-sm text-gray-500">No pages found.</p>
+            <p className="px-4 py-6 text-center text-sm text-gray-500">
+              No pages found.
+            </p>
           ) : (
             filteredGroups.map((group) => (
               <div key={group.label} className="p-1">

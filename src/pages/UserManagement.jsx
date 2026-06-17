@@ -194,6 +194,15 @@ export default function UserManagement({ embedded = false }) {
     },
   });
 
+  const updateMfaMutation = useMutation({
+    mutationFn: ({ userId, enabled, forced }) => api.users.updateMfa(userId, { enabled, forced }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      showSuccess('Email MFA settings updated.');
+    },
+    onError: (error) => showError(error, 'Failed to update email MFA'),
+  });
+
   const createRoleMutation = useMutation({
     mutationFn: (payload) => api.roles.create(payload),
     onSuccess: () => {
@@ -268,7 +277,11 @@ export default function UserManagement({ embedded = false }) {
   const setResetPasswordField = (userId, field, value) => {
     setResetPasswordByUser((prev) => ({
       ...prev,
-      [userId]: { ...getResetPasswordForm(userId), [field]: value, error: '' },
+      [userId]: {
+        ...(prev[userId] || { password: '', confirmPassword: '', error: '' }),
+        [field]: value,
+        error: '',
+      },
     }));
   };
 
@@ -656,6 +669,14 @@ export default function UserManagement({ embedded = false }) {
                             Custom
                           </Badge>
                         )}
+                        {!isUserAdmin && user.mfa_email_enabled && (
+                          <Badge
+                            variant="outline"
+                            className="hidden sm:inline-flex border-green-300 text-green-700"
+                          >
+                            Email MFA
+                          </Badge>
+                        )}
                       </>
                     )}
                     {isExpanded ? (
@@ -734,6 +755,57 @@ export default function UserManagement({ embedded = false }) {
                         >
                           {resetPasswordMutation.isPending ? 'Updating...' : 'Update password'}
                         </Button>
+                      </div>
+                    )}
+
+                    {!isUserAdmin && (
+                      <div className="p-4 rounded-lg border bg-white space-y-4">
+                        <div className="flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-primary" />
+                          <span className="font-medium text-sm text-gray-900">Email MFA</span>
+                        </div>
+                        <p className="text-xs text-gray-600">
+                          Sign-in codes are sent to the user&apos;s account email only — not SMS or
+                          phone. Users can also enable MFA on their profile unless you require it.
+                        </p>
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <Label className="text-sm">Enabled</Label>
+                            <p className="text-xs text-gray-500">
+                              User must enter an email code when signing in
+                            </p>
+                          </div>
+                          <Switch
+                            checked={Boolean(user.mfa_email_enabled)}
+                            disabled={updateMfaMutation.isPending}
+                            onCheckedChange={(checked) =>
+                              updateMfaMutation.mutate({
+                                userId: user.id,
+                                enabled: checked,
+                                forced: user.mfa_email_forced,
+                              })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <Label className="text-sm">Required (admin lock)</Label>
+                            <p className="text-xs text-gray-500">
+                              User cannot disable MFA on their profile
+                            </p>
+                          </div>
+                          <Switch
+                            checked={Boolean(user.mfa_email_forced)}
+                            disabled={updateMfaMutation.isPending || !user.mfa_email_enabled}
+                            onCheckedChange={(forced) =>
+                              updateMfaMutation.mutate({
+                                userId: user.id,
+                                enabled: true,
+                                forced,
+                              })
+                            }
+                          />
+                        </div>
                       </div>
                     )}
 

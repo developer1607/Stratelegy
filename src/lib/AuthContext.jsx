@@ -1,14 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { api } from '@/api/client';
 import { appParams } from '@/lib/app-params';
-import { getToken, hasToken } from '@/lib/auth-token';
+import { clearToken, getToken, hasToken } from '@/lib/auth-token';
 
 /** @type {import('react').Context<null | Record<string, unknown>>} */
 const AuthContext = createContext(null);
 
 async function fetchPublicSettings(appId) {
   const headers = { 'X-App-Id': appId };
-  const token = getToken(appParams.token);
+  const token = getToken();
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
   const res = await fetch(`/api/apps/public/prod/public-settings/by-id/${appId}`, { headers });
@@ -44,6 +44,9 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
     } catch (error) {
       console.error('User auth check failed:', error);
+      if (error.status === 401) {
+        clearToken();
+      }
       setUser(null);
       setIsAuthenticated(false);
       if (error.status === 401 || error.status === 403) {
@@ -65,7 +68,7 @@ export const AuthProvider = ({ children }) => {
 
         const authRequired = publicSettings?.public_settings?.auth_required !== false;
 
-        if (hasToken(appParams.token)) {
+        if (hasToken()) {
           await checkUserAuth();
         } else if (authRequired) {
           setUser(null);

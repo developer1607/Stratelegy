@@ -1,5 +1,5 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Button } from "@/components/ui/button";
 
 export default class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -12,7 +12,7 @@ export default class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('[ErrorBoundary]', error, info);
+    console.error("[ErrorBoundary]", error, info);
   }
 
   render() {
@@ -21,7 +21,9 @@ export default class ErrorBoundary extends React.Component {
         <div className="min-h-[50vh] flex items-center justify-center p-8">
           <div className="max-w-md text-center space-y-4">
             <h1 className="text-xl font-semibold text-gray-900">Page error</h1>
-            <p className="text-sm text-gray-600">Refresh the page or return to the dashboard.</p>
+            <p className="text-sm text-gray-600">
+              Refresh the page or return to the dashboard.
+            </p>
             <div className="flex flex-wrap justify-center gap-2">
               <Button type="button" onClick={() => window.location.reload()}>
                 Refresh
@@ -30,7 +32,7 @@ export default class ErrorBoundary extends React.Component {
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  window.location.href = '/';
+                  window.location.href = "/";
                 }}
               >
                 Dashboard

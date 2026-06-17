@@ -1,7 +1,7 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
-import { api } from '@/api/client';
-import { useAuth } from '@/lib/AuthContext';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { api } from "@/api/client";
+import { useAuth } from "@/lib/AuthContext";
 import {
   resolvePermissions,
   canAccessPage,
@@ -13,8 +13,11 @@ import {
   hasCrmModuleAccess,
   hasSupportModuleAccess,
   hasPbxModuleAccess,
-} from '@/lib/permissions';
-import { isPbxDomainReadOnly, isPbxDomainRestricted } from '@shared/pbxDomainAccess.js';
+} from "@/lib/permissions";
+import {
+  isPbxDomainReadOnly,
+  isPbxDomainRestricted,
+} from "@shared/pbxDomainAccess.js";
 
 export function usePermissions() {
   const { user, isAuthenticated } = useAuth();
@@ -25,23 +28,28 @@ export function usePermissions() {
     isLoading,
     refetch,
   } = useQuery({
-    queryKey: ['layout-user-permissions', user?.id],
+    queryKey: ["layout-user-permissions", user?.id],
     queryFn: async () => {
       if (!user) return null;
-      const response = await api.functions.invoke('getMyPermissions');
+      const response = await api.functions.invoke("getMyPermissions");
       return response.data?.permissions || null;
     },
     enabled: !!user && isAuthenticated,
     staleTime: 0,
-    refetchOnMount: 'always',
+    refetchOnMount: "always",
   });
 
   useEffect(() => {
-    if (!user || user.role !== 'admin') return;
+    if (!user) return;
     const unsubscribe = api.entities.UserPermissions.subscribe((event) => {
-      if (event.data?.user_id === user.id || event.old_data?.user_id === user.id) {
+      if (
+        event.data?.user_id === user.id ||
+        event.old_data?.user_id === user.id
+      ) {
         refetch();
-        queryClient.invalidateQueries({ queryKey: ['layout-user-permissions', user.id] });
+        queryClient.invalidateQueries({
+          queryKey: ["layout-user-permissions", user.id],
+        });
       }
     });
     return unsubscribe;

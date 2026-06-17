@@ -31,8 +31,8 @@ export async function ensureAdminUser() {
   const hash = bcrypt.hashSync(password, 10);
 
   await execute(
-    `INSERT INTO users (id, email, password_hash, full_name, role)
-     VALUES (?, ?, ?, ?, 'admin')`,
+    `INSERT INTO users (id, email, password_hash, full_name, role, email_verified)
+     VALUES (?, ?, ?, ?, 'admin', 1)`,
     [id, email, hash, "Administrator"],
   );
 

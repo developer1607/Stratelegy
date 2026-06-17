@@ -447,6 +447,18 @@ export const ENTITY_REGISTRY = {
         optional: true,
         default: "monday",
       },
+      default_mfa_email_enabled: {
+        type: "bool",
+        writable: true,
+        optional: true,
+        default: false,
+      },
+      default_mfa_email_forced: {
+        type: "bool",
+        writable: true,
+        optional: true,
+        default: false,
+      },
       created_date: { type: "datetime", writable: false },
       updated_date: { type: "datetime", writable: false },
     },

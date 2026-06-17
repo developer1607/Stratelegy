@@ -1,11 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Download, Eye, RefreshCw } from 'lucide-react';
+import { Download, RefreshCw } from 'lucide-react';
 import { pbxApi } from '@/api/pbx';
 import { PbxDataTable, PbxError } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxDeleteDialog from '@/components/pbx/shared/PbxDeleteDialog';
-import ReportDetailSheet from '@/components/pbx/reports/ReportDetailSheet';
 import PermissionGate from '@/components/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,12 +23,11 @@ function statusBadge(status) {
 }
 
 /**
- * Lists SkySwitch async report jobs (queued/completed). Generation is only available
- * in SkySwitch back-office — this UI supports view, download, and cancel.
+ * Lists SkySwitch async report jobs (queued/completed). Supports download and cancel.
  */
 export default function PbxCompletedExports({
   title = 'Completed exports',
-  description = 'Download finished report files queued in SkySwitch back-office.',
+  description = 'Queued and completed report files. Downloads appear when status is completed.',
   reportTypeMatch = null,
   enabled = true,
 }) {
@@ -37,7 +35,12 @@ export default function PbxCompletedExports({
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
-  const [detailId, setDetailId] = useState(null);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter]);
+
+  const hasActiveFilters = Boolean(search.trim()) || statusFilter !== 'all';
 
   const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['pbx-generated-reports', page],
@@ -56,8 +59,6 @@ export default function PbxCompletedExports({
     onSuccess: () => {
       toast.success('Report cancelled');
       queryClient.invalidateQueries({ queryKey: ['pbx-generated-reports'] });
-      queryClient.invalidateQueries({ queryKey: ['pbx-report-detail'] });
-      setDetailId(null);
     },
     onError: (err) => toast.error(err.message || 'Failed to cancel report'),
   });
@@ -73,7 +74,7 @@ export default function PbxCompletedExports({
     }
   };
 
-  const { rows, statusOptions, hasQueued, total, currentPage } = useMemo(() => {
+  const { rows, statusOptions, hasQueued, currentPage } = useMemo(() => {
     const list = (data?.data || []).map((item) => ({
       id: item.id,
       report_type: item.report_type,
@@ -99,7 +100,6 @@ export default function PbxCompletedExports({
       statusOptions: uniqueFieldValues(typeFiltered, 'status'),
       hasQueued: typeFiltered.some((row) => /queued|pending/i.test(String(row.status || ''))),
       rows: filtered,
-      total: typeFiltered.length,
       currentPage: Number(data?.current_page) || page,
     };
   }, [data, search, statusFilter, page, reportTypeMatch]);
@@ -120,10 +120,6 @@ export default function PbxCompletedExports({
       label: 'Actions',
       render: (row) => (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="outline" onClick={() => setDetailId(row.id)}>
-            <Eye className="h-4 w-4 mr-1" />
-            View
-          </Button>
           {row.file_id && (
             <Button size="sm" variant="outline" onClick={() => download(row.file_id)}>
               <Download className="h-4 w-4 mr-1" />
@@ -182,19 +178,25 @@ export default function PbxCompletedExports({
             )}
           </PbxListToolbar>
 
+          {hasActiveFilters && (
+            <p className="text-xs text-amber-700">
+              Search and status filters apply to the current page of exports only.
+            </p>
+          )}
+
           <PbxDataTable
             columns={columns}
             rows={rows}
             emptyMessage={
               reportTypeMatch
-                ? 'No matching exports yet. Queue this report type in SkySwitch back-office; completed files appear here.'
-                : 'No exports yet. Queue reports in SkySwitch back-office; completed files appear here.'
+                ? 'No matching exports yet. Queue a report above; completed files appear here.'
+                : 'No exports yet. Queue a report from the catalog; completed files appear here.'
             }
           />
 
           {rows.length > 0 && (
             <div className="flex items-center justify-between text-sm text-gray-600">
-              <span>{total} export(s) on this page</span>
+              <span>{rows.length} matching export(s) on page {currentPage}</span>
               <div className="flex gap-2">
                 <Button
                   size="sm"
@@ -216,13 +218,6 @@ export default function PbxCompletedExports({
               </div>
             </div>
           )}
-
-          <ReportDetailSheet
-            reportId={detailId}
-            open={!!detailId}
-            onOpenChange={(open) => !open && setDetailId(null)}
-            onDownload={download}
-          />
         </>
       )}
     </section>

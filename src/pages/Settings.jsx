@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { showError, showInfo, showSuccess } from '@/lib/toast';
@@ -17,37 +17,47 @@ import {
 import { AlertCircle, Download, Trash2 } from 'lucide-react';
 import ConfigListManager from '../components/settings/ConfigListManager';
 import PortalUsersPanel from '../components/settings/PortalUsersPanel';
+import EmailTemplatesPanel from '../components/settings/EmailTemplatesPanel';
+import PortalReferencePanel from '../components/settings/PortalReferencePanel';
 import { usePermissions } from '@/hooks/usePermissions';
 import AccessDenied from '@/components/AccessDenied';
 
 export default function Settings() {
   const { isAdmin, isLoading } = usePermissions();
   const [resetConfirmation, setResetConfirmation] = useState('');
+  const [salesTargetInput, setSalesTargetInput] = useState('');
+  const [exportingEntity, setExportingEntity] = useState(null);
   const queryClient = useQueryClient();
+  const adminQueriesEnabled = isAdmin && !isLoading;
 
   const { data: contactSources = [] } = useQuery({
     queryKey: ['contactSources'],
     queryFn: () => api.entities.ContactSource.list('order'),
+    enabled: adminQueriesEnabled,
   });
 
   const { data: leadStages = [] } = useQuery({
     queryKey: ['leadStages'],
     queryFn: () => api.entities.LeadStage.list('order'),
+    enabled: adminQueriesEnabled,
   });
 
   const { data: activityTypes = [] } = useQuery({
     queryKey: ['activityTypes'],
     queryFn: () => api.entities.ActivityType.list('order'),
+    enabled: adminQueriesEnabled,
   });
 
   const { data: accountTiers = [] } = useQuery({
     queryKey: ['accountTiers'],
     queryFn: () => api.entities.AccountTier.list('order'),
+    enabled: adminQueriesEnabled,
   });
 
   const { data: industries = [] } = useQuery({
     queryKey: ['industries'],
     queryFn: () => api.entities.Industry.list('order'),
+    enabled: adminQueriesEnabled,
   });
 
   const { data: defaultSettings } = useQuery({
@@ -56,7 +66,16 @@ export default function Settings() {
       const settings = await api.entities.DefaultSettings.list();
       return settings[0] || null;
     },
+    enabled: adminQueriesEnabled,
   });
+
+  useEffect(() => {
+    setSalesTargetInput(
+      defaultSettings?.monthly_sales_target != null
+        ? String(defaultSettings.monthly_sales_target)
+        : ''
+    );
+  }, [defaultSettings?.monthly_sales_target]);
 
   const createSettingsMutation = useMutation({
     mutationFn: (data) => api.entities.DefaultSettings.create(data),
@@ -116,23 +135,30 @@ export default function Settings() {
   };
 
   const exportData = async (entityName) => {
-    const data = await api.entities[entityName].list();
-    const csv = [
-      Object.keys(data[0] || {}).join(','),
-      ...data.map((row) =>
-        Object.values(row)
-          .map((v) => `"${v}"`)
-          .join(',')
-      ),
-    ].join('\n');
+    setExportingEntity(entityName);
+    try {
+      const data = await api.entities[entityName].list();
+      const csv = [
+        Object.keys(data[0] || {}).join(','),
+        ...data.map((row) =>
+          Object.values(row)
+            .map((v) => `"${v}"`)
+            .join(',')
+        ),
+      ].join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${entityName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${entityName.toLowerCase()}_${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showError(null, `Failed to export ${entityName.toLowerCase()} data`);
+    } finally {
+      setExportingEntity(null);
+    }
   };
 
   const downloadTemplate = (type) => {
@@ -175,9 +201,11 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="config" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 h-auto">
             <TabsTrigger value="config">CRM Configuration</TabsTrigger>
             <TabsTrigger value="defaults">Defaults</TabsTrigger>
+            <TabsTrigger value="email">Email</TabsTrigger>
+            <TabsTrigger value="reference">Portal reference</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
             <TabsTrigger value="users">Portal Users</TabsTrigger>
           </TabsList>
@@ -295,13 +323,14 @@ export default function Settings() {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={defaultSettings?.monthly_sales_target ?? ''}
-                    onChange={(e) =>
-                      handleUpdateSettings(
-                        'monthly_sales_target',
-                        e.target.value === '' ? 0 : parseFloat(e.target.value)
-                      )
-                    }
+                    value={salesTargetInput}
+                    onChange={(e) => setSalesTargetInput(e.target.value)}
+                    onBlur={() => {
+                      if (salesTargetInput.trim() === '') return;
+                      const value = parseFloat(salesTargetInput);
+                      if (Number.isNaN(value)) return;
+                      handleUpdateSettings('monthly_sales_target', value);
+                    }}
                     placeholder="0"
                   />
                   <p className="text-xs text-gray-500">
@@ -376,6 +405,14 @@ export default function Settings() {
             </Card>
           </TabsContent>
 
+          <TabsContent value="email" className="space-y-4">
+            <EmailTemplatesPanel />
+          </TabsContent>
+
+          <TabsContent value="reference" className="space-y-4">
+            <PortalReferencePanel />
+          </TabsContent>
+
           <TabsContent value="users" className="space-y-4">
             <PortalUsersPanel />
           </TabsContent>
@@ -423,34 +460,38 @@ export default function Settings() {
                 <Button
                   variant="outline"
                   onClick={() => exportData('Contact')}
+                  disabled={exportingEntity === 'Contact'}
                   className="w-full sm:w-auto"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export Contacts
+                  {exportingEntity === 'Contact' ? 'Exporting…' : 'Export Contacts'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => exportData('Account')}
+                  disabled={exportingEntity === 'Account'}
                   className="w-full sm:w-auto ml-0 sm:ml-2"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export Accounts
+                  {exportingEntity === 'Account' ? 'Exporting…' : 'Export Accounts'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => exportData('Lead')}
+                  disabled={exportingEntity === 'Lead'}
                   className="w-full sm:w-auto ml-0 sm:ml-2"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export Leads
+                  {exportingEntity === 'Lead' ? 'Exporting…' : 'Export Leads'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => exportData('Activity')}
+                  disabled={exportingEntity === 'Activity'}
                   className="w-full sm:w-auto ml-0 sm:ml-2"
                 >
                   <Download className="w-4 h-4 mr-2" />
-                  Export Activities
+                  {exportingEntity === 'Activity' ? 'Exporting…' : 'Export Activities'}
                 </Button>
               </CardContent>
             </Card>

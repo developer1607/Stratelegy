@@ -1,1 +1,4 @@
-export { usePbxDomain, PbxDomainProvider } from '@/components/pbx/domain/PbxDomainContext';
+export {
+  usePbxDomain,
+  PbxDomainProvider,
+} from "@/components/pbx/domain/PbxDomainContext";

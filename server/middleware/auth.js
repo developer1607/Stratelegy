@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config.js';
-import { getUserById } from '../services/users.js';
+import { getUserById, getUserTokenVersion } from '../services/users.js';
 
 const JWT_VERIFY_OPTIONS = {
   issuer: 'stratelegy-insight',
@@ -15,6 +15,16 @@ export async function optionalAuth(req, res, next) {
   }
   try {
     const payload = jwt.verify(token, config.jwtSecret, JWT_VERIFY_OPTIONS);
+    const currentTokenVersion = await getUserTokenVersion(payload.sub);
+    if (currentTokenVersion === null) {
+      req.user = null;
+      return next();
+    }
+    const tokenVersion = Number(payload.tv) || 0;
+    if (tokenVersion !== currentTokenVersion) {
+      req.user = null;
+      return next();
+    }
     req.user = await getUserById(payload.sub);
     if (!req.user?.is_active) req.user = null;
   } catch {
@@ -44,12 +54,16 @@ export function requireAdmin(req, res, next) {
   });
 }
 
-export function signToken(user) {
-  return jwt.sign({ sub: user.id, email: user.email, role: user.role }, config.jwtSecret, {
-    expiresIn: config.isProduction ? '24h' : '7d',
-    issuer: 'stratelegy-insight',
-    audience: 'stratelegy-portal',
-  });
+export function signToken(user, tokenVersion = 0) {
+  return jwt.sign(
+    { sub: user.id, email: user.email, role: user.role, tv: tokenVersion },
+    config.jwtSecret,
+    {
+      expiresIn: config.isProduction ? '24h' : '7d',
+      issuer: 'stratelegy-insight',
+      audience: 'stratelegy-portal',
+    }
+  );
 }
 
 function extractToken(req) {

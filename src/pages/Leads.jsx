@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { api } from '@/api/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, CheckCircle, XCircle, Percent, Calendar } from 'lucide-react';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { matchFieldEquals, matchSearch, namesFromConfigItems } from '@/lib/listFilters';
 import { showError, showSuccess } from '@/lib/toast';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -77,6 +78,19 @@ export default function Leads() {
     sort: '-created_date',
     queryKeyPrefix: 'leads',
   });
+
+  const { data: leadStages = [] } = useQuery({
+    queryKey: ['leadStages'],
+    queryFn: () => api.entities.LeadStage.list('order'),
+  });
+
+  const { data: contactSources = [] } = useQuery({
+    queryKey: ['contactSources'],
+    queryFn: () => api.entities.ContactSource.list('order'),
+  });
+
+  const leadStageOptions = useMemo(() => namesFromConfigItems(leadStages), [leadStages]);
+  const sourceOptions = useMemo(() => namesFromConfigItems(contactSources), [contactSources]);
 
   useEffect(() => {
     resetPage();
@@ -149,18 +163,14 @@ export default function Leads() {
 
   const filteredAndSortedLeads = useMemo(() => {
     let result = leads.filter((lead) => {
-      const matchSearch =
-        lead.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.company?.toLowerCase().includes(searchTerm.toLowerCase());
-
-      const matchStatus = filters.status === 'all' || lead.status === filters.status;
-      const matchSource = filters.source === 'all' || lead.source === filters.source;
+      const matchSearchTerm = matchSearch(lead, searchTerm, ['name', 'email', 'company', 'phone']);
+      const matchStatus = matchFieldEquals(lead.status, filters.status);
+      const matchSource = matchFieldEquals(lead.source, filters.source);
       const matchValue =
         !filters.minValue || (lead.value && lead.value >= parseFloat(filters.minValue));
       const matchFollowUp = !filters.followUpDate || lead.next_follow_up === filters.followUpDate;
 
-      return matchSearch && matchStatus && matchSource && matchValue && matchFollowUp;
+      return matchSearchTerm && matchStatus && matchSource && matchValue && matchFollowUp;
     });
 
     result.sort((a, b) => {
@@ -338,6 +348,8 @@ export default function Leads() {
             onClearFilters={handleClearFilters}
             savedViews={savedViews}
             onSaveView={handleSaveView}
+            leadStages={leadStageOptions}
+            sources={sourceOptions}
           />
         </div>
 

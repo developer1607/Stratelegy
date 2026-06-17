@@ -1,5 +1,10 @@
 import { config } from '../../../config.js';
 import { escapeHtml, renderLayout, infoRow } from './base.js';
+import {
+  getTemplateOverrideRow,
+  mergeTemplateContent,
+  renderTemplateContent,
+} from '../templateOverrides.js';
 
 function ticketUrl(ticketId) {
   return `${config.appBaseUrl}/SupportTicketDetail?id=${encodeURIComponent(ticketId)}`;
@@ -179,10 +184,38 @@ export const EMAIL_TEMPLATES = {
       }),
     }),
   },
+
+  mfa_email_code: {
+    subject: () => `${config.appName} sign-in code`,
+    render: ({ code }) => ({
+      subject: `${config.appName} sign-in code`,
+      text: [
+        `Your ${config.appName} verification code is: ${code}`,
+        'This code expires in 10 minutes.',
+        'If you did not request this code, you can ignore this email.',
+      ].join('\n'),
+      html: renderLayout({
+        title: 'Verification code',
+        preheader: `Code: ${code}`,
+        bodyHtml: `
+          <p style="margin:0 0 16px;">Use this code to complete sign-in to <strong>${escapeHtml(config.appName)}</strong>:</p>
+          <p style="margin:0 0 16px;font-size:28px;font-weight:700;letter-spacing:4px;">${escapeHtml(code)}</p>
+          <p style="margin:0;color:#64748b;font-size:14px;">This code expires in 10 minutes. If you did not request it, ignore this email.</p>
+        `,
+      }),
+    }),
+  },
 };
 
-export function renderEmailTemplate(templateId, data) {
+export async function renderEmailTemplate(templateId, data) {
   const template = EMAIL_TEMPLATES[templateId];
   if (!template) throw new Error(`Unknown email template: ${templateId}`);
+
+  const row = await getTemplateOverrideRow(templateId);
+  if (row) {
+    const content = mergeTemplateContent(templateId, row);
+    return renderTemplateContent(content, data);
+  }
+
   return template.render(data);
 }

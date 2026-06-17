@@ -179,14 +179,14 @@ export const SKYSWITCH_API_REGISTRY = [
     implemented: true,
   },
   {
-    portal: 'GET /api/pbx/reports/types',
-    skyswitch: 'GET /accounts/{id}/reports/types',
+    portal: 'POST /api/pbx/reports',
+    skyswitch: 'POST /accounts/{id}/reports',
     scope: 'report',
     implemented: true,
   },
   {
-    portal: 'GET /api/pbx/reports/:id',
-    skyswitch: 'GET /accounts/{id}/reports/{id}',
+    portal: 'GET /api/pbx/reports/types',
+    skyswitch: 'GET /accounts/{id}/reports/types',
     scope: 'report',
     implemented: true,
   },
@@ -371,6 +371,6 @@ export const SKYSWITCH_OUT_OF_SCOPE = [
   'billing',
 ];
 
-/** Reports: apiDocumentation.md documents list/types/status/cancel/download only — no queue/create POST. */
+/** Reports: public docs list types/status/cancel/download; POST queue works at runtime. */
 export const REPORTS_API_NOTE =
-  'Report generation is not exposed in apiDocumentation.md; queue jobs in SkySwitch back-office.';
+  'POST /accounts/{id}/reports queues async exports (undocumented in public reference; verified at runtime).';

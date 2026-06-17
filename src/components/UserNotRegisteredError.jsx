@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const UserNotRegisteredError = () => {
   return (
@@ -20,9 +20,16 @@ const UserNotRegisteredError = () => {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-4">Access restricted</h1>
-          <p className="text-slate-600 mb-4">This account is not registered for this portal.</p>
-          <p className="text-sm text-slate-500">Sign out and back in with a different account, or ask an admin for access.</p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-4">
+            Access restricted
+          </h1>
+          <p className="text-slate-600 mb-4">
+            This account is not registered for this portal.
+          </p>
+          <p className="text-sm text-slate-500">
+            Sign out and back in with a different account, or ask an admin for
+            access.
+          </p>
         </div>
       </div>
     </div>

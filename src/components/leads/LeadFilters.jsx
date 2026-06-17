@@ -17,6 +17,8 @@ export default function LeadFilters({
   onClearFilters,
   savedViews,
   onSaveView,
+  leadStages = [],
+  sources = [],
 }) {
   const [showFilters, setShowFilters] = React.useState(false);
 
@@ -43,12 +45,22 @@ export default function LeadFilters({
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="new">New</SelectItem>
-                  <SelectItem value="contacted">Contacted</SelectItem>
-                  <SelectItem value="qualified">Qualified</SelectItem>
-                  <SelectItem value="won">Won</SelectItem>
-                  <SelectItem value="lost">Lost</SelectItem>
+                  <SelectItem value="all">All status</SelectItem>
+                  {leadStages.length > 0
+                    ? leadStages.map((stage) => (
+                        <SelectItem key={stage} value={stage}>{stage}</SelectItem>
+                      ))
+                    : [
+                        'new',
+                        'contacted',
+                        'qualified',
+                        'won',
+                        'lost',
+                      ].map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {s.charAt(0).toUpperCase() + s.slice(1)}
+                        </SelectItem>
+                      ))}
                 </SelectContent>
               </Select>
             </div>
@@ -63,12 +75,16 @@ export default function LeadFilters({
                   <SelectValue placeholder="All Sources" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="call">Call</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="partner">Partner</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
+                  <SelectItem value="all">All sources</SelectItem>
+                  {sources.length > 0
+                    ? sources.map((source) => (
+                        <SelectItem key={source} value={source}>{source}</SelectItem>
+                      ))
+                    : ['call', 'email', 'website', 'partner', 'referral'].map((source) => (
+                        <SelectItem key={source} value={source}>
+                          {source.charAt(0).toUpperCase() + source.slice(1)}
+                        </SelectItem>
+                      ))}
                 </SelectContent>
               </Select>
             </div>

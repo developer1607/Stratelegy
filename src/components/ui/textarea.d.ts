@@ -1,5 +1,6 @@
-import * as React from 'react';
+import * as React from "react";
 
 export const Textarea: React.ForwardRefExoticComponent<
-  React.TextareaHTMLAttributes<HTMLTextAreaElement> & React.RefAttributes<HTMLTextAreaElement>
+  React.TextareaHTMLAttributes<HTMLTextAreaElement> &
+    React.RefAttributes<HTMLTextAreaElement>
 >;

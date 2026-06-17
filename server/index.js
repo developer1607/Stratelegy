@@ -35,6 +35,7 @@ import logRoutes from "./routes/logs.js";
 import realtimeRoutes from "./routes/realtime.js";
 import pbxRoutes from "./routes/pbx.js";
 import notificationRoutes from "./routes/notifications.js";
+import emailRoutes from "./routes/email.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -43,7 +44,9 @@ assertProductionConfig();
 await initDatabase();
 
 const app = express();
-app.set("trust proxy", 1);
+if (config.trustProxy) {
+  app.set("trust proxy", 1);
+}
 
 const useHsts = config.isProduction && config.appBaseUrl.startsWith("https://");
 
@@ -107,6 +110,15 @@ app.use("/api", (req, res, next) => {
   apiRateLimiter(req, res, next);
 });
 
+// Legacy /uploads URLs redirect to authenticated file API
+app.use("/uploads", (req, res, next) => {
+  const filename = path.basename(req.path);
+  if (!filename || filename === "/") {
+    return res.status(404).json({ message: "Not found" });
+  }
+  res.redirect(307, `/api/integrations/files/${encodeURIComponent(filename)}`);
+});
+
 app.get("/api/health", async (_req, res) => {
   try {
     await queryOne("SELECT 1 AS ok");
@@ -126,8 +138,6 @@ app.get("/api/health", async (_req, res) => {
   }
 });
 
-app.use("/uploads", express.static(config.uploadsDir));
-
 app.use("/api/auth/login", authRateLimiter);
 app.use("/api/auth/register-invite", inviteRateLimiter);
 app.use("/api/auth", authRoutes);
@@ -144,6 +154,7 @@ app.use("/api/logs", logRoutes);
 app.use("/api/realtime", realtimeRoutes);
 app.use("/api/pbx", pbxRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/email", emailRoutes);
 
 app.use("/api", (_req, res) => {
   res.status(404).json({ message: "Not found" });

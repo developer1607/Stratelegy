@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { usePermissions } from '@/hooks/usePermissions';
-import AccessDenied from '@/components/AccessDenied';
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { usePermissions } from "@/hooks/usePermissions";
+import AccessDenied from "@/components/AccessDenied";
 
 export default function RouteGuard({ pageName, children }) {
   const navigate = useNavigate();

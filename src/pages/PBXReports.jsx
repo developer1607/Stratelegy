@@ -1,31 +1,35 @@
 import React, { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Play } from 'lucide-react';
 import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxCompletedExports from '@/components/pbx/reports/PbxCompletedExports';
+import QueueReportDialog from '@/components/pbx/reports/QueueReportDialog';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
+import PermissionGate from '@/components/PermissionGate';
+import { Button } from '@/components/ui/button';
 import { flattenReportTypes, filterReportTypes, describeReportFields } from '@/lib/reportTypes';
-import { createPageUrl } from '@/utils';
 import { uniqueFieldValues } from '@/lib/listFilters';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function PBXReports() {
   return (
     <PbxShell
-      title="PBX Reports"
-      description="Report catalog and completed exports from SkySwitch"
+      title="Report catalog"
+      description="All async export types available for your account"
       requiresDomain={false}
     >
-      <ReportsHub />
+      <ReportsCatalog />
     </PbxShell>
   );
 }
 
-function ReportsHub() {
+function ReportsCatalog() {
   const [search, setSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [queueType, setQueueType] = useState(null);
+  const [queueOpen, setQueueOpen] = useState(false);
   const { isPbxDomainRestricted, isLoading: permissionsLoading } = usePermissions();
   const canUseAccountReports = !isPbxDomainRestricted;
 
@@ -55,8 +59,8 @@ function ReportsHub() {
   if (!canUseAccountReports) {
     return (
       <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-        Account-wide PBX report exports are not available for domain-scoped users. Use domain
-        screens such as E911 Review for operational data on your assigned domain(s).
+        Account-wide PBX report exports are not available for domain-scoped users. Use the
+        individual report pages under Reports for domain-specific live views where available.
       </p>
     );
   }
@@ -81,7 +85,7 @@ function ReportsHub() {
 
       <section>
         <h2 className="text-lg font-semibold text-gray-900 mb-3">
-          Available report types ({rows.length})
+          All report types ({rows.length})
         </h2>
         <PbxDataTable
           columns={[
@@ -89,20 +93,34 @@ function ReportsHub() {
             { key: 'label', label: 'Report' },
             { key: 'value', label: 'Type key' },
             { key: 'parameters', label: 'Parameters' },
+            {
+              key: 'actions',
+              label: 'Actions',
+              render: (row) => (
+                <PermissionGate pbxAction="manageReports" fallback="—">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setQueueType(row);
+                      setQueueOpen(true);
+                    }}
+                  >
+                    <Play className="h-3.5 w-3.5 mr-1" />
+                    Queue
+                  </Button>
+                </PermissionGate>
+              ),
+            },
           ]}
           rows={rows}
           emptyMessage="No report types returned for this account."
         />
-        <p className="text-xs text-gray-500 mt-3">
-          Queue new reports in SkySwitch back-office. Download completed files below or on{' '}
-          <Link to={createPageUrl('E911Reports')} className="underline font-medium">
-            E911 Reports
-          </Link>
-          .
-        </p>
       </section>
 
-      <PbxCompletedExports title="Completed report exports" />
+      <PbxCompletedExports title="All report exports" />
+
+      <QueueReportDialog open={queueOpen} onOpenChange={setQueueOpen} reportType={queueType} />
     </div>
   );
 }

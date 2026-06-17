@@ -10,26 +10,41 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RotateCcw } from 'lucide-react';
 
-export default function ActivityFilters({ filters, onFilterChange, onSaveView }) {
+export default function ActivityFilters({
+  filters,
+  onFilterChange,
+  activityTypes = [],
+  owners = [],
+  onClear,
+}) {
+  const types =
+    activityTypes.length > 0
+      ? activityTypes
+      : ['Call', 'Email', 'Meeting', 'WhatsApp', 'Note'];
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-2">
           <CardTitle className="text-base">Filters</CardTitle>
-          <Button variant="ghost" size="sm" onClick={onSaveView}>
-            Save All
-          </Button>
+          {onClear && (
+            <Button variant="ghost" size="sm" onClick={onClear} className="h-8">
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              Clear
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label className="text-sm font-semibold mb-3 block">Activity Type</Label>
+          <Label className="text-sm font-semibold mb-3 block">Activity type</Label>
           <div className="space-y-2">
-            {['Call', 'Email', 'Meeting', 'WhatsApp'].map((type) => (
+            {types.map((type) => (
               <div key={type} className="flex items-center space-x-2">
                 <Checkbox
-                  id={type}
+                  id={`activity-type-${type}`}
                   checked={filters.types?.includes(type)}
                   onCheckedChange={(checked) => {
                     const newTypes = checked
@@ -38,7 +53,7 @@ export default function ActivityFilters({ filters, onFilterChange, onSaveView })
                     onFilterChange('types', newTypes);
                   }}
                 />
-                <label htmlFor={type} className="text-sm cursor-pointer">
+                <label htmlFor={`activity-type-${type}`} className="text-sm cursor-pointer">
                   {type}
                 </label>
               </div>
@@ -50,35 +65,30 @@ export default function ActivityFilters({ filters, onFilterChange, onSaveView })
           <Label className="text-sm font-semibold mb-2 block">Owner</Label>
           <Select value={filters.owner} onValueChange={(value) => onFilterChange('owner', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="All Owners" />
+              <SelectValue placeholder="All owners" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Owners</SelectItem>
-              <SelectItem value="john">John Kuy</SelectItem>
-              <SelectItem value="see-all">See all</SelectItem>
+              <SelectItem value="all">All owners</SelectItem>
+              {owners.map((owner) => (
+                <SelectItem key={owner} value={owner}>{owner}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label className="text-sm font-semibold mb-2 block">Status</Label>
+          <Label className="text-sm font-semibold mb-2 block">Date range</Label>
           <Select value={filters.status} onValueChange={(value) => onFilterChange('status', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="Last 7 Days" />
+              <SelectValue placeholder="Date range" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7days">Last 7 Days</SelectItem>
-              <SelectItem value="30days">Last 30 Days</SelectItem>
-              <SelectItem value="90days">Last 90 Days</SelectItem>
+              <SelectItem value="all">All dates</SelectItem>
+              <SelectItem value="7days">Last 7 days</SelectItem>
+              <SelectItem value="30days">Last 30 days</SelectItem>
+              <SelectItem value="90days">Last 90 days</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-
-        <div className="pt-2">
-          <Button variant="outline" className="w-full text-sm">
-            More Filters (1)
-          </Button>
-          <Button className="w-full mt-2 bg-blue-600 hover:bg-blue-700">Filter</Button>
         </div>
       </CardContent>
     </Card>

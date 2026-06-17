@@ -63,9 +63,9 @@ export const pbxApi = {
   phoneNumbers: (domain, scope) => pbxGet("/phone-numbers", { domain, scope }),
   auditLogs: (params) => pbxGet("/audit-logs", params),
   reportTypes: () => pbxGet("/reports/types"),
+  createReport: (body) => pbxRequest("POST", "/reports", body),
   listReports: (page = 1, perPage = 25) =>
     pbxGet("/reports", { page, per_page: perPage }),
-  getReport: (reportId) => pbxGet(`/reports/${encodeURIComponent(reportId)}`),
   cancelReport: (reportId) =>
     pbxRequest("DELETE", `/reports/${encodeURIComponent(reportId)}`),
   downloadReportFile: (fileId) =>

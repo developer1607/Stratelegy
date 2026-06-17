@@ -1,6 +1,6 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
  * Simple prev/next pagination bar for data tables.
@@ -11,7 +11,7 @@ export default function TablePagination({
   total,
   onPageChange,
   isLoading = false,
-  className = '',
+  className = "",
 }) {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const safePage = Math.min(page, totalPages - 1);
@@ -19,9 +19,13 @@ export default function TablePagination({
   const end = Math.min((safePage + 1) * pageSize, total);
 
   return (
-    <div className={`flex items-center justify-between gap-4 px-2 py-3 ${className}`}>
+    <div
+      className={`flex items-center justify-between gap-4 px-2 py-3 ${className}`}
+    >
       <p className="text-sm text-muted-foreground">
-        {total === 0 ? 'No results' : `Showing ${start}–${end} of ${total.toLocaleString()}`}
+        {total === 0
+          ? "No results"
+          : `Showing ${start}–${end} of ${total.toLocaleString()}`}
       </p>
       <div className="flex items-center gap-2">
         <Button
@@ -35,7 +39,7 @@ export default function TablePagination({
           Previous
         </Button>
         <span className="text-sm text-muted-foreground min-w-[5rem] text-center">
-          {total === 0 ? 'No pages' : `Page ${safePage + 1} of ${totalPages}`}
+          {total === 0 ? "No pages" : `Page ${safePage + 1} of ${totalPages}`}
         </span>
         <Button
           type="button"

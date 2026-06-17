@@ -55,6 +55,40 @@ export function daysAgo(days) {
   return formatDateInput(new Date(Date.now() - days * 86400000));
 }
 
+export function uniqueOwners(rows, keys = ['owner', 'created_by']) {
+  const set = new Set();
+  for (const row of rows || []) {
+    for (const key of keys) {
+      const v = row?.[key];
+      if (v != null && String(v).trim()) set.add(String(v).trim());
+    }
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
+export function normalizeFilterText(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase();
+}
+
+export function matchFieldEquals(a, b) {
+  if (!b || b === 'all') return true;
+  return normalizeFilterText(a) === normalizeFilterText(b);
+}
+
+export function matchFieldIncludes(a, b) {
+  if (!b || b === 'all') return true;
+  return normalizeFilterText(a).includes(normalizeFilterText(b));
+}
+
+export function namesFromConfigItems(items) {
+  return (items || [])
+    .map((item) => item?.name)
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+}
+
 export function todayInput() {
   return formatDateInput(new Date());
 }

@@ -117,7 +117,7 @@ export default function EditAccountDialog({
                 {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
               <div className={formDialogField}>
-                <Label htmlFor="edit-account-email">Email</Label>
+                <Label htmlFor="edit-account-email">Email *</Label>
                 <Input id="edit-account-email" type="email" value={formData.email} disabled={readOnly} {...bind('email')} />
                 {!readOnly && <FieldError message={validation.fieldError('email')} />}
               </div>

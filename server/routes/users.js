@@ -7,7 +7,10 @@ import {
   deleteUser,
   setUserPasswordAdmin,
   updateUserSupportRouting,
+  setUserMfaEmailSettings,
+  disableMfaEmailForUser,
 } from '../services/users.js';
+import { auditLog } from '../services/auditLog.js';
 import {
   assignPortalRole,
   setUserPermissionFlags,
@@ -40,6 +43,11 @@ router.post('/', requireAdmin, async (req, res, next) => {
       permissions,
       portalRoleId: portal_role_id ?? portalRoleId,
       createdByUserId: req.user.id,
+    });
+    await auditLog(req, 'user_created', {
+      resourceType: 'user',
+      resourceId: user.id,
+      metadata: { email: user.email, role: user.role },
     });
     res.status(201).json({ user });
   } catch (e) {
@@ -116,6 +124,10 @@ router.patch('/:id/password', requireAdmin, async (req, res, next) => {
     const password = req.body?.password ?? req.body?.new_password;
     if (!password) return res.status(400).json({ message: 'password is required' });
     const updated = await setUserPasswordAdmin(user.id, password);
+    await auditLog(req, 'user_password_reset', {
+      resourceType: 'user',
+      resourceId: user.id,
+    });
     res.json({ user: updated, message: 'Password updated' });
   } catch (e) {
     next(e);
@@ -171,7 +183,47 @@ router.patch('/:id/permissions', requireAdmin, async (req, res, next) => {
       updates,
       useCustomPermissions: true,
     });
+    await auditLog(req, 'user_permissions_updated', {
+      resourceType: 'user',
+      resourceId: user.id,
+      metadata: { keys: Object.keys(updates) },
+    });
     res.json({ permission });
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.patch('/:id/mfa', requireAdmin, async (req, res, next) => {
+  try {
+    const user = await getUserById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const enabled = req.body?.enabled ?? req.body?.mfa_email_enabled;
+    const forced = req.body?.forced ?? req.body?.mfa_email_forced;
+
+    if (enabled === false) {
+      const updated = await disableMfaEmailForUser(user.id, { admin: true });
+      await auditLog(req, 'mfa_email_disabled_admin', {
+        resourceType: 'user',
+        resourceId: user.id,
+      });
+      return res.json({ user: updated });
+    }
+
+    const updated = await setUserMfaEmailSettings(user.id, {
+      enabled: enabled !== undefined ? Boolean(enabled) : undefined,
+      forced: forced !== undefined ? Boolean(forced) : undefined,
+    });
+    await auditLog(req, 'mfa_email_updated_admin', {
+      resourceType: 'user',
+      resourceId: user.id,
+      metadata: {
+        enabled: updated.mfa_email_enabled,
+        forced: updated.mfa_email_forced,
+      },
+    });
+    res.json({ user: updated });
   } catch (e) {
     next(e);
   }
@@ -180,6 +232,11 @@ router.patch('/:id/permissions', requireAdmin, async (req, res, next) => {
 router.delete('/:id', requireAdmin, async (req, res, next) => {
   try {
     const result = await deleteUser(req.params.id, { deletedByUserId: req.user.id });
+    await auditLog(req, 'user_deleted', {
+      resourceType: 'user',
+      resourceId: result.id,
+      metadata: { email: result.email },
+    });
     res.json({ ...result, message: 'User deleted' });
   } catch (e) {
     next(e);

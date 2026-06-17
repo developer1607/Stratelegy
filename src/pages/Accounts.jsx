@@ -34,6 +34,7 @@ import PermissionGate from '@/components/PermissionGate';
 import AccountFilters from '../components/accounts/AccountFilters';
 import AccountInsightsDialog from '../components/accounts/AccountInsightsDialog';
 import { activityMatchesAccount } from '@/lib/crmHelpers';
+import { matchFieldEquals, matchSearch, namesFromConfigItems, uniqueOwners, revenueInRange } from '@/lib/listFilters';
 import { showError, showSuccess } from '@/lib/toast';
 import { usePermissions } from '@/hooks/usePermissions';
 
@@ -154,31 +155,58 @@ export default function Accounts() {
     });
   }, [accounts, activities, opportunities]);
 
+  const { data: industries = [] } = useQuery({
+    queryKey: ['industries'],
+    queryFn: () => api.entities.Industry.list('order'),
+  });
+
+  const { data: accountTiers = [] } = useQuery({
+    queryKey: ['accountTiers'],
+    queryFn: () => api.entities.AccountTier.list('order'),
+  });
+
+  const industryOptions = useMemo(() => {
+    const fromConfig = namesFromConfigItems(industries);
+    const fromData = [...new Set(enrichedAccounts.map((a) => a.industry).filter(Boolean))];
+    return [...new Set([...fromConfig, ...fromData])].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+  }, [industries, enrichedAccounts]);
+
+  const tierOptions = useMemo(() => {
+    const fromConfig = namesFromConfigItems(accountTiers);
+    const fromData = [...new Set(enrichedAccounts.map((a) => a.tier).filter(Boolean))];
+    return [...new Set([...fromConfig, ...fromData])].sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+  }, [accountTiers, enrichedAccounts]);
+
+  const ownerOptions = useMemo(
+    () => uniqueOwners(enrichedAccounts, ['owner', 'created_by']),
+    [enrichedAccounts]
+  );
+
   const filteredAccounts = useMemo(() => {
     return enrichedAccounts.filter((account) => {
-      const matchSearch = account.name?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchIndustry = filters.industry === 'all' || account.industry === filters.industry;
+      const matchSearchTerm = matchSearch(account, searchTerm, [
+        'name',
+        'industry',
+        'email',
+        'phone',
+        'website',
+      ]);
+      const matchIndustry = matchFieldEquals(account.industry, filters.industry);
       const matchTier =
         filters.tiers.length === 0 ||
-        filters.tiers.includes(account.tier) ||
-        (filters.tiers.includes('Key Account') && account.tier === 'Key');
+        filters.tiers.some((tier) => {
+          if (tier === 'Key Account') return account.tier === 'Key' || account.tier === 'Key Account';
+          return matchFieldEquals(account.tier, tier);
+        });
       const matchOwner =
-        filters.owner === 'all' ||
-        (filters.owner === 'john' &&
-          String(account.owner || '')
-            .toLowerCase()
-            .includes('john')) ||
-        String(account.owner || '').toLowerCase() === String(filters.owner).toLowerCase();
-      const matchRevenue = (() => {
-        if (filters.revenue === 'all') return true;
-        const rev = Number(account.annual_revenue) || 0;
-        if (filters.revenue === '0-1m') return rev <= 1_000_000;
-        if (filters.revenue === '1m-5m') return rev > 1_000_000 && rev <= 5_000_000;
-        if (filters.revenue === '5m+') return rev > 5_000_000;
-        return true;
-      })();
+        filters.owner === 'all' || matchFieldEquals(account.owner || account.created_by, filters.owner);
+      const matchRevenue = revenueInRange(account.annual_revenue, filters.revenue);
 
-      return matchSearch && matchIndustry && matchTier && matchOwner && matchRevenue;
+      return matchSearchTerm && matchIndustry && matchTier && matchOwner && matchRevenue;
     });
   }, [enrichedAccounts, searchTerm, filters]);
 
@@ -212,6 +240,10 @@ export default function Accounts() {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({ owner: 'all', industry: 'all', revenue: 'all', tiers: [] });
   };
 
   const exportToCSV = () => {
@@ -529,7 +561,14 @@ export default function Accounts() {
 
         {/* Right Sidebar Filters */}
         <div className="hidden lg:block w-80">
-          <AccountFilters filters={filters} onFilterChange={handleFilterChange} />
+          <AccountFilters
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            industries={industryOptions}
+            tiers={tierOptions}
+            owners={ownerOptions}
+            onClear={clearFilters}
+          />
         </div>
       </div>
 

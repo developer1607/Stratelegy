@@ -1,30 +1,36 @@
-import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Check, ExternalLink, Globe, Loader2 } from 'lucide-react';
-import { createPageUrl } from '@/utils';
-import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
-import { domainsMatch, findDomainRecord } from '@/lib/pbxDomain';
-import PbxShell, { PbxDataTable, PbxError } from '@/components/pbx/PbxShell';
-import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
-import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { usePermissions } from '@/hooks/usePermissions';
-import { isPbxDomainRestricted, getAssignedPbxDomains } from '@/lib/permissions';
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { Check, ExternalLink, Globe, Loader2 } from "lucide-react";
+import { createPageUrl } from "@/utils";
+import { usePbxDomain } from "@/components/pbx/domain/PbxDomainContext";
+import { domainsMatch, findDomainRecord } from "@/lib/pbxDomain";
+import PbxShell, { PbxDataTable, PbxError } from "@/components/pbx/PbxShell";
+import PbxListToolbar from "@/components/pbx/shared/PbxListToolbar";
+import PbxFilterSelect from "@/components/pbx/shared/PbxFilterSelect";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { usePermissions } from "@/hooks/usePermissions";
+import { getAssignedPbxDomains } from "@/lib/permissions";
 
 export default function PBXDomains() {
-  const { domain: selectedDomain, setDomain, domains, isLoading, error, isDomainRestricted } =
-    usePbxDomain();
+  const {
+    domain: selectedDomain,
+    setDomain,
+    domains,
+    isLoading,
+    error,
+    isDomainRestricted,
+  } = usePbxDomain();
   const { canAccessPage, permissions } = usePermissions();
   const assignedCount = getAssignedPbxDomains(permissions).length;
-  const canOpenDashboard = canAccessPage('PBXDashboard');
-  const [search, setSearch] = useState('');
-  const [resellerFilter, setResellerFilter] = useState('all');
+  const canOpenDashboard = canAccessPage("PBXDashboard");
+  const [search, setSearch] = useState("");
+  const [resellerFilter, setResellerFilter] = useState("all");
 
   const selectedRecord = useMemo(
     () => findDomainRecord(domains, selectedDomain),
-    [domains, selectedDomain]
+    [domains, selectedDomain],
   );
 
   const resellerOptions = useMemo(() => {
@@ -35,14 +41,14 @@ export default function PBXDomains() {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     let list = domains;
-    if (resellerFilter !== 'all') {
-      list = list.filter((d) => String(d.reseller || '') === resellerFilter);
+    if (resellerFilter !== "all") {
+      list = list.filter((d) => String(d.reseller || "") === resellerFilter);
     }
     if (q) {
       list = list.filter((d) => {
         const haystack = [d.domain, d.description, d.name, d.reseller]
           .filter(Boolean)
-          .join(' ')
+          .join(" ")
           .toLowerCase();
         return haystack.includes(q);
       });
@@ -52,48 +58,54 @@ export default function PBXDomains() {
       const bSelected = domainsMatch(b.domain, selectedDomain);
       if (aSelected && !bSelected) return -1;
       if (!aSelected && bSelected) return 1;
-      return (a.domain || '').localeCompare(b.domain || '', undefined, { sensitivity: 'base' });
+      return (a.domain || "").localeCompare(b.domain || "", undefined, {
+        sensitivity: "base",
+      });
     });
   }, [domains, search, resellerFilter, selectedDomain]);
 
   const selectedHiddenBySearch = Boolean(
     selectedRecord &&
-    (search.trim() || resellerFilter !== 'all') &&
-    !filtered.some((d) => domainsMatch(d.domain, selectedDomain))
+    (search.trim() || resellerFilter !== "all") &&
+    !filtered.some((d) => domainsMatch(d.domain, selectedDomain)),
   );
 
   const rows = filtered.map((item) => ({
     domain: item.domain,
-    description: item.description || '—',
-    reseller: item.reseller || '—',
+    description: item.description || "—",
+    reseller: item.reseller || "—",
     isSelected: domainsMatch(item.domain, selectedDomain),
   }));
 
   const columns = [
     {
-      key: 'domain',
-      label: 'Domain',
+      key: "domain",
+      label: "Domain",
       render: (row) => (
         <div className="flex items-center gap-2 min-w-0">
           <Globe className="h-4 w-4 text-gray-400 shrink-0" />
-          <span className="font-mono text-sm font-medium truncate">{row.domain}</span>
+          <span className="font-mono text-sm font-medium truncate">
+            {row.domain}
+          </span>
           {row.isSelected ? (
-            <Badge className="bg-[#F07020] hover:bg-[#F07020] shrink-0">Selected</Badge>
+            <Badge className="bg-[#F07020] hover:bg-[#F07020] shrink-0">
+              Selected
+            </Badge>
           ) : null}
         </div>
       ),
     },
-    { key: 'description', label: 'Description' },
-    { key: 'reseller', label: 'Reseller' },
+    { key: "description", label: "Description" },
+    { key: "reseller", label: "Reseller" },
     {
-      key: 'actions',
-      label: '',
+      key: "actions",
+      label: "",
       render: (row) => (
         <div className="flex flex-wrap gap-2 justify-end">
           <Button
             size="sm"
-            variant={row.isSelected ? 'secondary' : 'default'}
-            className={row.isSelected ? '' : 'bg-[#F07020] hover:bg-[#e06518]'}
+            variant={row.isSelected ? "secondary" : "default"}
+            className={row.isSelected ? "" : "bg-[#F07020] hover:bg-[#e06518]"}
             onClick={() => setDomain(row.domain)}
             disabled={row.isSelected}
           >
@@ -103,13 +115,13 @@ export default function PBXDomains() {
                 Selected
               </>
             ) : (
-              'Select domain'
+              "Select domain"
             )}
           </Button>
           {canOpenDashboard ? (
             <Button asChild size="sm" variant="outline">
               <Link
-                to={`${createPageUrl('PBXDashboard')}?domain=${encodeURIComponent(row.domain)}`}
+                to={`${createPageUrl("PBXDashboard")}?domain=${encodeURIComponent(row.domain)}`}
                 onClick={() => !row.isSelected && setDomain(row.domain)}
               >
                 <ExternalLink className="h-4 w-4 mr-1" />
@@ -144,12 +156,14 @@ export default function PBXDomains() {
           <CardContent className="py-12 text-center">
             <Globe className="h-10 w-10 text-gray-300 mx-auto mb-3" />
             <p className="font-medium text-gray-900">
-              {isDomainRestricted ? 'No assigned PBX domains' : 'No PBX domains found'}
+              {isDomainRestricted
+                ? "No assigned PBX domains"
+                : "No PBX domains found"}
             </p>
             <p className="text-sm text-gray-500 mt-1 max-w-md mx-auto">
               {isDomainRestricted
-                ? 'Ask an admin to assign one or more PBX domains to your account in Portal Users.'
-                : 'No domains on this account.'}
+                ? "Ask an admin to assign one or more PBX domains to your account in Portal Users."
+                : "No domains on this account."}
             </p>
           </CardContent>
         </Card>
@@ -158,7 +172,8 @@ export default function PBXDomains() {
           {isDomainRestricted && (
             <Card className="border-blue-200 bg-blue-50">
               <CardContent className="py-3 text-sm text-blue-900">
-                You only see domains assigned to your account. Contact an admin to change assignments.
+                You only see domains assigned to your account. Contact an admin
+                to change assignments.
               </CardContent>
             </Card>
           )}
@@ -173,7 +188,9 @@ export default function PBXDomains() {
                     {selectedRecord.domain}
                   </p>
                   {selectedRecord.description ? (
-                    <p className="text-sm text-gray-600 mt-1">{selectedRecord.description}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {selectedRecord.description}
+                    </p>
                   ) : null}
                   {selectedRecord.reseller ? (
                     <p className="text-xs text-gray-500 mt-1">
@@ -182,9 +199,12 @@ export default function PBXDomains() {
                   ) : null}
                 </div>
                 {canOpenDashboard ? (
-                  <Button asChild className="bg-[#F07020] hover:bg-[#e06518] shrink-0">
+                  <Button
+                    asChild
+                    className="bg-[#F07020] hover:bg-[#e06518] shrink-0"
+                  >
                     <Link
-                      to={`${createPageUrl('PBXDashboard')}?domain=${encodeURIComponent(selectedRecord.domain)}`}
+                      to={`${createPageUrl("PBXDashboard")}?domain=${encodeURIComponent(selectedRecord.domain)}`}
                     >
                       Open PBX dashboard
                     </Link>
@@ -195,7 +215,8 @@ export default function PBXDomains() {
           ) : (
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-4 text-sm text-amber-900">
-                Select a domain below — saved in this browser for domain-scoped PBX screens.
+                Select a domain below — saved in this browser for domain-scoped
+                PBX screens.
               </CardContent>
             </Card>
           )}
@@ -204,16 +225,18 @@ export default function PBXDomains() {
             <Card className="border-amber-200 bg-amber-50">
               <CardContent className="py-3 text-sm text-amber-900 flex flex-wrap items-center justify-between gap-2">
                 <span>
-                  Selected domain{' '}
-                  <span className="font-mono font-medium">{selectedRecord.domain}</span> is hidden
-                  by filters.
+                  Selected domain{" "}
+                  <span className="font-mono font-medium">
+                    {selectedRecord.domain}
+                  </span>{" "}
+                  is hidden by filters.
                 </span>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => {
-                    setSearch('');
-                    setResellerFilter('all');
+                    setSearch("");
+                    setResellerFilter("all");
                   }}
                 >
                   Clear filters
@@ -246,8 +269,8 @@ export default function PBXDomains() {
             rows={rows}
             rowClassName={(row) =>
               row.isSelected
-                ? 'bg-orange-50 hover:bg-orange-50 ring-1 ring-inset ring-[#F07020]/25'
-                : ''
+                ? "bg-orange-50 hover:bg-orange-50 ring-1 ring-inset ring-[#F07020]/25"
+                : ""
             }
             emptyMessage="No domains match your filters."
           />

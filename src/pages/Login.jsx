@@ -16,6 +16,10 @@ export default function Login() {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mfaStep, setMfaStep] = useState(false);
+  const [mfaToken, setMfaToken] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+  const [emailHint, setEmailHint] = useState('');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { refreshAuth } = useAuth();
@@ -29,11 +33,22 @@ export default function Login() {
     if (inviteEmail) setEmail(inviteEmail);
   }, [inviteEmail]);
 
+  const finishSignIn = async () => {
+    await refreshAuth();
+    navigate(fromUrl, { replace: true });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
+      if (mfaStep) {
+        await api.auth.verifyMfa(mfaToken, mfaCode.trim());
+        await finishSignIn();
+        return;
+      }
+
       if (isInviteFlow) {
         const passwordCheck = validatePassword(password);
         if (!passwordCheck.valid) {
@@ -47,16 +62,45 @@ export default function Login() {
           password,
           full_name: fullName,
         });
-      } else {
-        await api.auth.login(email, password);
+        await finishSignIn();
+        return;
       }
-      await refreshAuth();
-      navigate(fromUrl, { replace: true });
+
+      const result = await api.auth.login(email, password);
+      if (result.mfaRequired) {
+        setMfaStep(true);
+        setMfaToken(result.mfaToken);
+        setEmailHint(result.emailHint || 'your email');
+        setMfaCode('');
+        return;
+      }
+      await finishSignIn();
     } catch (err) {
       setError(err.message || (isInviteFlow ? 'Registration failed' : 'Login failed'));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResendMfa = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const result = await api.auth.resendMfa(mfaToken);
+      setMfaToken(result.mfa_token);
+      setEmailHint(result.email_hint || emailHint);
+    } catch (err) {
+      setError(err.message || 'Could not resend code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBackToPassword = () => {
+    setMfaStep(false);
+    setMfaToken('');
+    setMfaCode('');
+    setError('');
   };
 
   return (
@@ -65,7 +109,11 @@ export default function Login() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl">Stratelegy Insight</CardTitle>
           <CardDescription>
-            {isInviteFlow ? 'Complete your portal account setup' : 'Sign in to your dashboard'}
+            {isInviteFlow
+              ? 'Complete your portal account setup'
+              : mfaStep
+                ? 'Enter the verification code sent to your email'
+                : 'Sign in to your dashboard'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -82,40 +130,91 @@ export default function Login() {
                 />
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@company.com"
-                required
-                autoComplete="email"
-                readOnly={isInviteFlow}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">{isInviteFlow ? 'Choose password' : 'Password'}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete={isInviteFlow ? 'new-password' : 'current-password'}
-              />
-              {isInviteFlow && <PasswordRequirements password={password} className="mt-2" />}
-            </div>
+
+            {!mfaStep && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@company.com"
+                    required
+                    autoComplete="email"
+                    readOnly={isInviteFlow}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">{isInviteFlow ? 'Choose password' : 'Password'}</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    autoComplete={isInviteFlow ? 'new-password' : 'current-password'}
+                  />
+                  {isInviteFlow && <PasswordRequirements password={password} className="mt-2" />}
+                </div>
+              </>
+            )}
+
+            {mfaStep && (
+              <>
+                <p className="text-sm text-gray-600">
+                  We sent a 6-digit code to <strong>{emailHint}</strong>. Email MFA uses your
+                  account email only — not SMS or phone.
+                </p>
+                <div className="space-y-2">
+                  <Label htmlFor="mfa_code">Verification code</Label>
+                  <Input
+                    id="mfa_code"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    value={mfaCode}
+                    onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                    placeholder="6-digit code"
+                    required
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={loading}
+                    onClick={handleBackToPassword}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex-1"
+                    disabled={loading}
+                    onClick={handleResendMfa}
+                  >
+                    Resend code
+                  </Button>
+                </div>
+              </>
+            )}
+
             {error && <p className="text-sm text-red-600">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
               {loading
-                ? isInviteFlow
-                  ? 'Creating account...'
-                  : 'Signing in...'
-                : isInviteFlow
-                  ? 'Create account'
-                  : 'Sign in'}
+                ? mfaStep
+                  ? 'Verifying...'
+                  : isInviteFlow
+                    ? 'Creating account...'
+                    : 'Signing in...'
+                : mfaStep
+                  ? 'Verify and sign in'
+                  : isInviteFlow
+                    ? 'Create account'
+                    : 'Sign in'}
             </Button>
           </form>
         </CardContent>

@@ -88,6 +88,11 @@ function denyDomainScopedAccountWide(req, res) {
   return true;
 }
 
+const requireViewReports = requireAnyPbxPermission(
+  'can_view_pbx_reports_page',
+  'can_view_e911_reports'
+);
+
 function scopeErr(err, feature, res, next) {
   const mapped = scopeErrBody(err, feature);
   if (mapped) return res.status(mapped.status).json(mapped.body);
@@ -291,10 +296,11 @@ router.get(
   requirePbxPermission('can_view_endpoint_control'),
   async (req, res, next) => {
     try {
-      const { domain, user, service, uri } = req.query;
+      const { user, service, uri } = req.query;
       if (!user) {
         return res.status(400).json({ error: 'user query parameter is required' });
       }
+      const domain = await domainFromRequest(req);
       res.json(await pbx.getPbxUserPhoneNumbers(domain, user, { service, uri }));
     } catch (err) {
       next(err);
@@ -510,6 +516,12 @@ router.get(
   async (req, res, next) => {
     try {
       if (req.query.scope === 'inventory') {
+        if (isPbxDomainRestricted(req.permissions)) {
+          return res.status(403).json({
+            error: 'Account-wide phone inventory is not available for domain-scoped users',
+            code: 'pbx_domain_scope_required',
+          });
+        }
         res.json(await pbx.listInventoryPhoneNumbers());
       } else {
         const domain = await domainFromRequest(req);
@@ -597,7 +609,7 @@ router.get(
 
 router.get(
   '/reports/types',
-  requirePbxPermission('can_view_e911_reports'),
+  requireViewReports,
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
@@ -608,7 +620,7 @@ router.get(
   }
 );
 
-router.get('/reports', requirePbxPermission('can_view_e911_reports'), async (req, res, next) => {
+router.get('/reports', requireViewReports, async (req, res, next) => {
   try {
     if (denyDomainScopedAccountWide(req, res)) return;
     res.json(
@@ -622,28 +634,45 @@ router.get('/reports', requirePbxPermission('can_view_e911_reports'), async (req
   }
 });
 
-router.get('/scope-status', requireAdmin, (_req, res) => {
-  res.json(getSkySwitchScopeStatus(config.skyswitch.scope));
-});
-
-router.get(
-  '/reports/files/:fileId/download',
-  requirePbxPermission('can_view_e911_reports'),
+router.post(
+  '/reports',
+  requirePbxPermission('can_manage_pbx_reports'),
   async (req, res, next) => {
     try {
-      res.json(await pbx.getReportFileDownload(req.params.fileId));
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const { report_type: reportType, parameters, notes } = req.body || {};
+      const params =
+        parameters == null
+          ? []
+          : Array.isArray(parameters)
+            ? parameters
+            : typeof parameters === 'object'
+              ? parameters
+              : [];
+      res.status(201).json(
+        await pbx.createReport({
+          reportType,
+          parameters: params,
+          notes,
+        })
+      );
     } catch (err) {
       return scopeErr(err, 'report', res, next);
     }
   }
 );
 
+router.get('/scope-status', requireAdmin, (_req, res) => {
+  res.json(getSkySwitchScopeStatus(config.skyswitch.scope));
+});
+
 router.get(
-  '/reports/:reportId',
-  requirePbxPermission('can_view_e911_reports'),
+  '/reports/files/:fileId/download',
+  requireViewReports,
   async (req, res, next) => {
     try {
-      res.json(await pbx.getReport(req.params.reportId));
+      if (denyDomainScopedAccountWide(req, res)) return;
+      res.json(await pbx.getReportFileDownload(req.params.fileId));
     } catch (err) {
       return scopeErr(err, 'report', res, next);
     }
@@ -683,8 +712,9 @@ router.get(
   requireAnyPbxPermission('can_view_sip_alg', 'can_view_troubleshooting'),
   async (req, res, next) => {
     try {
-      const { domain, config_name: configName } = req.query;
+      const { config_name: configName } = req.query;
       if (!configName) return res.status(400).json({ message: 'config_name is required' });
+      const domain = await domainFromRequest(req);
       res.json(await pbx.getUiConfig(domain, configName));
     } catch (err) {
       next(err);
@@ -801,8 +831,9 @@ router.delete(
 router.get(
   '/fax-atas',
   requirePbxPermission('can_view_offline_endpoints'),
-  async (_req, res, next) => {
+  async (req, res, next) => {
     try {
+      if (denyDomainScopedAccountWide(req, res)) return;
       res.json(await pbx.listFaxAtas());
     } catch (err) {
       next(err);
@@ -815,6 +846,7 @@ router.get(
   requirePbxPermission('can_view_offline_endpoints'),
   async (req, res, next) => {
     try {
+      if (denyDomainScopedAccountWide(req, res)) return;
       res.json(await pbx.getFaxAtaStatus(req.params.macAddress));
     } catch (err) {
       next(err);
@@ -851,10 +883,11 @@ router.get(
   requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
   async (req, res, next) => {
     try {
-      const { domain, subscriber, ...rest } = req.query;
+      const { subscriber, ...rest } = req.query;
       if (!subscriber) {
         return res.status(400).json({ message: 'subscriber query parameter is required' });
       }
+      const domain = await domainFromRequest(req);
       res.json(await pbx.listUcConfig(domain, subscriber, rest));
     } catch (err) {
       return scopeErr(err, 'uc_config', res, next);
@@ -975,6 +1008,7 @@ router.get(
   requirePbxPermission('can_view_phone_numbers_page'),
   async (req, res, next) => {
     try {
+      await assertPhoneInAssignedDomain(req, req.params.phoneNumber);
       res.json(await pbx.getOutboundCnam(req.params.phoneNumber));
     } catch (err) {
       next(err);

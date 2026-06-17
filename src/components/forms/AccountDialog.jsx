@@ -95,7 +95,7 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                 <FieldError message={validation.fieldError('industry')} />
               </div>
               <div className={formDialogField}>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Email *</Label>
                 <Input
                   id="email"
                   type="email"

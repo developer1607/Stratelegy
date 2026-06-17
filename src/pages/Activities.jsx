@@ -12,7 +12,7 @@ import ActivityFilters from '../components/activities/ActivityFilters';
 import ActivitiesAnalytics from '../components/activities/ActivitiesAnalytics';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { filterByDateRange } from '@/lib/listFilters';
+import { filterByDateRange, matchFieldIncludes, matchSearch, namesFromConfigItems, uniqueOwners } from '@/lib/listFilters';
 import { showError, showSuccess } from '@/lib/toast';
 import PermissionGate from '@/components/PermissionGate';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -35,6 +35,21 @@ export default function Activities() {
     queryKey: ['activities'],
     queryFn: () => api.entities.Activity.list('-date'),
   });
+
+  const { data: activityTypes = [] } = useQuery({
+    queryKey: ['activityTypes'],
+    queryFn: () => api.entities.ActivityType.list('order'),
+  });
+
+  const activityTypeOptions = useMemo(
+    () => namesFromConfigItems(activityTypes),
+    [activityTypes]
+  );
+
+  const ownerOptions = useMemo(
+    () => uniqueOwners(activities, ['created_by', 'owner']),
+    [activities]
+  );
 
   const createMutation = useMutation({
     mutationFn: (data) => api.entities.Activity.create(data),
@@ -71,24 +86,27 @@ export default function Activities() {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  const clearFilters = () => {
+    setFilters({ types: [], owner: 'all', status: '7days' });
+  };
+
   const filteredActivities = useMemo(() => {
     return activities.filter((activity) => {
-      const matchSearch =
-        activity.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.related_to_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        activity.type?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSearchTerm = matchSearch(activity, searchTerm, [
+        'description',
+        'related_to_name',
+        'type',
+      ]);
 
       const matchType = filters.types.length === 0 || filters.types.includes(activity.type);
 
       const matchOwner =
         filters.owner === 'all' ||
-        String(activity.created_by || activity.owner || '')
-          .toLowerCase()
-          .includes(filters.owner.toLowerCase());
+        matchFieldIncludes(activity.created_by || activity.owner, filters.owner);
 
       const matchStatus = filterByDateRange(activity.date, filters.status);
 
-      return matchSearch && matchType && matchOwner && matchStatus;
+      return matchSearchTerm && matchType && matchOwner && matchStatus;
     });
   }, [activities, searchTerm, filters]);
 
@@ -339,7 +357,9 @@ export default function Activities() {
           <ActivityFilters
             filters={filters}
             onFilterChange={handleFilterChange}
-            onSaveView={() => {}}
+            activityTypes={activityTypeOptions}
+            owners={ownerOptions}
+            onClear={clearFilters}
           />
 
           <ActivitiesAnalytics activities={filteredActivities} />

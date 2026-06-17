@@ -7,6 +7,8 @@ import { updateUserPermissions, applyPortalRoleOnUserCreate } from './permission
 import { getSeededRoleId } from '../db/seedRoles.js';
 import { sendPortalInviteEmail, sendPortalWelcomeEmail } from './email/notifications.js';
 import { assertPasswordValid } from '../utils/passwordValidation.js';
+import { getNewUserMfaDefaults } from './defaultSettings.js';
+import { isEmailConfigured } from './email/mailer.js';
 
 export function rowToUser(row) {
   return {
@@ -18,6 +20,9 @@ export function rowToUser(row) {
     is_active: Boolean(row.is_active),
     departments: row.departments || '',
     categories: row.categories || '',
+    mfa_email_enabled: Boolean(row.mfa_email_enabled),
+    mfa_email_forced: Boolean(row.mfa_email_forced),
+    email_verified: Boolean(row.email_verified),
     created_date: toIsoDate(row.created_date),
     updated_date: toIsoDate(row.updated_date),
   };
@@ -43,7 +48,25 @@ export async function authenticateUser(email, password) {
   if (!row || !row.is_active) return null;
   const match = await bcrypt.compare(password, row.password_hash);
   if (!match) return null;
-  return rowToUser(row);
+  return {
+    user: rowToUser(row),
+    tokenVersion: Number(row.token_version) || 0,
+  };
+}
+
+export async function getUserTokenVersion(userId) {
+  const row = await queryOne('SELECT token_version FROM users WHERE id = ?', [userId]);
+  if (!row) return null;
+  return Number(row.token_version) || 0;
+}
+
+/** Invalidate all existing JWTs for a user (logout, password change, etc.). */
+export async function incrementUserTokenVersion(userId) {
+  await execute(
+    'UPDATE users SET token_version = token_version + 1, updated_date = NOW() WHERE id = ?',
+    [userId]
+  );
+  return getUserTokenVersion(userId);
 }
 
 export async function updateUser(id, data) {
@@ -136,10 +159,10 @@ export async function changeUserPassword(userId, { currentPassword, newPassword 
     throw err;
   }
 
-  await execute('UPDATE users SET password_hash = ?, updated_date = NOW() WHERE id = ?', [
-    bcrypt.hashSync(newPassword, 10),
-    userId,
-  ]);
+  await execute(
+    'UPDATE users SET password_hash = ?, token_version = token_version + 1, updated_date = NOW() WHERE id = ?',
+    [bcrypt.hashSync(newPassword, 10), userId]
+  );
   return getUserById(userId);
 }
 
@@ -152,10 +175,10 @@ export async function setUserPasswordAdmin(userId, newPassword) {
     err.status = 404;
     throw err;
   }
-  await execute('UPDATE users SET password_hash = ?, updated_date = NOW() WHERE id = ?', [
-    bcrypt.hashSync(newPassword, 10),
-    userId,
-  ]);
+  await execute(
+    'UPDATE users SET password_hash = ?, token_version = token_version + 1, updated_date = NOW() WHERE id = ?',
+    [bcrypt.hashSync(newPassword, 10), userId]
+  );
   return getUserById(userId);
 }
 
@@ -187,10 +210,19 @@ export async function createUser({
 
   const id = uuidv4();
   const hash = bcrypt.hashSync(password, 10);
+  const mfaDefaults = await getNewUserMfaDefaults();
   await execute(
-    `INSERT INTO users (id, email, password_hash, full_name, role)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, normalized, hash, fullName?.trim() || normalized, validRole]
+    `INSERT INTO users (id, email, password_hash, full_name, role, mfa_email_enabled, mfa_email_forced)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      normalized,
+      hash,
+      fullName?.trim() || normalized,
+      validRole,
+      mfaDefaults.enabled ? 1 : 0,
+      mfaDefaults.forced ? 1 : 0,
+    ]
   );
 
   const user = await getUserById(id);
@@ -255,10 +287,13 @@ export async function inviteUser(email, role, invitedBy, portalRoleId = null) {
 
   const token = uuidv4();
   const id = uuidv4();
+  const expiresAt = new Date();
+  expiresAt.setDate(expiresAt.getDate() + 7);
+
   await execute(
-    `INSERT INTO invites (id, email, role, portal_role_id, token, invited_by)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [id, normalized, validRole, portalRoleId || null, token, invitedBy]
+    `INSERT INTO invites (id, email, role, portal_role_id, token, invited_by, expires_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    [id, normalized, validRole, portalRoleId || null, token, invitedBy, expiresAt]
   );
 
   const inviteUrl = `${config.appBaseUrl}/login?invite_token=${token}&email=${encodeURIComponent(normalized)}`;
@@ -295,14 +330,29 @@ export async function registerFromInvite({ token, email, password, fullName }) {
     throw err;
   }
 
+  if (invite.expires_at && new Date(invite.expires_at) < new Date()) {
+    const err = new Error('This invite has expired. Ask an administrator to send a new invite.');
+    err.status = 400;
+    throw err;
+  }
+
   assertPasswordValid(password);
 
   const id = uuidv4();
   const hash = bcrypt.hashSync(password, 10);
+  const mfaDefaults = await getNewUserMfaDefaults();
   await execute(
-    `INSERT INTO users (id, email, password_hash, full_name, role)
-     VALUES (?, ?, ?, ?, ?)`,
-    [id, email.toLowerCase(), hash, fullName || email, invite.role]
+    `INSERT INTO users (id, email, password_hash, full_name, role, email_verified, mfa_email_enabled, mfa_email_forced)
+     VALUES (?, ?, ?, ?, ?, 1, ?, ?)`,
+    [
+      id,
+      email.toLowerCase(),
+      hash,
+      fullName || email,
+      invite.role,
+      mfaDefaults.enabled ? 1 : 0,
+      mfaDefaults.forced ? 1 : 0,
+    ]
   );
 
   await execute('UPDATE invites SET accepted_at = NOW() WHERE id = ?', [invite.id]);
@@ -351,4 +401,82 @@ export async function deleteUser(userId, { deletedByUserId } = {}) {
   await execute('DELETE FROM users WHERE id = ?', [userId]);
 
   return { id: userId, email: user.email };
+}
+
+export async function setUserMfaEmailSettings(
+  userId,
+  { enabled, forced },
+  { allowDisableForced = false } = {}
+) {
+  const row = await queryOne('SELECT * FROM users WHERE id = ?', [userId]);
+  if (!row) {
+    const err = new Error('User not found');
+    err.status = 404;
+    throw err;
+  }
+
+  if (enabled === false && row.mfa_email_forced && !allowDisableForced) {
+    const err = new Error('Email MFA is required by an administrator and cannot be disabled');
+    err.status = 400;
+    throw err;
+  }
+
+  const enabling = enabled === true || (forced === true && enabled !== false);
+  if (enabling && !isEmailConfigured()) {
+    const err = new Error(
+      'Email is not configured on this server. Configure SMTP before enabling email MFA.'
+    );
+    err.status = 503;
+    throw err;
+  }
+
+  if (forced === true && enabled === false) {
+    const err = new Error('Email MFA must be enabled when required by an administrator');
+    err.status = 400;
+    throw err;
+  }
+
+  const updates = [];
+  const values = [];
+
+  if (enabled !== undefined) {
+    updates.push('mfa_email_enabled = ?');
+    values.push(enabled ? 1 : 0);
+  }
+
+  if (forced !== undefined) {
+    updates.push('mfa_email_forced = ?');
+    values.push(forced ? 1 : 0);
+    if (forced) {
+      if (enabled === undefined) {
+        updates.push('mfa_email_enabled = ?');
+        values.push(1);
+      }
+    }
+  }
+
+  if (updates.length === 0) return rowToUser(row);
+
+  values.push(userId);
+  await execute(
+    `UPDATE users SET ${updates.join(', ')}, updated_date = NOW() WHERE id = ?`,
+    values
+  );
+
+  return getUserById(userId);
+}
+
+export async function enableMfaEmailForUser(userId) {
+  return setUserMfaEmailSettings(userId, { enabled: true });
+}
+
+export async function disableMfaEmailForUser(userId, { admin = false } = {}) {
+  if (admin) {
+    return setUserMfaEmailSettings(
+      userId,
+      { enabled: false, forced: false },
+      { allowDisableForced: false }
+    );
+  }
+  return setUserMfaEmailSettings(userId, { enabled: false });
 }

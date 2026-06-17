@@ -4,7 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 
-export default function ContactFiltersPanel({ filters, onFilterChange, onClose: _onClose }) {
+export default function ContactFiltersPanel({
+  filters,
+  onFilterChange,
+  onClose: _onClose,
+  sources = [],
+}) {
   const handleCheckboxChange = (category, value) => {
     const currentValues = filters[category] || [];
     const newValues = currentValues.includes(value)
@@ -116,7 +121,9 @@ export default function ContactFiltersPanel({ filters, onFilterChange, onClose: 
             <CardTitle className="text-sm">Source</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {['call', 'email', 'website', 'partner', 'referral'].map((source) => (
+            {(sources.length > 0
+              ? sources
+              : ['call', 'email', 'website', 'partner', 'referral']).map((source) => (
               <div key={source} className="flex items-center space-x-2">
                 <Checkbox
                   id={`source-${source}`}
@@ -124,7 +131,7 @@ export default function ContactFiltersPanel({ filters, onFilterChange, onClose: 
                   onCheckedChange={() => handleCheckboxChange('sources', source)}
                 />
                 <Label htmlFor={`source-${source}`} className="text-sm font-normal cursor-pointer">
-                  {source.charAt(0).toUpperCase() + source.slice(1)}
+                  {String(source).charAt(0).toUpperCase() + String(source).slice(1)}
                 </Label>
               </div>
             ))}

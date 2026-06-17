@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { api } from '@/api/client';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -57,6 +57,7 @@ import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
 import { differenceInDays, isAfter, startOfMonth } from 'date-fns';
 import { showError, showSuccess } from '@/lib/toast';
+import { namesFromConfigItems, matchSearch, normalizeFilterText } from '@/lib/listFilters';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Contacts() {
@@ -96,6 +97,13 @@ export default function Contacts() {
     sort: '-created_date',
     queryKeyPrefix: 'contacts',
   });
+
+  const { data: contactSources = [] } = useQuery({
+    queryKey: ['contactSources'],
+    queryFn: () => api.entities.ContactSource.list('order'),
+  });
+
+  const sourceOptions = useMemo(() => namesFromConfigItems(contactSources), [contactSources]);
 
   useEffect(() => {
     resetPage();
@@ -212,29 +220,27 @@ export default function Contacts() {
   // Filter and sort contacts
   const filteredAndSortedContacts = useMemo(() => {
     let filtered = contacts.filter((contact) => {
-      // Search filter
-      const matchesSearch =
-        contact.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        contact.company?.toLowerCase().includes(searchTerm.toLowerCase());
+      if (
+        !matchSearch(contact, searchTerm, ['name', 'email', 'company', 'phone', 'position'])
+      ) {
+        return false;
+      }
 
-      if (!matchesSearch) return false;
-
-      // Role filter
       if (filters.roles.length > 0 && !filters.roles.includes(contact.role)) return false;
 
-      // Priority filter
       if (filters.priorities.length > 0 && !filters.priorities.includes(contact.priority))
         return false;
 
-      // Company size filter
       if (filters.companySizes.length > 0 && !filters.companySizes.includes(contact.company_size))
         return false;
 
-      // Source filter
-      if (filters.sources.length > 0 && !filters.sources.includes(contact.source)) return false;
+      if (
+        filters.sources.length > 0 &&
+        !filters.sources.some((s) => normalizeFilterText(s) === normalizeFilterText(contact.source))
+      ) {
+        return false;
+      }
 
-      // Engagement level filter
       if (
         filters.engagementLevels.length > 0 &&
         !filters.engagementLevels.includes(contact.engagement_level)
@@ -731,6 +737,7 @@ export default function Contacts() {
             filters={filters}
             onFilterChange={handleFilterChange}
             onClose={() => setShowFilters(false)}
+            sources={sourceOptions}
           />
         </div>
       )}

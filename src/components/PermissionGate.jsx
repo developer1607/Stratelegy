@@ -1,5 +1,5 @@
-import { usePermissions } from '@/hooks/usePermissions';
-import { hasPermissionKey } from '@/lib/permissions';
+import { usePermissions } from "@/hooks/usePermissions";
+import { hasPermissionKey } from "@/lib/permissions";
 
 /**
  * @typedef {object} PermissionGateProps
@@ -25,7 +25,13 @@ export default function PermissionGate({
   children,
   fallback = null,
 }) {
-  const { permissions, isAdmin, canWriteEntity, canTicketAction, canPbxAction } = usePermissions();
+  const {
+    permissions,
+    isAdmin,
+    canWriteEntity,
+    canTicketAction,
+    canPbxAction,
+  } = usePermissions();
 
   let allowed = false;
   if (adminOnly) {

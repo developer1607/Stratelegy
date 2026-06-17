@@ -10,16 +10,32 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { RotateCcw } from 'lucide-react';
 
-export default function AccountFilters({ filters, onFilterChange }) {
+export default function AccountFilters({
+  filters,
+  onFilterChange,
+  industries = [],
+  tiers = [],
+  owners = [],
+  onClear,
+}) {
+  const tierOptions =
+    tiers.length > 0
+      ? tiers.map((t) => (t === 'Key' ? 'Key Account' : t))
+      : ['Key Account', 'A', 'B', 'C'];
+
   return (
     <Card>
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center gap-2">
           <CardTitle className="text-base">Filters</CardTitle>
-          <Button variant="ghost" size="sm">
-            Save All
-          </Button>
+          {onClear && (
+            <Button variant="ghost" size="sm" onClick={onClear} className="h-8">
+              <RotateCcw className="w-3.5 h-3.5 mr-1" />
+              Clear
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -27,11 +43,13 @@ export default function AccountFilters({ filters, onFilterChange }) {
           <Label className="text-sm font-semibold mb-2 block">Owner</Label>
           <Select value={filters.owner} onValueChange={(value) => onFilterChange('owner', value)}>
             <SelectTrigger>
-              <SelectValue placeholder="John Kuy" />
+              <SelectValue placeholder="All owners" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Owners</SelectItem>
-              <SelectItem value="john">John Kuy</SelectItem>
+              <SelectItem value="all">All owners</SelectItem>
+              {owners.map((owner) => (
+                <SelectItem key={owner} value={owner}>{owner}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
@@ -43,31 +61,30 @@ export default function AccountFilters({ filters, onFilterChange }) {
             onValueChange={(value) => onFilterChange('industry', value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Technology" />
+              <SelectValue placeholder="All industries" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Industries</SelectItem>
-              <SelectItem value="technology">Technology</SelectItem>
-              <SelectItem value="software">Software</SelectItem>
-              <SelectItem value="financial">Financial Services</SelectItem>
-              <SelectItem value="healthcare">Healthcare</SelectItem>
+              <SelectItem value="all">All industries</SelectItem>
+              {industries.map((industry) => (
+                <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label className="text-sm font-semibold mb-2 block">Revenue Range</Label>
+          <Label className="text-sm font-semibold mb-2 block">Revenue range</Label>
           <Select
             value={filters.revenue}
             onValueChange={(value) => onFilterChange('revenue', value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="$1M to $5M" />
+              <SelectValue placeholder="All revenue" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Revenue</SelectItem>
-              <SelectItem value="0-1m">$0 - $1M</SelectItem>
-              <SelectItem value="1m-5m">$1M - $5M</SelectItem>
+              <SelectItem value="all">All revenue</SelectItem>
+              <SelectItem value="0-1m">$0 – $1M</SelectItem>
+              <SelectItem value="1m-5m">$1M – $5M</SelectItem>
               <SelectItem value="5m+">$5M+</SelectItem>
             </SelectContent>
           </Select>
@@ -76,10 +93,10 @@ export default function AccountFilters({ filters, onFilterChange }) {
         <div>
           <Label className="text-sm font-semibold mb-3 block">Tier</Label>
           <div className="space-y-2">
-            {['Key Account', 'A', 'B', 'C'].map((tier) => (
+            {tierOptions.map((tier) => (
               <div key={tier} className="flex items-center space-x-2">
                 <Checkbox
-                  id={tier}
+                  id={`tier-${tier}`}
                   checked={filters.tiers?.includes(tier)}
                   onCheckedChange={(checked) => {
                     const newTiers = checked
@@ -88,16 +105,12 @@ export default function AccountFilters({ filters, onFilterChange }) {
                     onFilterChange('tiers', newTiers);
                   }}
                 />
-                <label htmlFor={tier} className="text-sm cursor-pointer">
+                <label htmlFor={`tier-${tier}`} className="text-sm cursor-pointer">
                   {tier}
                 </label>
               </div>
             ))}
           </div>
-        </div>
-
-        <div className="pt-2">
-          <Button className="w-full bg-blue-600 hover:bg-blue-700">Filter</Button>
         </div>
       </CardContent>
     </Card>

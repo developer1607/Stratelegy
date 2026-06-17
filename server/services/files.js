@@ -2,19 +2,86 @@ import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config.js';
+import { queryOne, execute } from '../db/query.js';
 
-export function saveUploadedFile(file) {
-  const ext = path.extname(file.originalname || '') || '';
+const ALLOWED_EXTENSIONS = new Set([
+  '.jpg',
+  '.jpeg',
+  '.png',
+  '.webp',
+  '.gif',
+  '.csv',
+  '.json',
+  '.txt',
+  '.pdf',
+]);
+
+const ALLOWED_MIME_PREFIXES = ['image/', 'text/', 'application/json', 'application/pdf'];
+
+function sanitizeExtension(originalName) {
+  const ext = path.extname(originalName || '').toLowerCase();
+  if (ext && ALLOWED_EXTENSIONS.has(ext)) return ext;
+  return '';
+}
+
+function isAllowedMime(mime) {
+  if (!mime) return true;
+  return ALLOWED_MIME_PREFIXES.some((prefix) => mime.startsWith(prefix));
+}
+
+export function fileApiPath(filename) {
+  return `/api/integrations/files/${encodeURIComponent(filename)}`;
+}
+
+export async function saveUploadedFile(file, uploadedByUserId = null) {
+  const ext = sanitizeExtension(file.originalname);
   const filename = `${uuidv4()}${ext}`;
   const dest = path.join(config.uploadsDir, filename);
   fs.writeFileSync(dest, file.buffer);
-  const fileUrl = `/uploads/${filename}`;
-  return { file_url: fileUrl, filename };
+
+  const mime = file.mimetype || null;
+  if (!isAllowedMime(mime)) {
+    fs.unlinkSync(dest);
+    const err = new Error('File type is not allowed');
+    err.status = 400;
+    throw err;
+  }
+
+  const id = uuidv4();
+  await execute(
+    `INSERT INTO file_uploads (id, filename, original_name, mime_type, size_bytes, uploaded_by)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [
+      id,
+      filename,
+      file.originalname || null,
+      mime,
+      file.buffer?.length ?? file.size ?? null,
+      uploadedByUserId || null,
+    ]
+  );
+
+  return { file_url: fileApiPath(filename), filename, id };
 }
 
-export function resolveUploadPath(fileUrl) {
-  const name = path.basename(fileUrl);
-  return path.join(config.uploadsDir, name);
+export function resolveUploadPath(fileUrlOrFilename) {
+  const raw = fileUrlOrFilename || '';
+  const basename = path.basename(
+    raw.replace(/^\/api\/integrations\/files\//, '').replace(/^\/uploads\//, '')
+  );
+  return path.join(config.uploadsDir, basename);
+}
+
+export async function getUploadRecord(filename) {
+  const name = path.basename(filename);
+  return queryOne('SELECT * FROM file_uploads WHERE filename = ?', [name]);
+}
+
+export function canAccessUpload(uploadRecord, user) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (!uploadRecord || !uploadRecord.uploaded_by) return false;
+  return uploadRecord.uploaded_by === user.id;
 }
 
 function parseCsvLine(line) {

@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Plus, Search, MessageSquare } from 'lucide-react';
+import { Plus, Search, MessageSquare, RotateCcw } from 'lucide-react';
 import PermissionGate from '@/components/PermissionGate';
 import {
   TICKET_STATUSES,
@@ -154,6 +154,27 @@ export default function SupportTickets() {
     );
   });
 
+  const clearTicketFilters = () => {
+    setSearch('');
+    setFilterStatus('all');
+    setFilterPriority('all');
+    setFilterCategory('all');
+    setFilterDepartment('all');
+    setFilterAssignee('all');
+    setUnassignedOnly(false);
+    searchParams.delete('status');
+    setSearchParams(searchParams, { replace: true });
+  };
+
+  const hasActiveTicketFilters =
+    search ||
+    filterStatus !== 'all' ||
+    filterPriority !== 'all' ||
+    filterCategory !== 'all' ||
+    filterDepartment !== 'all' ||
+    filterAssignee !== 'all' ||
+    unassignedOnly;
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -253,6 +274,12 @@ export default function SupportTickets() {
         >
           Unassigned only
         </Button>
+        {hasActiveTicketFilters && (
+          <Button type="button" variant="ghost" size="sm" onClick={clearTicketFilters}>
+            <RotateCcw className="w-4 h-4 mr-1" />
+            Clear filters
+          </Button>
+        )}
       </div>
 
       <div className="bg-white rounded-xl border border-border overflow-x-auto">

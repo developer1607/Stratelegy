@@ -7,13 +7,14 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Shield, Camera, KeyRound } from 'lucide-react';
+import { User, Mail, Shield, Camera, KeyRound, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import PasswordRequirements from '@/components/PasswordRequirements';
+import AuthenticatedImage from '@/components/AuthenticatedImage';
 import { formatPasswordErrors, validatePassword } from '@/lib/passwordValidation';
 
 export default function Profile() {
-  const { refreshAuth } = useAuth();
+  const { refreshAuth, logout } = useAuth();
   const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     display_name: '',
@@ -27,9 +28,17 @@ export default function Profile() {
     confirm_password: '',
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(false);
+  const [mfaEnrollToken, setMfaEnrollToken] = useState('');
+  const [mfaEnrollCode, setMfaEnrollCode] = useState('');
+  const [mfaDisablePassword, setMfaDisablePassword] = useState('');
+  const [loadError, setLoadError] = useState(null);
+  const [isLoadingUser, setIsLoadingUser] = useState(true);
 
   useEffect(() => {
     const loadUser = async () => {
+      setIsLoadingUser(true);
+      setLoadError(null);
       try {
         const userData = await api.auth.me();
         setUser(userData);
@@ -39,6 +48,9 @@ export default function Profile() {
         });
       } catch (error) {
         console.error('Failed to load user:', error);
+        setLoadError(error.message || 'Failed to load profile');
+      } finally {
+        setIsLoadingUser(false);
       }
     };
     loadUser();
@@ -51,7 +63,7 @@ export default function Profile() {
     setUploading(true);
     try {
       const { file_url } = await api.integrations.Core.UploadFile({ file });
-      setFormData({ ...formData, profile_picture: file_url });
+      setFormData((prev) => ({ ...prev, profile_picture: file_url }));
       toast.success('Photo uploaded');
     } catch {
       toast.error('Failed to upload photo');
@@ -106,8 +118,13 @@ export default function Profile() {
 
     setPasswordLoading(true);
     try {
-      await api.auth.changePassword({ current_password, new_password });
+      const result = await api.auth.changePassword({ current_password, new_password });
       setPasswordForm({ current_password: '', new_password: '', confirm_password: '' });
+      if (result?.password_changed) {
+        toast.success('Password updated. Please sign in again.');
+        logout(true);
+        return;
+      }
       toast.success('Password updated');
     } catch (error) {
       toast.error(error.message || 'Failed to update password');
@@ -116,11 +133,80 @@ export default function Profile() {
     }
   };
 
-  if (!user) {
+  const handleStartEnableMfa = async () => {
+    setMfaLoading(true);
+    try {
+      const result = await api.auth.startEnableMfa();
+      setMfaEnrollToken(result.mfa_token);
+      setMfaEnrollCode('');
+      toast.success(`Verification code sent to ${result.email_hint || user.email}`);
+    } catch (error) {
+      toast.error(error.message || 'Could not start email MFA setup');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleConfirmEnableMfa = async () => {
+    if (!mfaEnrollCode.trim()) {
+      toast.error('Enter the verification code from your email');
+      return;
+    }
+    setMfaLoading(true);
+    try {
+      const result = await api.auth.confirmEnableMfa(mfaEnrollToken, mfaEnrollCode.trim());
+      setUser(result.user);
+      setMfaEnrollToken('');
+      setMfaEnrollCode('');
+      await refreshAuth();
+      toast.success('Email MFA enabled');
+    } catch (error) {
+      toast.error(error.message || 'Invalid verification code');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  const handleDisableMfa = async () => {
+    if (!mfaDisablePassword) {
+      toast.error('Enter your current password to disable MFA');
+      return;
+    }
+    setMfaLoading(true);
+    try {
+      const result = await api.auth.disableMfa(mfaDisablePassword);
+      setUser(result.user);
+      setMfaDisablePassword('');
+      await refreshAuth();
+      toast.success('Email MFA disabled');
+    } catch (error) {
+      toast.error(error.message || 'Could not disable MFA');
+    } finally {
+      setMfaLoading(false);
+    }
+  };
+
+  if (isLoadingUser) {
     return (
       <div className="p-4 sm:p-8">
         <div className="max-w-4xl mx-auto">
           <div className="text-center py-12">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError || !user) {
+    return (
+      <div className="p-4 sm:p-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center py-12 space-y-4">
+            <AlertCircle className="w-10 h-10 text-red-500 mx-auto" />
+            <p className="text-gray-700">{loadError || 'Could not load profile'}</p>
+            <Button variant="outline" onClick={() => window.location.reload()}>
+              Retry
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -148,7 +234,7 @@ export default function Profile() {
                       <div className="flex flex-col sm:flex-row items-center gap-4">
                         <Avatar className="w-20 h-20 sm:w-24 sm:h-24">
                           {formData.profile_picture ? (
-                            <img
+                            <AuthenticatedImage
                               src={formData.profile_picture}
                               alt="Profile"
                               className="w-full h-full object-cover"
@@ -231,6 +317,98 @@ export default function Profile() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Email MFA
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4 max-w-md">
+                <p className="text-sm text-gray-600">
+                  Optional second step at sign-in. Codes are sent to your account email only — not
+                  SMS or phone.
+                </p>
+                {!user.email_mfa_available && (
+                  <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
+                    Email is not configured on this server. Ask an administrator to enable SMTP
+                    before using email MFA.
+                  </p>
+                )}
+                {user.mfa_email_enabled ? (
+                  <div className="space-y-3">
+                    <Badge className="bg-green-100 text-green-800 border-green-200">Enabled</Badge>
+                    {user.mfa_email_forced && (
+                      <p className="text-sm text-gray-600">
+                        Required by an administrator — you cannot turn this off yourself.
+                      </p>
+                    )}
+                    {!user.mfa_email_forced && (
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="mfa_disable_password">Current password</Label>
+                          <Input
+                            id="mfa_disable_password"
+                            type="password"
+                            autoComplete="current-password"
+                            value={mfaDisablePassword}
+                            onChange={(e) => setMfaDisablePassword(e.target.value)}
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={mfaLoading}
+                          onClick={handleDisableMfa}
+                        >
+                          Disable email MFA
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <Badge variant="outline">Not enabled</Badge>
+                    {!mfaEnrollToken ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={mfaLoading || !user.email_mfa_available}
+                        onClick={handleStartEnableMfa}
+                      >
+                        Enable email MFA
+                      </Button>
+                    ) : (
+                      <>
+                        <p className="text-sm text-gray-600">
+                          Enter the code sent to your email to confirm setup.
+                        </p>
+                        <div className="space-y-2">
+                          <Label htmlFor="mfa_enroll_code">Verification code</Label>
+                          <Input
+                            id="mfa_enroll_code"
+                            inputMode="numeric"
+                            value={mfaEnrollCode}
+                            onChange={(e) =>
+                              setMfaEnrollCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                            }
+                            placeholder="6-digit code"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          disabled={mfaLoading}
+                          onClick={handleConfirmEnableMfa}
+                        >
+                          Confirm and enable
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
                   <KeyRound className="w-5 h-5" />
                   Change password
                 </CardTitle>
@@ -291,7 +469,7 @@ export default function Profile() {
                 <div className="flex flex-col items-center text-center">
                   <Avatar className="w-20 h-20 mb-4">
                     {user.avatar_url || user.profile_picture ? (
-                      <img
+                      <AuthenticatedImage
                         src={user.avatar_url || user.profile_picture}
                         alt="Profile"
                         className="w-full h-full object-cover"
@@ -333,7 +511,12 @@ export default function Profile() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm text-gray-500">Email Verified</p>
-                    <p className="font-semibold">Yes</p>
+                    <p className="font-semibold">{user.email_verified ? 'Yes' : 'No'}</p>
+                    {!user.email_verified && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Complete invite registration to verify your email.
+                      </p>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -346,8 +529,10 @@ export default function Profile() {
                     <Shield className="w-6 h-6 text-purple-600" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm text-gray-500">Security</p>
-                    <p className="font-semibold">Protected</p>
+                    <p className="text-sm text-gray-500">Email MFA</p>
+                    <p className="font-semibold">
+                      {user.mfa_email_enabled ? 'Enabled' : 'Not enabled'}
+                    </p>
                   </div>
                 </div>
               </CardContent>

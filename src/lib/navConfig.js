@@ -22,7 +22,10 @@ import {
   Settings,
   Mail,
   LineChart,
+  Cpu,
+  FileDown,
 } from "lucide-react";
+import { PBX_OPERATIONAL_REPORT_PAGES } from "@shared/pbxReportPages.js";
 
 /** Sidebar navigation — permissions resolved via canAccessPage(page). */
 export const CRM_NAV = [
@@ -41,6 +44,17 @@ export const SUPPORT_NAV = [
   { name: "Tickets", icon: Ticket, path: "SupportTickets" },
   { name: "Knowledge Base", icon: BookOpen, path: "KnowledgeBase" },
 ];
+
+const PBX_REPORT_NAV_ICONS = {
+  offlineEndpoints: Activity,
+  deviceMonitoring: Cpu,
+  domainExport: FileDown,
+  e911: Mail,
+  sipAlg: Settings,
+  sipTrunk: Briefcase,
+  vulnerabilityCheck: ShieldAlert,
+  voicemail: Voicemail,
+};
 
 export const PBX_NAV_GROUPS = [
   {
@@ -69,14 +83,16 @@ export const PBX_NAV_GROUPS = [
   },
   {
     label: "E911",
-    items: [
-      { name: "E911 Review", icon: Mail, path: "E911Review" },
-      { name: "E911 Reports", icon: BarChart3, path: "E911Reports" },
-    ],
+    items: [{ name: "E911 Review", icon: Mail, path: "E911Review" }],
   },
   {
     label: "Reports",
     items: [
+      ...PBX_OPERATIONAL_REPORT_PAGES.map((def) => ({
+        name: def.title,
+        icon: PBX_REPORT_NAV_ICONS[def.id] || BarChart3,
+        path: def.page,
+      })),
       { name: "Report catalog", icon: BarChart3, path: "PBXReports" },
       { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
     ],
@@ -102,11 +118,13 @@ export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "PBXDomains",
   "E911Review",
   "E911Reports",
+  "PBXReportE911",
   "PBXReports",
   "PBXMosScores",
   "CallLogs",
   "SIPTrunks",
   "PBXMakeCall",
+  ...PBX_OPERATIONAL_REPORT_PAGES.map((def) => def.page),
 ]);
 
 export const ADMIN_BOTTOM_NAV = [

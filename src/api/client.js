@@ -12,7 +12,7 @@ async function request(method, path, body, options = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const token = getToken(appParams.token);
+  const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
   const res = await fetch(path, {
@@ -33,6 +33,13 @@ async function request(method, path, body, options = {}) {
     : await res.text();
 
   if (!res.ok) {
+    if (res.status === 401 && token && !path.startsWith("/api/auth/login")) {
+      clearToken();
+      if (window.location.pathname !== "/login") {
+        const from = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        window.location.href = `/login?from_url=${encodeURIComponent(from)}`;
+      }
+    }
     throw new ApiError(data?.message || res.statusText, res.status, data);
   }
   return data;
@@ -75,7 +82,7 @@ function createEntityClient(entityName) {
     bulkCreate: (items) =>
       request("POST", `/api/entities/${entityName}/bulk`, { items }),
     subscribe: (callback) => {
-      const token = getToken(appParams.token);
+      const token = getToken();
       const url = `/api/realtime/entities/${entityName}/subscribe`;
       const controller = new AbortController();
       let closed = false;
@@ -178,9 +185,13 @@ export const api = {
     updateMe: (data) => request("PATCH", "/api/auth/me", data),
     changePassword: ({ current_password, new_password }) =>
       request("PATCH", "/api/auth/me", { current_password, new_password }),
-    logout: (shouldRedirect = true) => {
+    logout: async (shouldRedirect = true) => {
+      try {
+        await request("POST", "/api/auth/logout");
+      } catch {
+        /* ignore — still clear local token */
+      }
       clearToken();
-      request("POST", "/api/auth/logout").catch(() => {});
       if (shouldRedirect) {
         window.location.href = "/login";
       }
@@ -196,9 +207,36 @@ export const api = {
         email,
         password,
       });
+      if (result.mfa_required) {
+        return {
+          mfaRequired: true,
+          mfaToken: result.mfa_token,
+          emailHint: result.email_hint,
+          expiresIn: result.expires_in,
+        };
+      }
+      setToken(result.token);
+      return { mfaRequired: false, user: result.user };
+    },
+    verifyMfa: async (mfaToken, code) => {
+      const result = await request("POST", "/api/auth/mfa/verify", {
+        mfa_token: mfaToken,
+        code,
+      });
       setToken(result.token);
       return result.user;
     },
+    resendMfa: async (mfaToken) => {
+      return request("POST", "/api/auth/mfa/resend", { mfa_token: mfaToken });
+    },
+    startEnableMfa: () => request("POST", "/api/auth/mfa/enable/start"),
+    confirmEnableMfa: (mfaToken, code) =>
+      request("POST", "/api/auth/mfa/enable/confirm", {
+        mfa_token: mfaToken,
+        code,
+      }),
+    disableMfa: (current_password) =>
+      request("POST", "/api/auth/mfa/disable", { current_password }),
     registerInvite: async ({ token, email, password, full_name }) => {
       const result = await request("POST", "/api/auth/register-invite", {
         token,
@@ -245,6 +283,13 @@ export const api = {
       request("PATCH", `/api/users/${userId}/pbx-domains`, { domains }),
     setPassword: (userId, password) =>
       request("PATCH", `/api/users/${userId}/password`, { password }),
+    updateMfa: (userId, { enabled, forced }) =>
+      request("PATCH", `/api/users/${userId}/mfa`, {
+        enabled,
+        forced,
+        mfa_email_enabled: enabled,
+        mfa_email_forced: forced,
+      }),
     delete: (userId) => request("DELETE", `/api/users/${userId}`),
   },
 
@@ -323,5 +368,21 @@ export const api = {
   appLogs: {
     logUserInApp: (pageName) =>
       request("POST", "/api/logs/in-app", { page_name: pageName }),
+  },
+
+  email: {
+    listTemplates: () => request("GET", "/api/email/templates"),
+    getTemplate: (id) => request("GET", `/api/email/templates/${id}`),
+    previewTemplate: (id, content) =>
+      content
+        ? request("POST", `/api/email/templates/${id}/preview`, { content })
+        : request("GET", `/api/email/templates/${id}/preview`),
+    saveTemplate: (id, content) =>
+      request("PUT", `/api/email/templates/${id}`, { content }),
+    resetTemplate: (id) =>
+      request("DELETE", `/api/email/templates/${id}/customization`),
+    sendTestTemplate: (id, { to, content }) =>
+      request("POST", `/api/email/templates/${id}/test`, { to, content }),
+    status: () => request("GET", "/api/email/status"),
   },
 };

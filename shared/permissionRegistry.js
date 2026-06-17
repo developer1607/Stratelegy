@@ -3,6 +3,10 @@
  * Imported by server and client (via @shared alias).
  */
 
+import {
+  PBX_OPERATIONAL_REPORT_PAGES,
+} from './pbxReportPages.js';
+
 export const PERMISSION_DEFS = [
   {
     key: 'can_access_crm',
@@ -382,7 +386,7 @@ export const PERMISSION_DEFS = [
 
   {
     key: 'can_manage_pbx_reports',
-    label: 'Manage generated reports (cancel queued)',
+    label: 'Manage PBX reports (queue and cancel)',
     module: 'pbx',
     section: 'Actions',
   },
@@ -549,9 +553,13 @@ export function buildPagePermissionMap() {
     Settings: '__admin__',
     UserManagement: '__admin__',
     SupportTicketDetail: 'can_view_tickets',
+    E911Reports: 'can_view_e911_reports',
   };
   for (const def of PERMISSION_DEFS) {
     if (def.page) map[def.page] = def.key;
+  }
+  for (const def of PBX_OPERATIONAL_REPORT_PAGES) {
+    map[def.page] = def.permissionKey;
   }
   return map;
 }

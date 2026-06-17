@@ -12,6 +12,10 @@ export async function createPlatformTables(execute) {
       is_active TINYINT(1) NOT NULL DEFAULT 1,
       departments VARCHAR(500) NULL,
       categories VARCHAR(500) NULL,
+      token_version INT NOT NULL DEFAULT 0,
+      mfa_email_enabled TINYINT(1) NOT NULL DEFAULT 0,
+      mfa_email_forced TINYINT(1) NOT NULL DEFAULT 0,
+      email_verified TINYINT(1) NOT NULL DEFAULT 0,
       created_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updated_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -98,7 +102,86 @@ export async function createPlatformTables(execute) {
       token VARCHAR(64) NOT NULL UNIQUE,
       invited_by VARCHAR(36),
       created_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      expires_at DATETIME NULL,
       accepted_at DATETIME NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await execute(`
+    CREATE TABLE IF NOT EXISTS login_attempts (
+      ip VARCHAR(64) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      attempts INT NOT NULL DEFAULT 0,
+      window_start DATETIME NOT NULL,
+      locked_until DATETIME NULL,
+      PRIMARY KEY (ip, email)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await execute(`
+    CREATE TABLE IF NOT EXISTS mfa_email_challenges (
+      id VARCHAR(36) PRIMARY KEY,
+      user_id VARCHAR(36) NOT NULL,
+      challenge_token VARCHAR(64) NOT NULL UNIQUE,
+      purpose VARCHAR(20) NOT NULL DEFAULT 'login',
+      code_hash VARCHAR(255) NOT NULL,
+      attempts INT NOT NULL DEFAULT 0,
+      expires_at DATETIME NOT NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_mfa_challenge_token (challenge_token),
+      INDEX idx_mfa_challenge_user (user_id),
+      CONSTRAINT fk_mfa_challenge_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await execute(`
+    CREATE TABLE IF NOT EXISTS audit_events (
+      id VARCHAR(36) PRIMARY KEY,
+      actor_user_id VARCHAR(36) NULL,
+      action VARCHAR(100) NOT NULL,
+      resource_type VARCHAR(50) NULL,
+      resource_id VARCHAR(36) NULL,
+      metadata JSON NULL,
+      ip VARCHAR(64) NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_audit_created (created_at),
+      INDEX idx_audit_actor (actor_user_id),
+      INDEX idx_audit_action (action)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await execute(`
+    CREATE TABLE IF NOT EXISTS file_uploads (
+      id VARCHAR(36) PRIMARY KEY,
+      filename VARCHAR(255) NOT NULL UNIQUE,
+      original_name VARCHAR(500) NULL,
+      mime_type VARCHAR(100) NULL,
+      size_bytes INT NULL,
+      uploaded_by VARCHAR(36) NULL,
+      created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_upload_filename (filename),
+      CONSTRAINT fk_upload_user
+        FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE SET NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  `);
+
+  await execute(`
+    CREATE TABLE IF NOT EXISTS email_template_overrides (
+      id VARCHAR(36) PRIMARY KEY,
+      template_id VARCHAR(64) NOT NULL UNIQUE,
+      subject VARCHAR(500) NOT NULL,
+      use_layout TINYINT(1) NOT NULL DEFAULT 1,
+      layout_title VARCHAR(255) NULL,
+      layout_preheader VARCHAR(500) NULL,
+      layout_cta_url VARCHAR(1000) NULL,
+      layout_cta_label VARCHAR(255) NULL,
+      html_body MEDIUMTEXT NOT NULL,
+      text_body TEXT NULL,
+      updated_by VARCHAR(36) NULL,
+      updated_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      CONSTRAINT fk_email_template_override_user
+        FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
   `);
 }

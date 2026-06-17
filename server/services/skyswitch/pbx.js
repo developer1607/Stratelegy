@@ -176,12 +176,27 @@ export async function listReports({ page = 1, perPage = 25 } = {}) {
   });
 }
 
-export async function getReport(reportId) {
-  return skyswitchRequest('GET', accountPath(`/reports/${reportId}`));
+export async function cancelReport(reportId) {
+  return skyswitchRequest('DELETE', accountPath(`/reports/${reportId}`), {
+    query: { id: reportId },
+  });
 }
 
-export async function cancelReport(reportId) {
-  return skyswitchRequest('DELETE', accountPath(`/reports/${reportId}`));
+/** Queue an async report export (POST — works at runtime though omitted from public docs). */
+export async function createReport({ reportType, parameters = [], notes = null } = {}) {
+  if (!reportType) {
+    const err = new Error('report_type is required');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+
+  const body = { report_type: reportType, parameters };
+  if (notes != null && String(notes).trim()) {
+    body.notes = String(notes).trim();
+  }
+
+  return skyswitchRequest('POST', accountPath('/reports'), { body });
 }
 
 export async function getReportFileDownload(fileId) {
@@ -427,16 +442,22 @@ export async function getTroubleshootingSnapshot(domain, permissions = null, dom
   return filterPbxSummaryFields(permissions, raw);
 }
 
+function phoneNumberValue(phone) {
+  if (typeof phone === 'string') return phone;
+  return phone?.phone_number || phone?.number || phone?.did || '';
+}
+
 export async function getCallRoutingOverview(domain) {
   const resolved = await resolveDomain(domain);
   const phoneNumbers = await listPbxPhoneNumbers(resolved);
   const routes = await Promise.all(
     phoneNumbers.slice(0, 25).map(async (phone) => {
+      const phoneNumber = phoneNumberValue(phone);
       try {
-        const route = await getPhoneRoute(phone);
-        return { phone_number: phone, ...route };
+        const route = await getPhoneRoute(phoneNumber);
+        return { phone_number: phoneNumber, ...route };
       } catch (err) {
-        return { phone_number: phone, error: 'Route lookup failed' };
+        return { phone_number: phoneNumber, error: 'Route lookup failed' };
       }
     })
   );
