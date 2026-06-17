@@ -822,25 +822,37 @@ export default function Dashboard() {
 
       <LeadDialog
         open={activeDialog === 'lead'}
-        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onOpenChange={(open) => {
+          if (!open && createLeadMutation.isPending) return;
+          if (!open) setActiveDialog(null);
+        }}
         onSubmit={(data) => createLeadMutation.mutate(data)}
         isLoading={createLeadMutation.isPending}
       />
       <ContactDialog
         open={activeDialog === 'contact'}
-        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onOpenChange={(open) => {
+          if (!open && createContactMutation.isPending) return;
+          if (!open) setActiveDialog(null);
+        }}
         onSubmit={(data) => createContactMutation.mutate(data)}
         isLoading={createContactMutation.isPending}
       />
       <OpportunityDialog
         open={activeDialog === 'opportunity'}
-        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onOpenChange={(open) => {
+          if (!open && createOpportunityMutation.isPending) return;
+          if (!open) setActiveDialog(null);
+        }}
         onSubmit={(data) => createOpportunityMutation.mutate(data)}
         isLoading={createOpportunityMutation.isPending}
       />
       <ActivityDialog
         open={activeDialog === 'activity'}
-        onOpenChange={(open) => !open && setActiveDialog(null)}
+        onOpenChange={(open) => {
+          if (!open && createActivityMutation.isPending) return;
+          if (!open) setActiveDialog(null);
+        }}
         onSubmit={(data) => createActivityMutation.mutate(data)}
         isLoading={createActivityMutation.isPending}
       />

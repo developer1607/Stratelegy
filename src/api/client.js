@@ -15,17 +15,40 @@ async function request(method, path, body, options = {}) {
   const token = getToken();
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
-  const res = await fetch(path, {
-    method,
-    headers,
-    body:
-      body instanceof FormData
-        ? body
-        : body != null
-          ? JSON.stringify(body)
-          : undefined,
-    credentials: "include",
-  });
+  const timeoutMs = options.timeoutMs ?? 60_000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+  let res;
+  try {
+    res = await fetch(path, {
+      method,
+      headers,
+      body:
+        body instanceof FormData
+          ? body
+          : body != null
+            ? JSON.stringify(body)
+            : undefined,
+      credentials: "include",
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      throw new ApiError(
+        "Request timed out. Check your connection and try again.",
+        408,
+      );
+    }
+    if (error instanceof ApiError) throw error;
+    const message =
+      error?.message === "Failed to fetch"
+        ? "Network error — could not reach the server."
+        : error?.message || "Request failed.";
+    throw new ApiError(message, 0);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const contentType = res.headers.get("content-type") || "";
   const data = contentType.includes("application/json")

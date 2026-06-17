@@ -124,6 +124,36 @@ export function validateAccountForm(data) {
   return errors;
 }
 
+/** Strip empty optional fields before entity API create/update. */
+export function buildAccountPayload(formData) {
+  const payload = {
+    name: trim(formData.name),
+    email: trim(formData.email),
+    status: trim(formData.status) || 'active',
+  };
+
+  const industry = trim(formData.industry);
+  if (industry) payload.industry = industry;
+
+  const website = trim(formData.website);
+  if (website) payload.website = website;
+
+  const phone = trim(formData.phone);
+  if (phone) payload.phone = phone;
+
+  if (formData.annual_revenue !== '' && formData.annual_revenue != null) {
+    const revenue = Number(formData.annual_revenue);
+    if (!Number.isNaN(revenue)) payload.annual_revenue = revenue;
+  }
+
+  if (formData.employees !== '' && formData.employees != null) {
+    const employees = parseInt(formData.employees, 10);
+    if (!Number.isNaN(employees)) payload.employees = employees;
+  }
+
+  return payload;
+}
+
 export function validateContactForm(data, { requireEmail = true } = {}) {
   const errors = {};
   collect(errors, 'name', requiredField(data.name, 'Name'));

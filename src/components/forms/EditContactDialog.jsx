@@ -102,7 +102,7 @@ export default function EditContactDialog({
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>{readOnly ? 'Contact Details' : 'Edit Contact'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className={formDialogGrid}>
               <div className={formDialogField}>
@@ -175,7 +175,12 @@ export default function EditContactDialog({
           </div>
 
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={!readOnly && isLoading}
+            >
               {readOnly ? 'Close' : 'Cancel'}
             </Button>
             {!readOnly && (

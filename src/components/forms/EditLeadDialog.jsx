@@ -98,7 +98,7 @@ export default function EditLeadDialog({
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>{readOnly ? 'Lead Details' : 'Edit Lead'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className={formDialogGrid}>
               <div className={formDialogField}>
@@ -206,7 +206,12 @@ export default function EditLeadDialog({
           </div>
 
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={!readOnly && isLoading}
+            >
               {readOnly ? 'Close' : 'Cancel'}
             </Button>
             {!readOnly && (

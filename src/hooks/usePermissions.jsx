@@ -19,6 +19,31 @@ import {
   isPbxDomainRestricted,
 } from "@shared/pbxDomainAccess.js";
 
+// Share a single UserPermissions realtime stream across all consumers.
+// usePermissions() is called by every PermissionGate, page, and the layout;
+// opening one SSE connection per consumer saturates the browser's per-origin
+// HTTP connection limit and makes other requests (create, notifications) hang.
+const permissionEventSubscribers = new Set();
+let unsubscribePermissionStream = null;
+
+function subscribeToPermissionEvents(callback) {
+  permissionEventSubscribers.add(callback);
+  if (!unsubscribePermissionStream) {
+    unsubscribePermissionStream = api.entities.UserPermissions.subscribe(
+      (event) => {
+        for (const cb of [...permissionEventSubscribers]) cb(event);
+      },
+    );
+  }
+  return () => {
+    permissionEventSubscribers.delete(callback);
+    if (permissionEventSubscribers.size === 0 && unsubscribePermissionStream) {
+      unsubscribePermissionStream();
+      unsubscribePermissionStream = null;
+    }
+  };
+}
+
 export function usePermissions() {
   const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
@@ -41,7 +66,7 @@ export function usePermissions() {
 
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = api.entities.UserPermissions.subscribe((event) => {
+    const unsubscribe = subscribeToPermissionEvents((event) => {
       if (
         event.data?.user_id === user.id ||
         event.old_data?.user_id === user.id

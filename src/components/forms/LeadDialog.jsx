@@ -47,7 +47,12 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
-    if (open) resetValidation();
+    if (open) {
+      resetValidation();
+      return;
+    }
+    setFormData(EMPTY_FORM);
+    resetValidation();
   }, [open, resetValidation]);
 
   const handleSubmit = (e) => {
@@ -58,8 +63,6 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
       ...formData,
       value: formData.value ? parseFloat(formData.value) : undefined,
     });
-    setFormData(EMPTY_FORM);
-    resetValidation();
   };
 
   return (
@@ -68,7 +71,7 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create New Lead</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className="space-y-4">
               <div className={formDialogField}>
@@ -188,7 +191,7 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
             </div>
           </div>
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

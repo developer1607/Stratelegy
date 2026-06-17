@@ -43,6 +43,7 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, CheckCircle, XCircle, Percent, Calendar } from 'lucide-react';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { useLeadCreateMutation } from '@/hooks/useLeadCreateMutation';
 import { matchFieldEquals, matchSearch, namesFromConfigItems } from '@/lib/listFilters';
 import { showError, showSuccess } from '@/lib/toast';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -51,7 +52,7 @@ export default function Leads() {
   const { canWriteEntity } = usePermissions();
   const canManage = canWriteEntity('Lead');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
   const [sortColumn, setSortColumn] = useState('created_date');
@@ -96,14 +97,12 @@ export default function Leads() {
     resetPage();
   }, [searchTerm, filters, sortColumn, sortDirection, resetPage]);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => api.entities.Lead.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['leads'] });
-      setDialogOpen(false);
-      showSuccess('Lead created.');
+  const createLeadMutation = useLeadCreateMutation({
+    extraInvalidateKeys: [['leads']],
+    onCreated: () => {
+      setLeadDialogOpen(false);
+      resetPage();
     },
-    onError: (error) => showError(error, 'Failed to create lead.'),
   });
 
   const updateMutation = useMutation({
@@ -287,7 +286,7 @@ export default function Leads() {
           <PermissionGate entity="Lead">
             <Button
               className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
-              onClick={() => setDialogOpen(true)}
+              onClick={() => setLeadDialogOpen(true)}
             >
               <Plus className="w-4 h-4 mr-2" />
               New Lead
@@ -510,15 +509,21 @@ export default function Leads() {
       <LeadsAnalytics leads={filteredAndSortedLeads} />
 
       <LeadDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={(data) => createMutation.mutate(data)}
-        isLoading={createMutation.isPending}
+        open={leadDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && createLeadMutation.isPending) return;
+          setLeadDialogOpen(open);
+        }}
+        onSubmit={(data) => createLeadMutation.mutate(data)}
+        isLoading={createLeadMutation.isPending}
       />
 
       <EditLeadDialog
         open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && updateMutation.isPending) return;
+          setEditDialogOpen(open);
+        }}
         lead={selectedLead}
         onSubmit={(data) => updateMutation.mutate({ id: selectedLead.id, data })}
         isLoading={updateMutation.isPending}

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -55,6 +55,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { useCrmEntityCreate } from '@/hooks/useCrmEntityCreate';
 import { differenceInDays, isAfter, startOfMonth } from 'date-fns';
 import { showError, showSuccess } from '@/lib/toast';
 import { namesFromConfigItems, matchSearch, normalizeFilterText } from '@/lib/listFilters';
@@ -64,7 +65,6 @@ export default function Contacts() {
   const { canWriteEntity } = usePermissions();
   const canManage = canWriteEntity('Contact');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
@@ -109,15 +109,27 @@ export default function Contacts() {
     resetPage();
   }, [searchTerm, filters, resetPage]);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => api.entities.Contact.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      setDialogOpen(false);
-      showSuccess('Contact created.');
-    },
-    onError: (error) => showError(error, 'Failed to create contact.'),
+  const {
+    dialogOpen,
+    setDialogOpen,
+    handleDialogOpenChange: baseHandleDialogOpenChange,
+    submitCreate,
+    isCreating,
+  } = useCrmEntityCreate({
+    entityName: 'Contact',
+    invalidateKeys: [['contacts']],
+    successMessage: 'Contact created.',
+    errorMessage: 'Failed to create contact.',
+    onCreated: resetPage,
   });
+
+  const handleDialogOpenChange = useCallback(
+    (open) => {
+      baseHandleDialogOpenChange(open);
+      if (!open) setScannedData(null);
+    },
+    [baseHandleDialogOpenChange],
+  );
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.entities.Contact.update(id, data),
@@ -755,21 +767,18 @@ export default function Contacts() {
 
       <ContactDialog
         open={dialogOpen}
-        onOpenChange={(open) => {
-          setDialogOpen(open);
-          if (!open) setScannedData(null);
-        }}
-        onSubmit={(data) => {
-          createMutation.mutate(data);
-          setScannedData(null);
-        }}
-        isLoading={createMutation.isPending}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={submitCreate}
+        isLoading={isCreating}
         initialData={scannedData}
       />
 
       <EditContactDialog
         open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && updateMutation.isPending) return;
+          setEditDialogOpen(open);
+        }}
         contact={selectedContact}
         onSubmit={(data) => updateMutation.mutate({ id: selectedContact.id, data })}
         isLoading={updateMutation.isPending}

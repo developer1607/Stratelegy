@@ -55,7 +55,12 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
-    if (open) resetValidation();
+    if (open) {
+      resetValidation();
+      return;
+    }
+    setFormData(EMPTY_FORM);
+    resetValidation();
   }, [open, resetValidation]);
 
   const handleSubmit = (e) => {
@@ -67,8 +72,6 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
       amount: formData.amount ? parseFloat(formData.amount) : undefined,
       probability: formData.probability ? parseFloat(formData.probability) : undefined,
     });
-    setFormData(EMPTY_FORM);
-    resetValidation();
   };
 
   return (
@@ -77,7 +80,7 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create Opportunity</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className="space-y-4">
               <div className={formDialogField}>
@@ -196,7 +199,7 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
             </div>
           </div>
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

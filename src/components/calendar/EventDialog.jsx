@@ -82,7 +82,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>{event ? 'Edit Event' : 'New Event'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className={formDialogField}>
               <Label htmlFor="event-title">Title *</Label>
@@ -240,7 +240,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
           </div>
 
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={isLoading}>

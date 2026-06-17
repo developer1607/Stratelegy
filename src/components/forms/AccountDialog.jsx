@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateAccountForm } from '@/lib/crmFormValidation';
+import { buildAccountPayload, validateAccountForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
 import {
@@ -58,17 +58,7 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
     e.preventDefault();
     if (!validateSubmit(formData)) return;
 
-    onSubmit({
-      ...formData,
-      annual_revenue:
-        formData.annual_revenue !== ''
-          ? parseFloat(formData.annual_revenue)
-          : undefined,
-      employees:
-        formData.employees !== ''
-          ? parseInt(formData.employees, 10)
-          : undefined,
-    });
+    onSubmit(buildAccountPayload(formData));
   };
 
   return (
@@ -192,7 +182,7 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
             </div>
           </div>
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

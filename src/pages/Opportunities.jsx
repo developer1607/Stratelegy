@@ -31,6 +31,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { useCrmEntityCreate } from '@/hooks/useCrmEntityCreate';
 import { showError, showSuccess } from '@/lib/toast';
 import { formatCurrency } from '@/utils';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -58,7 +59,6 @@ export default function Opportunities() {
   const canManage = canWriteEntity('Opportunity');
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedOpportunity, setSelectedOpportunity] = useState(null);
   const [sortColumn, setSortColumn] = useState('created_date');
@@ -83,14 +83,18 @@ export default function Opportunities() {
     resetPage();
   }, [searchTerm, stageFilter, sortColumn, sortDirection, resetPage]);
 
-  const createMutation = useMutation({
-    mutationFn: (data) => api.entities.Opportunity.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
-      setDialogOpen(false);
-      showSuccess('Opportunity created.');
-    },
-    onError: (error) => showError(error, 'Failed to create opportunity.'),
+  const {
+    dialogOpen,
+    setDialogOpen,
+    handleDialogOpenChange,
+    submitCreate,
+    isCreating,
+  } = useCrmEntityCreate({
+    entityName: 'Opportunity',
+    invalidateKeys: [['opportunities']],
+    successMessage: 'Opportunity created.',
+    errorMessage: 'Failed to create opportunity.',
+    onCreated: resetPage,
   });
 
   const updateMutation = useMutation({
@@ -355,14 +359,17 @@ export default function Opportunities() {
 
       <OpportunityDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={(data) => createMutation.mutate(data)}
-        isLoading={createMutation.isPending}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={submitCreate}
+        isLoading={isCreating}
       />
 
       <EditOpportunityDialog
         open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && updateMutation.isPending) return;
+          setEditDialogOpen(open);
+        }}
         opportunity={selectedOpportunity}
         onSubmit={(data) =>
           selectedOpportunity &&

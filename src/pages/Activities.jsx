@@ -15,13 +15,13 @@ import { Search } from 'lucide-react';
 import { filterByDateRange, matchFieldIncludes, matchSearch, namesFromConfigItems, uniqueOwners } from '@/lib/listFilters';
 import { showError, showSuccess } from '@/lib/toast';
 import PermissionGate from '@/components/PermissionGate';
+import { useCrmEntityCreate } from '@/hooks/useCrmEntityCreate';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Activities() {
   const { canWriteEntity } = usePermissions();
   const canManage = canWriteEntity('Activity');
   const [searchTerm, setSearchTerm] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
   const [activityType, setActivityType] = useState(null);
   const [priorityTab, setPriorityTab] = useState('overdue');
   const [filters, setFilters] = useState({
@@ -51,17 +51,22 @@ export default function Activities() {
     [activities]
   );
 
-  const createMutation = useMutation({
-    mutationFn: (data) => api.entities.Activity.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['activities'] });
-      queryClient.invalidateQueries({ queryKey: ['contacts'] });
-      setDialogOpen(false);
-      setActivityType(null);
-      showSuccess('Activity logged.');
-    },
-    onError: (error) => showError(error, 'Failed to log activity.'),
+  const {
+    dialogOpen,
+    setDialogOpen,
+    handleDialogOpenChange,
+    submitCreate,
+    isCreating,
+  } = useCrmEntityCreate({
+    entityName: 'Activity',
+    invalidateKeys: [['activities'], ['contacts']],
+    successMessage: 'Activity logged.',
+    errorMessage: 'Failed to log activity.',
+    onCreated: () => setActivityType(null),
   });
+
+  const submitActivity = (data) =>
+    submitCreate({ ...data, type: activityType || data.type });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }) => api.entities.Activity.update(id, data),
@@ -368,9 +373,9 @@ export default function Activities() {
 
       <ActivityDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={(data) => createMutation.mutate({ ...data, type: activityType || data.type })}
-        isLoading={createMutation.isPending}
+        onOpenChange={handleDialogOpenChange}
+        onSubmit={submitActivity}
+        isLoading={isCreating}
         defaultType={activityType}
       />
     </div>

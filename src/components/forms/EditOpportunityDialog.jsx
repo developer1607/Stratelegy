@@ -107,7 +107,7 @@ export default function EditOpportunityDialog({
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>{readOnly ? 'View Opportunity' : 'Edit Opportunity'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className="space-y-4">
               <div className={formDialogField}>
@@ -203,7 +203,12 @@ export default function EditOpportunityDialog({
               </Button>
             ) : (
               <>
-                <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={isLoading}
+                >
                   Cancel
                 </Button>
                 <Button type="submit" disabled={isLoading}>

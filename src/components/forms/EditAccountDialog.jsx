@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { validateAccountForm } from '@/lib/crmFormValidation';
+import { buildAccountPayload, validateAccountForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
 import {
@@ -75,11 +75,7 @@ export default function EditAccountDialog({
     if (readOnly) return;
     if (!validateSubmit(formData)) return;
 
-    onSubmit({
-      ...formData,
-      annual_revenue: formData.annual_revenue ? Number(formData.annual_revenue) : undefined,
-      employees: formData.employees ? Number(formData.employees) : undefined,
-    });
+    onSubmit(buildAccountPayload(formData));
   };
 
   const bind = (field) =>

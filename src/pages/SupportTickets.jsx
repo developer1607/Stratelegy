@@ -366,7 +366,14 @@ export default function SupportTickets() {
         </table>
       </div>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      <Dialog
+        open={showDialog}
+        onOpenChange={(open) => {
+          if (!open && createMutation.isPending) return;
+          setShowDialog(open);
+          if (!open) setForm({ ...DEFAULT_TICKET_FORM });
+        }}
+      >
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Ticket</DialogTitle>
@@ -516,7 +523,7 @@ export default function SupportTickets() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDialog(false)}>
+            <Button variant="outline" onClick={() => setShowDialog(false)} disabled={createMutation.isPending}>
               Cancel
             </Button>
             <Button

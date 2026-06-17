@@ -116,7 +116,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Log Activity</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className={formDialogGrid}>
               <div className={formDialogField}>
@@ -220,7 +220,7 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
           </div>
 
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

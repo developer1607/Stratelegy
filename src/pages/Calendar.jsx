@@ -504,7 +504,11 @@ export default function Calendar() {
 
       <EventDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && (createMutation.isPending || updateMutation.isPending)) return;
+          setDialogOpen(open);
+          if (!open) setSelectedEvent(null);
+        }}
         onSubmit={handleSubmit}
         isLoading={createMutation.isPending || updateMutation.isPending}
         event={selectedEvent}

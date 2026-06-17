@@ -56,29 +56,33 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
-    if (open) resetValidation();
-  }, [open, resetValidation]);
-
-  React.useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        email: initialData.email || '',
-        phone: initialData.phone || '',
-        company: initialData.company || '',
-        position: initialData.position || '',
-        role: '',
-        priority: 'Standard',
-        status: 'active',
-        source: 'email',
-        engagement_level: 'Medium',
-        company_size: '',
-        last_activity_date: '',
-        photo_url: initialData.photo_url || '',
-      });
+    if (open) {
       resetValidation();
+      if (initialData) {
+        setFormData({
+          name: initialData.name || '',
+          email: initialData.email || '',
+          phone: initialData.phone || '',
+          company: initialData.company || '',
+          position: initialData.position || '',
+          role: '',
+          priority: 'Standard',
+          status: 'active',
+          source: 'email',
+          engagement_level: 'Medium',
+          company_size: '',
+          last_activity_date: '',
+          photo_url: initialData.photo_url || '',
+        });
+      }
+      return;
     }
-  }, [initialData, resetValidation]);
+    setFormData(EMPTY_FORM);
+    resetValidation();
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [open, initialData, resetValidation]);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -122,11 +126,6 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
     e.preventDefault();
     if (!validateSubmit(formData)) return;
     onSubmit(formData);
-    setFormData(EMPTY_FORM);
-    resetValidation();
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   return (
@@ -135,7 +134,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create New Contact</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className="grid gap-6">
               <div className="flex flex-col items-center gap-4 pb-4 border-b">
@@ -280,7 +279,12 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
             </div>
           </div>
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading || uploadingPhoto}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading || uploadingPhoto}>

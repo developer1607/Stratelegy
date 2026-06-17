@@ -76,6 +76,7 @@ export default function Accounts() {
 
   const createMutation = useMutation({
     mutationFn: (data) => api.entities.Account.create(data),
+    retry: false,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       setDialogOpen(false);
@@ -574,17 +575,29 @@ export default function Accounts() {
 
       <AccountDialog
         open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        onSubmit={(data) => createMutation.mutate(data)}
-        isLoading={createMutation.isPending}
+        onOpenChange={(open) => {
+          if (!open && createMutation.isPending) return;
+          setDialogOpen(open);
+        }}
+        onSubmit={(data) => {
+          if (!canManage) {
+            showError(new Error('You do not have permission to create accounts.'));
+            return;
+          }
+          createMutation.mutate(data);
+        }}
+        isLoading={createMutation.isPending && dialogOpen}
       />
 
       <EditAccountDialog
         open={editDialogOpen}
-        onOpenChange={setEditDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && updateMutation.isPending) return;
+          setEditDialogOpen(open);
+        }}
         account={selectedAccount}
         onSubmit={(data) => updateMutation.mutate({ id: selectedAccount.id, data })}
-        isLoading={updateMutation.isPending}
+        isLoading={updateMutation.isPending && editDialogOpen}
         readOnly={!canManage}
       />
 

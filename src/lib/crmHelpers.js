@@ -8,6 +8,12 @@ export const LEAD_STATUSES = [
   { value: 'lost', label: 'Lost' },
 ];
 
+export const ACCOUNT_STATUSES = [
+  { value: 'active', label: 'Active' },
+  { value: 'inactive', label: 'Inactive' },
+  { value: 'prospect', label: 'Prospect' },
+];
+
 export function activityMatchesAccount(activity, account) {
   if (!activity || !account) return false;
   if (activity.related_to_id && activity.related_to_id === account.id) return true;
