@@ -46,7 +46,12 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
-    if (open) resetValidation();
+    if (open) {
+      resetValidation();
+      return;
+    }
+    setFormData(EMPTY_FORM);
+    resetValidation();
   }, [open, resetValidation]);
 
   const handleSubmit = (e) => {
@@ -55,11 +60,15 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
 
     onSubmit({
       ...formData,
-      annual_revenue: formData.annual_revenue ? parseFloat(formData.annual_revenue) : undefined,
-      employees: formData.employees ? parseInt(formData.employees) : undefined,
+      annual_revenue:
+        formData.annual_revenue !== ''
+          ? parseFloat(formData.annual_revenue)
+          : undefined,
+      employees:
+        formData.employees !== ''
+          ? parseInt(formData.employees, 10)
+          : undefined,
     });
-    setFormData(EMPTY_FORM);
-    resetValidation();
   };
 
   return (
@@ -68,7 +77,7 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Create New Account</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className={formDialogGrid}>
               <div className={formDialogField}>
@@ -124,7 +133,9 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                 <Label htmlFor="website">Website</Label>
                 <Input
                   id="website"
-                  type="url"
+                  type="text"
+                  inputMode="url"
+                  placeholder="https://example.com"
                   value={formData.website}
                   onChange={(e) => validation.updateField('website', e.target.value, formData, setFormData)}
                   onBlur={() => validation.touchField('website', formData)}

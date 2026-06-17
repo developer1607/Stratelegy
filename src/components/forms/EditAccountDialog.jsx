@@ -98,7 +98,7 @@ export default function EditAccountDialog({
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>{readOnly ? 'Account Details' : 'Edit Account'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className={formDialogForm}>
+        <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
             <div className={formDialogGrid}>
               <div className={formDialogField}>
@@ -127,7 +127,8 @@ export default function EditAccountDialog({
               <Label htmlFor="edit-account-website">Website</Label>
               <Input
                 id="edit-account-website"
-                type="url"
+                type="text"
+                inputMode="url"
                 placeholder="https://example.com"
                 value={formData.website}
                 disabled={readOnly}
