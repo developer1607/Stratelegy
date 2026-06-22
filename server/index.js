@@ -179,6 +179,11 @@ async function setupFrontend() {
     app.get("*", (req, res, next) => {
       if (req.path.startsWith("/api") || req.path.startsWith("/uploads"))
         return next();
+      // Missing hashed bundles must 404 — never return index.html (breaks cached clients).
+      if (req.path.startsWith("/assets/")) {
+        return res.status(404).json({ message: "Not found" });
+      }
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
       res.sendFile(indexPath);
     });
     return;
