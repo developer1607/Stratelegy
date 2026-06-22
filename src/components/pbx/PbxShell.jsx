@@ -111,6 +111,11 @@ export function PbxError({ error }) {
       {error.data?.code === 'skyswitch_log_scope_required' && (
         <p className="text-sm mt-2">Call logs unavailable.</p>
       )}
+      {error.data?.code === 'pbx_domain_scope_required' && (
+        <p className="text-sm mt-2">
+          Use the domain-specific live views under PBX, or ask an admin for account-wide report access.
+        </p>
+      )}
       {error.data?.code === 'skyswitch_report_scope_required' && (
         <p className="text-sm mt-2">Reports unavailable.</p>
       )}

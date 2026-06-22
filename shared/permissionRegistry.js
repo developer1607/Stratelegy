@@ -599,6 +599,9 @@ export function buildPageLists() {
     if (def.module === 'support') support.push(def.page);
     if (def.module === 'pbx') pbx.push(def.page);
   }
+  for (const def of PBX_OPERATIONAL_REPORT_PAGES) {
+    if (!pbx.includes(def.page)) pbx.push(def.page);
+  }
   return {
     CRM_PAGES: [...crm, 'Settings', 'Profile'],
     SUPPORT_PAGES: [...support, 'SupportTicketDetail'],

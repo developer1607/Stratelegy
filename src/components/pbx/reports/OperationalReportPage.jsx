@@ -1,29 +1,15 @@
-import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { ExternalLink, Play } from 'lucide-react';
 import { pbxApi } from '@/api/pbx';
-import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
+import PbxShell, { PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxCompletedExports from '@/components/pbx/reports/PbxCompletedExports';
-import QueueReportDialog from '@/components/pbx/reports/QueueReportDialog';
-import PermissionGate from '@/components/PermissionGate';
-import { Button } from '@/components/ui/button';
-import { flattenReportTypes, describeReportFields } from '@/lib/reportTypes';
+import PbxReportExportActions from '@/components/pbx/reports/PbxReportExportActions';
+import PbxReportLiveData from '@/components/pbx/reports/PbxReportLiveData';
+import { flattenReportTypes } from '@/lib/reportTypes';
 import { resolveReportTypesForPage, exportMatchForPage } from '@shared/pbxReportPages.js';
-import { createPageUrl } from '@/utils';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function OperationalReportPage({ config }) {
-  return (
-    <PbxShell title={config.title} description={config.description} requiresDomain={false}>
-      <ReportContent config={config} />
-    </PbxShell>
-  );
-}
-
-function ReportContent({ config }) {
-  const [queueType, setQueueType] = useState(null);
-  const [queueOpen, setQueueOpen] = useState(false);
   const { isPbxDomainRestricted, isLoading: permissionsLoading } = usePermissions();
   const canUseAccountReports = !isPbxDomainRestricted;
 
@@ -33,109 +19,74 @@ function ReportContent({ config }) {
     enabled: canUseAccountReports && !permissionsLoading,
   });
 
-  const catalogRows = useMemo(
-    () => flattenReportTypes(reportsQuery.data),
-    [reportsQuery.data]
-  );
+  const reportTypes = useMemo(() => {
+    const catalogRows = flattenReportTypes(reportsQuery.data);
+    return resolveReportTypesForPage(config, catalogRows);
+  }, [config, reportsQuery.data]);
 
-  const reportTypes = useMemo(
-    () => resolveReportTypesForPage(config, catalogRows),
-    [config, catalogRows]
-  );
+  const requiresDomain = config.requiresDomain !== false;
 
-  const typeRows = useMemo(
-    () =>
-      reportTypes.map((row) => ({
-        ...row,
-        parameters: describeReportFields(row.fields),
-      })),
-    [reportTypes]
-  );
-
-  if (permissionsLoading) return <PbxLoading />;
-
-  if (!canUseAccountReports) {
+  if (permissionsLoading) {
     return (
-      <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-        Account-wide report exports are not available for domain-scoped users.
-        {config.livePage ? (
-          <>
-            {' '}
-            Use{' '}
-            <Link to={createPageUrl(config.livePage)} className="underline font-medium">
-              {config.livePageLabel || config.title}
-            </Link>{' '}
-            for domain-specific data.
-          </>
-        ) : null}
-      </p>
+      <PbxShell title={config.title} description={config.description} requiresDomain={requiresDomain}>
+        <PbxLoading />
+      </PbxShell>
     );
   }
 
-  if (reportsQuery.isLoading) return <PbxLoading />;
-  if (reportsQuery.error) return <PbxError error={reportsQuery.error} />;
+  if (!canUseAccountReports) {
+    return (
+      <PbxShell title={config.title} description={config.description} requiresDomain={requiresDomain}>
+        <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
+          Account-wide report exports are not available for domain-scoped users. Live data below uses
+          your assigned domain when selected above.
+        </p>
+        <div className="mt-6">
+          <PbxReportLiveData config={config} />
+        </div>
+      </PbxShell>
+    );
+  }
+
+  if (reportsQuery.isLoading) {
+    return (
+      <PbxShell
+        title={config.title}
+        description={config.description}
+        requiresDomain={requiresDomain}
+        actions={<PbxReportExportActions reportTypes={[]} />}
+      >
+        <PbxLoading />
+      </PbxShell>
+    );
+  }
+
+  if (reportsQuery.error) {
+    return (
+      <PbxShell title={config.title} description={config.description} requiresDomain={requiresDomain}>
+        <PbxError error={reportsQuery.error} />
+      </PbxShell>
+    );
+  }
 
   return (
-    <div className="space-y-8">
-      {config.livePage ? (
-        <div className="flex flex-wrap items-center gap-3">
-          <Button variant="outline" size="sm" asChild>
-            <Link to={createPageUrl(config.livePage)}>
-              <ExternalLink className="h-4 w-4 mr-1.5" />
-              {config.livePageLabel || 'Open live view'}
-            </Link>
-          </Button>
-        </div>
-      ) : null}
+    <PbxShell
+      title={config.title}
+      description="Live data for your account. Use Generate export for a downloadable file."
+      requiresDomain={requiresDomain}
+      actions={<PbxReportExportActions reportTypes={reportTypes} />}
+    >
+      <div className="space-y-10">
+        <PbxReportLiveData config={config} />
 
-      {typeRows.length > 0 ? (
-        <section>
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Queue export</h2>
-          <PbxDataTable
-            columns={[
-              { key: 'label', label: 'Report' },
-              { key: 'value', label: 'Type key' },
-              { key: 'category', label: 'Category' },
-              { key: 'parameters', label: 'Parameters' },
-              {
-                key: 'actions',
-                label: 'Actions',
-                render: (row) => (
-                  <PermissionGate pbxAction="manageReports" fallback="—">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => {
-                        setQueueType(row);
-                        setQueueOpen(true);
-                      }}
-                    >
-                      <Play className="h-3.5 w-3.5 mr-1" />
-                      Queue
-                    </Button>
-                  </PermissionGate>
-                ),
-              },
-            ]}
-            rows={typeRows}
-            emptyMessage="No export types available for this account."
+        {exportMatchForPage(config) ? (
+          <PbxCompletedExports
+            title="Export history"
+            description="Previously generated files. Downloads are available when status is completed."
+            reportTypeMatch={exportMatchForPage(config)}
           />
-        </section>
-      ) : (
-        <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-          No async export types are available for this report on your account.
-          {config.livePage ? ' Use the live view link above for operational data.' : null}
-        </p>
-      )}
-
-      {exportMatchForPage(config) ? (
-        <PbxCompletedExports
-          title="Completed exports"
-          reportTypeMatch={exportMatchForPage(config)}
-        />
-      ) : null}
-
-      <QueueReportDialog open={queueOpen} onOpenChange={setQueueOpen} reportType={queueType} />
-    </div>
+        ) : null}
+      </div>
+    </PbxShell>
   );
 }

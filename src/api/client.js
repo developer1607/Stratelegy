@@ -63,7 +63,11 @@ async function request(method, path, body, options = {}) {
         window.location.href = `/login?from_url=${encodeURIComponent(from)}`;
       }
     }
-    throw new ApiError(data?.message || res.statusText, res.status, data);
+    throw new ApiError(
+      data?.message || data?.error || res.statusText,
+      res.status,
+      data,
+    );
   }
   return data;
 }

@@ -126,3 +126,14 @@ Before merging:
 - CI workflow (lint + build on PR)
 - Structured logging (pino/winston) with request IDs
 - Webhook auth via header instead of query string
+
+
+<!-- Deployment command -->
+ssh root@50.6.110.60
+cd /home/stratelegy/stratelegy
+git status
+git pull origin main
+npm ci
+npm run build
+pm2 restart stratelegy --update-env
+curl https://insight.stratelegy.com/api/health

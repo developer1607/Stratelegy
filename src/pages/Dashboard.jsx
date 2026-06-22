@@ -62,8 +62,38 @@ function percentChange(current, previous) {
 }
 
 function formatDelta(value) {
+  if (value >= 999.95) return '+999%+';
+  if (value <= -999.95) return '-999%+';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(1)}%`;
+}
+
+function KpiDelta({ value }) {
+  if (value === 0) return null;
+  return (
+    <span
+      className={`text-xs shrink-0 whitespace-nowrap ${value >= 0 ? 'text-green-600' : 'text-red-600'}`}
+    >
+      {formatDelta(value)}
+    </span>
+  );
+}
+
+function DashboardKpiCard({ title, badge, value, chart }) {
+  return (
+    <Card className="h-full">
+      <CardContent className="flex h-full flex-col p-4">
+        <div className="mb-2 flex min-h-5 items-start justify-between gap-2">
+          <span className="text-xs text-gray-600 leading-tight">{title}</span>
+          {badge ?? <span className="text-xs invisible shrink-0" aria-hidden>+0.0%</span>}
+        </div>
+        <div className="min-h-[2.75rem] truncate text-xl font-bold leading-tight sm:text-2xl xl:text-3xl">
+          {value}
+        </div>
+        <div className="mt-auto w-full pt-2">{chart}</div>
+      </CardContent>
+    </Card>
+  );
 }
 
 function countInMonth(rows, dateField, monthKey) {
@@ -84,9 +114,9 @@ function sumWonRevenueInMonth(opportunities, monthKey) {
 }
 
 function MiniSparkline({ data, type = 'line', color = '#10b981' }) {
-  if (!data.length) return <div className="mt-2 h-8" />;
+  if (!data.length) return <div className="h-8" />;
   return (
-    <div className="mt-2 h-8">
+    <div className="h-8">
       <ResponsiveContainer width="100%" height="100%">
         {type === 'area' ? (
           <AreaChart data={data}>
@@ -105,7 +135,7 @@ function MiniSparkline({ data, type = 'line', color = '#10b981' }) {
 function MiniBars({ data, barClass = 'bg-cyan-400' }) {
   const max = Math.max(...data.map((item) => item.value), 1);
   return (
-    <div className="mt-2 h-8 flex items-end gap-1">
+    <div className="h-8 flex items-end gap-1">
       {data.map((item, index) => (
         <div
           key={index}
@@ -581,100 +611,56 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Total Leads</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">{kpis.totalLeads}</span>
-              {kpis.leadsDelta !== 0 && (
-                <div
-                  className={`text-xs mb-1 ${kpis.leadsDelta >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                >
-                  {formatDelta(kpis.leadsDelta)}
-                </div>
-              )}
-            </div>
-            <MiniSparkline data={dashboardTrends.leadTrend} />
-          </CardContent>
-        </Card>
+      <div className="mb-6 grid grid-cols-1 items-stretch gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <DashboardKpiCard
+          title="Total Leads"
+          badge={kpis.leadsDelta !== 0 ? <KpiDelta value={kpis.leadsDelta} /> : undefined}
+          value={kpis.totalLeads}
+          chart={<MiniSparkline data={dashboardTrends.leadTrend} />}
+        />
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Deals Closed</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">
-                {formatCurrency(kpis.dealsClosedValue, currency, true)}
-              </span>
-            </div>
-            <MiniBars data={dashboardTrends.dealsClosedTrend} barClass="bg-cyan-400" />
-          </CardContent>
-        </Card>
+        <DashboardKpiCard
+          title="Deals Closed"
+          value={formatCurrency(kpis.dealsClosedValue, currency, true)}
+          chart={<MiniBars data={dashboardTrends.dealsClosedTrend} barClass="bg-cyan-400" />}
+        />
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Revenue This Month</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">
-                {formatCurrency(kpis.revenueThisMonth, currency, true)}
-              </span>
-              {kpis.revenueDelta !== 0 && (
-                <div
-                  className={`text-xs mb-1 ${kpis.revenueDelta >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                >
-                  {formatDelta(kpis.revenueDelta)}
-                </div>
-              )}
-            </div>
-            <MiniBars data={dashboardTrends.revenueTrend} barClass="bg-green-400" />
-          </CardContent>
-        </Card>
+        <DashboardKpiCard
+          title="Revenue This Month"
+          badge={kpis.revenueDelta !== 0 ? <KpiDelta value={kpis.revenueDelta} /> : undefined}
+          value={formatCurrency(kpis.revenueThisMonth, currency, true)}
+          chart={<MiniBars data={dashboardTrends.revenueTrend} barClass="bg-green-400" />}
+        />
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Sales Target</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">
-                {formatCurrency(kpis.salesTarget, currency, true)}
-              </span>
-              <div className="text-xs text-gray-600 mb-1">{kpis.targetProgress}%</div>
-            </div>
-            <MiniBars data={dashboardTrends.targetTrend} barClass="bg-amber-400" />
-          </CardContent>
-        </Card>
+        <DashboardKpiCard
+          title="Sales Target"
+          badge={
+            <span className="text-xs shrink-0 whitespace-nowrap text-gray-600">
+              {kpis.targetProgress}%
+            </span>
+          }
+          value={formatCurrency(kpis.salesTarget, currency, true)}
+          chart={<MiniBars data={dashboardTrends.targetTrend} barClass="bg-amber-400" />}
+        />
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Conversion Rate</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">{kpis.conversionRate}%</span>
-            </div>
+        <DashboardKpiCard
+          title="Conversion Rate"
+          value={`${kpis.conversionRate}%`}
+          chart={
             <MiniSparkline data={dashboardTrends.conversionTrend} type="area" color="#8b5cf6" />
-          </CardContent>
-        </Card>
+          }
+        />
 
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex justify-between items-start mb-2">
-              <span className="text-xs sm:text-sm text-gray-600">Avg. Sales Cycle</span>
-            </div>
-            <div className="flex items-end gap-2">
-              <span className="text-2xl sm:text-3xl font-bold">{kpis.avgSalesCycle}</span>
-              <span className="text-xs text-gray-600 mb-1">days</span>
-            </div>
-            <MiniSparkline data={dashboardTrends.salesCycleTrend} color="#10b981" />
-          </CardContent>
-        </Card>
+        <DashboardKpiCard
+          title="Avg. Sales Cycle"
+          value={
+            <>
+              {kpis.avgSalesCycle}{' '}
+              <span className="text-xs font-normal text-gray-600">days</span>
+            </>
+          }
+          chart={<MiniSparkline data={dashboardTrends.salesCycleTrend} color="#10b981" />}
+        />
       </div>
 
       {/* Filters */}

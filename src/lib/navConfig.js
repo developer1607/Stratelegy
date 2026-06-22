@@ -124,7 +124,9 @@ export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "CallLogs",
   "SIPTrunks",
   "PBXMakeCall",
-  ...PBX_OPERATIONAL_REPORT_PAGES.map((def) => def.page),
+  ...PBX_OPERATIONAL_REPORT_PAGES.filter((def) => def.requiresDomain === false).map(
+    (def) => def.page
+  ),
 ]);
 
 export const ADMIN_BOTTOM_NAV = [

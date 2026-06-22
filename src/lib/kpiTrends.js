@@ -35,6 +35,8 @@ export function percentChange(current, previous) {
 
 export function formatTrendDelta(value) {
   if (value === 0) return null;
+  if (value >= 999.95) return '+999%+';
+  if (value <= -999.95) return '-999%+';
   const sign = value > 0 ? '+' : '';
   return `${sign}${value.toFixed(1)}%`;
 }
