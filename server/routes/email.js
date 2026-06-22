@@ -14,15 +14,28 @@ const router = Router();
 
 router.use(requireAdmin);
 
-router.get('/status', (_req, res) => {
-  res.json(getEmailSystemStatus());
+router.get('/status', async (req, res, next) => {
+  try {
+    const force = req.query.force === 'true' || req.query.force === '1';
+    res.json(await getEmailSystemStatus({ verify: true, force }));
+  } catch (e) {
+    next(e);
+  }
+});
+
+router.post('/verify', async (_req, res, next) => {
+  try {
+    res.json(await getEmailSystemStatus({ verify: true, force: true }));
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.get('/templates', async (_req, res, next) => {
   try {
     res.json({
       templates: await listEmailTemplatesAdminWithStatus(),
-      status: getEmailSystemStatus(),
+      status: await getEmailSystemStatus({ verify: true }),
     });
   } catch (e) {
     next(e);

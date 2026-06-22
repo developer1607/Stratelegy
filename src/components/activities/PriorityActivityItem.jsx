@@ -9,9 +9,10 @@ export default function PriorityActivityItem({
   onMarkComplete,
   onReschedule: _onReschedule = undefined,
 }) {
+  const isCompleted = Boolean(activity.completed);
   const activityTime = new Date(activity.date).getTime();
   const now = Date.now();
-  const isOverdue = activityTime < now;
+  const isOverdue = !isCompleted && activityTime < now;
   const hoursDiff = Math.abs(Math.floor((activityTime - now) / (1000 * 60 * 60)));
 
   const getOverdueText = () => {
@@ -32,10 +33,14 @@ export default function PriorityActivityItem({
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <p className="font-medium text-sm">{activity.related_to_name || 'Activity'}</p>
-            {isOverdue && (
-              <Badge variant="destructive" className="text-xs">
-                {getOverdueText()}
-              </Badge>
+            {isCompleted ? (
+              <Badge className="text-xs bg-green-100 text-green-800">Completed</Badge>
+            ) : (
+              isOverdue && (
+                <Badge variant="destructive" className="text-xs">
+                  {getOverdueText()}
+                </Badge>
+              )
             )}
           </div>
           <p className="text-xs text-gray-600">{activity.description}</p>
@@ -48,15 +53,17 @@ export default function PriorityActivityItem({
             minute: '2-digit',
           })}
         </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-xs"
-          onClick={() => onMarkComplete(activity.id)}
-        >
-          <CheckCircle2 className="w-4 h-4 mr-1" />
-          Check as completed
-        </Button>
+        {!isCompleted && onMarkComplete && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs"
+            onClick={() => onMarkComplete(activity.id)}
+          >
+            <CheckCircle2 className="w-4 h-4 mr-1" />
+            Mark as completed
+          </Button>
+        )}
       </div>
     </div>
   );

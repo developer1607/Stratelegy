@@ -180,6 +180,12 @@ router.post("/:entityName", async (req, res, next) => {
     if (CRM_CREATED_BY_ENTITIES.has(entityName)) {
       body = { ...body, created_by: body.created_by || req.user?.id };
     }
+    if (entityName === "Account") {
+      const owner = String(body.owner ?? "").trim();
+      if (!owner && req.user) {
+        body = { ...body, owner: req.user.full_name || req.user.email };
+      }
+    }
     if (entityName === "Ticket") {
       body = { ...body, created_by: body.created_by || req.user?.id };
     }

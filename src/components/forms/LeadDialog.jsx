@@ -9,17 +9,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { LEAD_STATUSES } from '@/lib/crmHelpers';
+import { todayDateMin } from '@/lib/crmHelpers';
 import { validateLeadForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import AccountSelectField from '@/components/forms/AccountSelectField';
+import ConfigNameSelect from '@/components/forms/ConfigNameSelect';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { contactSourceOptions, leadStageOptions } from '@/lib/crmConfig';
 import {
   formDialogContent,
   formDialogHeader,
@@ -35,25 +32,40 @@ const EMPTY_FORM = {
   email: '',
   phone: '',
   company: '',
-  status: 'new',
-  source: 'email',
+  account_id: '',
+  status: '',
+  source: '',
   value: '',
   next_follow_up: '',
 };
 
 export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) {
+  const { defaults, leadStages, contactSources } = useCrmConfig({ enabled: open });
+  const stageOptions = leadStageOptions(leadStages);
+  const sourceOptions = contactSourceOptions(contactSources);
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const validation = useCrmFormValidation(validateLeadForm);
+  const validation = useCrmFormValidation((data) =>
+    validateLeadForm(data, {
+      allowedStatuses: stageOptions,
+      allowedSources: sourceOptions,
+    }),
+  );
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
     if (open) {
+      setFormData({
+        ...EMPTY_FORM,
+        status: defaults.leadStage,
+        source: defaults.contactSource,
+        next_follow_up: defaults.followUpDate,
+      });
       resetValidation();
       return;
     }
     setFormData(EMPTY_FORM);
     resetValidation();
-  }, [open, resetValidation]);
+  }, [open, resetValidation, defaults.leadStage, defaults.contactSource, defaults.followUpDate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -112,17 +124,25 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 />
                 <FieldError message={validation.fieldError('phone')} />
               </div>
-              <div className={formDialogField}>
-                <Label htmlFor="company">Company</Label>
-                <Input
-                  id="company"
-                  value={formData.company}
-                  onChange={(e) => validation.updateField('company', e.target.value, formData, setFormData)}
-                  onBlur={() => validation.touchField('company', formData)}
-                  className={validation.inputClassName('company')}
-                />
-                <FieldError message={validation.fieldError('company')} />
-              </div>
+              <AccountSelectField
+                company={formData.company}
+                accountId={formData.account_id}
+                onCompanyChange={(company) =>
+                  validation.updateField('company', company, formData, setFormData)
+                }
+                onAccountIdChange={(id) =>
+                  validation.updateField('account_id', id, formData, setFormData)
+                }
+                onCompanyBlur={() => validation.touchField('company', formData)}
+                companyError={validation.fieldError('company')}
+                companyInputClassName={validation.inputClassName('company')}
+                accountSelectId="lead-account"
+                companyInputId="lead-company"
+                customValueLabel="Company name"
+                linkedHint={(name) =>
+                  `When converted, the opportunity will link to account ${name}.`
+                }
+              />
               <div className={formDialogField}>
                 <Label htmlFor="value">Estimated Value</Label>
                 <Input
@@ -141,6 +161,7 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
                 <Input
                   id="next_follow_up"
                   type="date"
+                  min={todayDateMin()}
                   value={formData.next_follow_up}
                   onChange={(e) => validation.updateField('next_follow_up', e.target.value, formData, setFormData)}
                   onBlur={() => validation.touchField('next_follow_up', formData)}
@@ -152,39 +173,24 @@ export default function LeadDialog({ open, onOpenChange, onSubmit, isLoading }) 
               <div className={formDialogGrid}>
                 <div className={formDialogField}>
                   <Label htmlFor="status">Status</Label>
-                  <Select
+                  <ConfigNameSelect
+                    id="status"
                     value={formData.status}
                     onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
-                  >
-                    <SelectTrigger id="status" className={validation.inputClassName('status')}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                      {LEAD_STATUSES.map((status) => (
-                        <SelectItem key={status.value} value={status.value}>
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={stageOptions}
+                    className={validation.inputClassName('status')}
+                  />
                   <FieldError message={validation.fieldError('status')} />
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="source">Source</Label>
-                  <Select
+                  <ConfigNameSelect
+                    id="source"
                     value={formData.source}
                     onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
-                  >
-                    <SelectTrigger id="source" className={validation.inputClassName('source')}>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                      <SelectItem value="call">Call</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="website">Website</SelectItem>
-                      <SelectItem value="partner">Partner</SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={sourceOptions}
+                    className={validation.inputClassName('source')}
+                  />
                   <FieldError message={validation.fieldError('source')} />
                 </div>
               </div>

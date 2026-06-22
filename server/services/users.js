@@ -8,7 +8,7 @@ import { getSeededRoleId } from '../db/seedRoles.js';
 import { sendPortalInviteEmail, sendPortalWelcomeEmail } from './email/notifications.js';
 import { assertPasswordValid } from '../utils/passwordValidation.js';
 import { getNewUserMfaDefaults } from './defaultSettings.js';
-import { isEmailConfigured } from './email/mailer.js';
+import { isEmailOperational } from './email/mailer.js';
 
 export function rowToUser(row) {
   return {
@@ -41,6 +41,18 @@ export async function getUserByEmail(email) {
 export async function listUsers() {
   const rows = await query('SELECT * FROM users ORDER BY created_date DESC');
   return rows.map(rowToUser);
+}
+
+/** Id + display fields for CRM owner pickers (no admin required). */
+export async function listUsersDirectory() {
+  const rows = await query(
+    `SELECT id, full_name, email FROM users WHERE is_active = 1 ORDER BY full_name ASC, email ASC`,
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    full_name: row.full_name,
+    email: row.email,
+  }));
 }
 
 export async function authenticateUser(email, password) {
@@ -422,7 +434,7 @@ export async function setUserMfaEmailSettings(
   }
 
   const enabling = enabled === true || (forced === true && enabled !== false);
-  if (enabling && !isEmailConfigured()) {
+  if (enabling && !(await isEmailOperational())) {
     const err = new Error(
       'Email is not configured on this server. Configure SMTP before enabling email MFA.'
     );

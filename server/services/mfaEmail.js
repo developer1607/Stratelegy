@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { queryOne, execute } from '../db/query.js';
 import { sendTemplateEmail } from './email/mailer.js';
-import { isEmailConfigured } from './email/mailer.js';
+import { isEmailOperational } from './email/mailer.js';
 
 export const MFA_CODE_TTL_MS = 10 * 60 * 1000;
 export const MFA_MAX_VERIFY_ATTEMPTS = 5;
@@ -59,7 +59,7 @@ export async function createMfaEmailChallenge(userId, purpose = 'login', { resen
     throw err;
   }
 
-  if (!isEmailConfigured()) {
+  if (!(await isEmailOperational())) {
     const err = new Error(
       'Email is not configured on this server. Contact an administrator to enable email MFA.'
     );

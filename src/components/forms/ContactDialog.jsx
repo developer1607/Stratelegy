@@ -21,13 +21,10 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import AccountSelectField from '@/components/forms/AccountSelectField';
+import ConfigNameSelect from '@/components/forms/ConfigNameSelect';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { contactSourceOptions } from '@/lib/crmConfig';
 import { api } from '@/api/client';
 import { Camera, X, User } from 'lucide-react';
 
@@ -36,6 +33,7 @@ const EMPTY_FORM = {
   email: '',
   phone: '',
   company: '',
+  account_id: '',
   position: '',
   role: '',
   priority: 'Standard',
@@ -48,10 +46,19 @@ const EMPTY_FORM = {
 };
 
 export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading, initialData }) {
+  const { defaults, contactSources } = useCrmConfig({ enabled: open });
   const fileInputRef = useRef(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const validate = useCallback((data) => validateContactForm(data, { requireEmail: true }), []);
+  const sourceOptions = contactSourceOptions(contactSources, formData.source);
+  const validate = useCallback(
+    (data) =>
+      validateContactForm(data, {
+        requireEmail: true,
+        allowedSources: contactSourceOptions(contactSources, data.source),
+      }),
+    [contactSources],
+  );
   const validation = useCrmFormValidation(validate);
   const { resetValidation, validateSubmit } = validation;
 
@@ -64,16 +71,19 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
           email: initialData.email || '',
           phone: initialData.phone || '',
           company: initialData.company || '',
+          account_id: initialData.account_id || '',
           position: initialData.position || '',
           role: '',
           priority: 'Standard',
           status: 'active',
-          source: 'email',
+          source: initialData.source || defaults.contactSource,
           engagement_level: 'Medium',
           company_size: '',
           last_activity_date: '',
           photo_url: initialData.photo_url || '',
         });
+      } else {
+        setFormData({ ...EMPTY_FORM, source: defaults.contactSource });
       }
       return;
     }
@@ -82,7 +92,7 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [open, initialData, resetValidation]);
+  }, [open, initialData, resetValidation, defaults.contactSource]);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -231,18 +241,19 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                   Professional Details
                 </h3>
-                <div className="space-y-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input
-                    id="company"
-                    placeholder="Acme Inc."
-                    value={formData.company}
-                    onChange={(e) => validation.updateField('company', e.target.value, formData, setFormData)}
-                    onBlur={() => validation.touchField('company', formData)}
-                    className={validation.inputClassName('company')}
-                  />
-                  <FieldError message={validation.fieldError('company')} />
-                </div>
+                <AccountSelectField
+                  company={formData.company}
+                  accountId={formData.account_id}
+                  onCompanyChange={(value) =>
+                    validation.updateField('company', value, formData, setFormData)
+                  }
+                  onAccountIdChange={(id) =>
+                    validation.updateField('account_id', id, formData, setFormData)
+                  }
+                  onCompanyBlur={() => validation.touchField('company', formData)}
+                  companyError={validation.fieldError('company')}
+                  companyInputClassName={validation.inputClassName('company')}
+                />
                 <div className="space-y-2">
                   <Label htmlFor="position">Position</Label>
                   <Input
@@ -259,21 +270,13 @@ export default function ContactDialog({ open, onOpenChange, onSubmit, isLoading,
 
               <div className="space-y-2">
                 <Label htmlFor="source">How did you meet?</Label>
-                <Select
+                <ConfigNameSelect
+                  id="source"
                   value={formData.source}
                   onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
-                >
-                  <SelectTrigger id="source" className={validation.inputClassName('source')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                    <SelectItem value="call">📞 Phone Call</SelectItem>
-                    <SelectItem value="email">✉️ Email</SelectItem>
-                    <SelectItem value="website">🌐 Website</SelectItem>
-                    <SelectItem value="partner">🤝 Partner Referral</SelectItem>
-                    <SelectItem value="referral">👥 Personal Referral</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={sourceOptions}
+                  className={validation.inputClassName('source')}
+                />
                 <FieldError message={validation.fieldError('source')} />
               </div>
             </div>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import LeadDialog from '../components/forms/LeadDialog';
 import EditLeadDialog from '../components/forms/EditLeadDialog';
+import OpportunityDialog from '../components/forms/OpportunityDialog';
 import KPICard from '../components/leads/KPICard';
 import PermissionGate from '@/components/PermissionGate';
 import LeadFilters from '../components/leads/LeadFilters';
@@ -43,17 +44,22 @@ import { Badge } from '@/components/ui/badge';
 import { TrendingUp, CheckCircle, XCircle, Percent, Calendar } from 'lucide-react';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { useEntityFullList } from '@/hooks/useEntityFullList';
 import { useLeadCreateMutation } from '@/hooks/useLeadCreateMutation';
 import { matchFieldEquals, matchSearch, namesFromConfigItems } from '@/lib/listFilters';
+import { todayDateMin, toDateInputValue, isPastDate } from '@/lib/crmHelpers';
 import { showError, showSuccess } from '@/lib/toast';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Leads() {
   const { canWriteEntity } = usePermissions();
   const canManage = canWriteEntity('Lead');
+  const canCreateOpportunity = canWriteEntity('Opportunity');
   const [searchTerm, setSearchTerm] = useState('');
   const [leadDialogOpen, setLeadDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [opportunityDialogOpen, setOpportunityDialogOpen] = useState(false);
+  const [convertLead, setConvertLead] = useState(null);
   const [selectedLead, setSelectedLead] = useState(null);
   const [sortColumn, setSortColumn] = useState('created_date');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -78,6 +84,11 @@ export default function Leads() {
   } = usePaginatedEntityList('Lead', {
     sort: '-created_date',
     queryKeyPrefix: 'leads',
+  });
+
+  const { data: allLeads = [] } = useEntityFullList('Lead', {
+    queryKeyPrefix: 'leads',
+    sort: '-created_date',
   });
 
   const { data: leadStages = [] } = useQuery({
@@ -125,13 +136,67 @@ export default function Leads() {
     onError: (error) => showError(error, 'Failed to delete lead.'),
   });
 
+  const convertToOpportunityMutation = useMutation({
+    mutationFn: async ({ opportunityData, leadId }) => {
+      const opportunity = await api.entities.Opportunity.create(opportunityData);
+      if (leadId && canManage) {
+        const lead = leads.find((item) => item.id === leadId);
+        if (lead && !['won', 'lost'].includes(lead.status)) {
+          await api.entities.Lead.update(leadId, { status: 'qualified' });
+        }
+      }
+      return opportunity;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      setOpportunityDialogOpen(false);
+      setConvertLead(null);
+      showSuccess('Lead converted to opportunity.');
+    },
+    onError: (error) => showError(error, 'Failed to convert lead to opportunity.'),
+  });
+
   const handleEdit = (lead) => {
     setSelectedLead(lead);
     setEditDialogOpen(true);
   };
 
+  const handleConvertToOpportunity = (lead) => {
+    if (!canCreateOpportunity) {
+      showError(new Error('You do not have permission to create opportunities.'));
+      return;
+    }
+    setConvertLead(lead);
+    setOpportunityDialogOpen(true);
+  };
+
+  const opportunityInitialData = useMemo(() => {
+    if (!convertLead) return null;
+    return {
+      name: convertLead.company
+        ? `${convertLead.company} — ${convertLead.name}`
+        : convertLead.name,
+      account_name: convertLead.company || convertLead.name,
+      account_id: convertLead.account_id || '',
+      amount: convertLead.value || '',
+      source: convertLead.source || '',
+      stage: convertLead.status === 'qualified' ? 'qualification' : 'prospecting',
+      close_date: toDateInputValue(convertLead.next_follow_up),
+    };
+  }, [convertLead]);
+
   const handleQuickUpdate = (leadId, field, value) => {
     updateMutation.mutate({ id: leadId, data: { [field]: value } });
+  };
+
+  const handleFollowUpChange = (lead, value) => {
+    const original = toDateInputValue(lead.next_follow_up);
+    if (value && value !== original && isPastDate(value)) {
+      showError('Next follow-up cannot be in the past.');
+      return;
+    }
+    handleQuickUpdate(lead.id, 'next_follow_up', value);
   };
 
   const handleSort = (column) => {
@@ -160,17 +225,26 @@ export default function Leads() {
     setSavedViews((prev) => [...prev, { name, filters: { ...filters } }]);
   };
 
-  const filteredAndSortedLeads = useMemo(() => {
-    let result = leads.filter((lead) => {
+  const leadPassesFilters = useCallback(
+    (lead) => {
       const matchSearchTerm = matchSearch(lead, searchTerm, ['name', 'email', 'company', 'phone']);
       const matchStatus = matchFieldEquals(lead.status, filters.status);
       const matchSource = matchFieldEquals(lead.source, filters.source);
       const matchValue =
         !filters.minValue || (lead.value && lead.value >= parseFloat(filters.minValue));
       const matchFollowUp = !filters.followUpDate || lead.next_follow_up === filters.followUpDate;
-
       return matchSearchTerm && matchStatus && matchSource && matchValue && matchFollowUp;
-    });
+    },
+    [searchTerm, filters],
+  );
+
+  const leadsMatchingFilters = useMemo(
+    () => allLeads.filter(leadPassesFilters),
+    [allLeads, leadPassesFilters],
+  );
+
+  const filteredAndSortedLeads = useMemo(() => {
+    let result = leads.filter(leadPassesFilters);
 
     result.sort((a, b) => {
       let aVal = a[sortColumn];
@@ -187,15 +261,15 @@ export default function Leads() {
     });
 
     return result;
-  }, [leads, searchTerm, filters, sortColumn, sortDirection]);
+  }, [leads, leadPassesFilters, sortColumn, sortDirection]);
 
   const kpis = useMemo(() => {
     const totalLeads = leadsTotal;
-    const openLeads = filteredAndSortedLeads.filter((l) =>
+    const openLeads = leadsMatchingFilters.filter((l) =>
       ['new', 'contacted', 'qualified'].includes(l.status)
     ).length;
-    const wonDeals = filteredAndSortedLeads.filter((l) => l.status === 'won');
-    const lostDeals = filteredAndSortedLeads.filter((l) => l.status === 'lost');
+    const wonDeals = leadsMatchingFilters.filter((l) => l.status === 'won');
+    const lostDeals = leadsMatchingFilters.filter((l) => l.status === 'lost');
 
     const wonCount = wonDeals.length;
     const wonValue = wonDeals.reduce((sum, l) => sum + (l.value || 0), 0);
@@ -227,7 +301,7 @@ export default function Leads() {
       conversionRate,
       avgCycle,
     };
-  }, [filteredAndSortedLeads, leadsTotal]);
+  }, [leadsMatchingFilters, leadsTotal]);
 
   const exportToCSV = () => {
     const headers = [
@@ -240,7 +314,7 @@ export default function Leads() {
       'Source',
       'Next Follow-up',
     ];
-    const rows = filteredAndSortedLeads.map((lead) => [
+    const rows = leadsMatchingFilters.map((lead) => [
       lead.name,
       lead.email || '',
       lead.phone || '',
@@ -454,10 +528,9 @@ export default function Leads() {
                       <div className="flex items-center gap-2">
                         <Input
                           type="date"
+                          min={todayDateMin()}
                           value={lead.next_follow_up || ''}
-                          onChange={(e) =>
-                            handleQuickUpdate(lead.id, 'next_follow_up', e.target.value)
-                          }
+                          onChange={(e) => handleFollowUpChange(lead, e.target.value)}
                           className={`w-36 h-8 text-sm ${isOverdue(lead.next_follow_up) ? 'border-red-500' : ''}`}
                         />
                         {isOverdue(lead.next_follow_up) && (
@@ -476,16 +549,18 @@ export default function Leads() {
                           <DropdownMenuItem onClick={() => handleEdit(lead)}>
                             {canManage ? 'Edit' : 'View'}
                           </DropdownMenuItem>
+                          {canManage && canCreateOpportunity && (
+                              <DropdownMenuItem onClick={() => handleConvertToOpportunity(lead)}>
+                                Convert to Opportunity
+                              </DropdownMenuItem>
+                            )}
                           {canManage && (
-                            <>
-                              <DropdownMenuItem>Convert to Opportunity</DropdownMenuItem>
                               <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => deleteMutation.mutate(lead.id)}
                               >
                                 Delete
                               </DropdownMenuItem>
-                            </>
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -506,7 +581,7 @@ export default function Leads() {
       </div>
 
       {/* Analytics Section */}
-      <LeadsAnalytics leads={filteredAndSortedLeads} />
+      <LeadsAnalytics leads={leadsMatchingFilters} />
 
       <LeadDialog
         open={leadDialogOpen}
@@ -528,6 +603,25 @@ export default function Leads() {
         onSubmit={(data) => updateMutation.mutate({ id: selectedLead.id, data })}
         isLoading={updateMutation.isPending}
         readOnly={!canManage}
+      />
+
+      <OpportunityDialog
+        open={opportunityDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && convertToOpportunityMutation.isPending) return;
+          setOpportunityDialogOpen(open);
+          if (!open) setConvertLead(null);
+        }}
+        title="Convert Lead to Opportunity"
+        initialData={opportunityInitialData}
+        onSubmit={(data) =>
+          convertLead &&
+          convertToOpportunityMutation.mutate({
+            opportunityData: data,
+            leadId: convertLead.id,
+          })
+        }
+        isLoading={convertToOpportunityMutation.isPending}
       />
     </div>
   );

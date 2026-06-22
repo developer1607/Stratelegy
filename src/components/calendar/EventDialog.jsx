@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/api/client';
 import {
   Dialog,
   DialogContent,
@@ -17,10 +19,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { calendarEventToForm, calendarFormToPayload } from '@/lib/crmHelpers';
+import { calendarEventToForm, calendarFormToPayload, nowDatetimeLocalMin, datetimeMinForEnd } from '@/lib/crmHelpers';
 import { validateCalendarEventForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import { usePermissions } from '@/hooks/usePermissions';
 import {
   formDialogContent,
   formDialogHeader,
@@ -39,6 +42,7 @@ const EMPTY_FORM = {
   end_date: '',
   location: '',
   related_to_type: '',
+  related_to_id: '',
   related_to_name: '',
   status: 'scheduled',
 };
@@ -47,18 +51,37 @@ const selectContentProps = { position: 'popper', className: 'max-h-[min(16rem,50
 
 export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, event }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const validation = useCrmFormValidation(validateCalendarEventForm);
+  const [originalForm, setOriginalForm] = useState(null);
+  const validate = useCallback(
+    (data) => validateCalendarEventForm(data, { original: originalForm }),
+    [originalForm]
+  );
+  const validation = useCrmFormValidation(validate);
   const { resetValidation, validateSubmit, revalidate } = validation;
+  const { canReadEntity, isLoading: permsLoading } = usePermissions();
 
   useEffect(() => {
     if (!open) return;
-    if (event) {
-      setFormData(calendarEventToForm(event));
-    } else {
-      setFormData(EMPTY_FORM);
-    }
+    const loaded = event ? calendarEventToForm(event) : { ...EMPTY_FORM };
+    setFormData(loaded);
+    setOriginalForm(loaded);
     resetValidation();
   }, [event, open, resetValidation]);
+
+  const { data: relatedEntities = [] } = useQuery({
+    queryKey: ['crm-related-entities', formData.related_to_type],
+    queryFn: () => api.entities[formData.related_to_type].list('name'),
+    enabled:
+      open &&
+      !permsLoading &&
+      Boolean(formData.related_to_type) &&
+      canReadEntity(formData.related_to_type),
+    staleTime: 60_000,
+  });
+
+  const isScheduled = formData.status === 'scheduled';
+  const startMin = isScheduled ? nowDatetimeLocalMin() : undefined;
+  const endMin = isScheduled ? datetimeMinForEnd(formData.start_date) : undefined;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -66,14 +89,32 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
     onSubmit(calendarFormToPayload(formData));
   };
 
+  const handleRelatedEntityChange = (entityId) => {
+    const entity = relatedEntities.find((item) => item.id === entityId);
+    const newData = {
+      ...formData,
+      related_to_id: entity?.id || '',
+      related_to_name: entity?.name || '',
+    };
+    setFormData(newData);
+    revalidate(newData, 'related_to_name');
+  };
+
   const handleRelatedTypeChange = (value) => {
     const newData = {
       ...formData,
       related_to_type: value === 'none' ? '' : value,
+      related_to_id: '',
       related_to_name: '',
     };
     setFormData(newData);
     revalidate(newData, 'related_to_type');
+  };
+
+  const handleRelatedClear = () => {
+    const newData = { ...formData, related_to_id: '', related_to_name: '' };
+    setFormData(newData);
+    revalidate(newData, 'related_to_name');
   };
 
   return (
@@ -136,7 +177,11 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                 <Label htmlFor="event-status">Status</Label>
                 <Select
                   value={formData.status}
-                  onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
+                  onValueChange={(value) => {
+                    const newData = { ...formData, status: value };
+                    setFormData(newData);
+                    revalidate(newData, ['status', 'start_date', 'end_date']);
+                  }}
                 >
                   <SelectTrigger id="event-status" className={validation.inputClassName('status')}>
                     <SelectValue />
@@ -158,6 +203,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                   id="event-start"
                   type="datetime-local"
                   value={formData.start_date}
+                  min={startMin}
                   onChange={(e) =>
                     validation.updateField('start_date', e.target.value, formData, setFormData, ['end_date'])
                   }
@@ -174,6 +220,7 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
                   id="event-end"
                   type="datetime-local"
                   value={formData.end_date}
+                  min={endMin}
                   onChange={(e) =>
                     validation.updateField('end_date', e.target.value, formData, setFormData, ['start_date'])
                   }
@@ -221,19 +268,36 @@ export default function EventDialog({ open, onOpenChange, onSubmit, isLoading, e
 
               {formData.related_to_type && (
                 <div className={formDialogField}>
-                  <Label htmlFor="event-related-name">Name *</Label>
-                  <Input
-                    id="event-related-name"
-                    value={formData.related_to_name}
-                    onChange={(e) =>
-                      validation.updateField('related_to_name', e.target.value, formData, setFormData)
+                  <Label htmlFor="event-related-record">
+                    Related To (Record) *
+                  </Label>
+                  <Select
+                    value={formData.related_to_id || 'none'}
+                    onValueChange={(value) =>
+                      value === 'none' ? handleRelatedClear() : handleRelatedEntityChange(value)
                     }
-                    onBlur={() => validation.touchField('related_to_name', formData)}
-                    className={validation.inputClassName('related_to_name')}
-                    placeholder={`Enter ${formData.related_to_type} name`}
-                    aria-invalid={Boolean(validation.fieldError('related_to_name'))}
-                  />
+                  >
+                    <SelectTrigger
+                      id="event-related-record"
+                      className={validation.inputClassName('related_to_name')}
+                    >
+                      <SelectValue placeholder={`Select ${formData.related_to_type}`} />
+                    </SelectTrigger>
+                    <SelectContent {...selectContentProps}>
+                      <SelectItem value="none">None</SelectItem>
+                      {relatedEntities.map((entity) => (
+                        <SelectItem key={entity.id} value={entity.id}>
+                          {entity.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FieldError message={validation.fieldError('related_to_name')} />
+                  {formData.related_to_id && formData.related_to_name && (
+                    <p className="text-xs text-gray-500">
+                      Linked to {formData.related_to_type}: {formData.related_to_name}
+                    </p>
+                  )}
                 </div>
               )}
             </div>

@@ -19,6 +19,7 @@ import {
 import { validateOpportunityForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import AccountSelectField from '@/components/forms/AccountSelectField';
 import {
   formDialogContent,
   formDialogHeader,
@@ -49,6 +50,7 @@ export default function EditOpportunityDialog({
   const [formData, setFormData] = useState({
     name: '',
     account_name: '',
+    account_id: '',
     amount: '',
     stage: 'prospecting',
     probability: '',
@@ -68,6 +70,7 @@ export default function EditOpportunityDialog({
       setFormData({
         name: opportunity.name || '',
         account_name: opportunity.account_name || '',
+        account_id: opportunity.account_id || '',
         amount: opportunity.amount ?? '',
         stage: opportunity.stage || 'prospecting',
         probability: opportunity.probability ?? '',
@@ -115,11 +118,29 @@ export default function EditOpportunityDialog({
                 <Input id="edit-opp-name" disabled={readOnly} value={formData.name} {...bind('name')} />
                 {!readOnly && <FieldError message={validation.fieldError('name')} />}
               </div>
-              <div className={formDialogField}>
-                <Label htmlFor="edit-opp-account">Account</Label>
-                <Input id="edit-opp-account" disabled={readOnly} value={formData.account_name} {...bind('account_name')} />
-                {!readOnly && <FieldError message={validation.fieldError('account_name')} />}
-              </div>
+              <AccountSelectField
+                value={formData.account_name}
+                accountId={formData.account_id}
+                onValueChange={(accountName) =>
+                  readOnly
+                    ? undefined
+                    : validation.updateField('account_name', accountName, formData, setFormData)
+                }
+                onAccountIdChange={(id) =>
+                  readOnly
+                    ? undefined
+                    : validation.updateField('account_id', id, formData, setFormData)
+                }
+                onCompanyBlur={() => validation.touchField('account_name', formData)}
+                companyError={validation.fieldError('account_name')}
+                companyInputClassName={validation.inputClassName('account_name')}
+                disabled={readOnly}
+                accountSelectId="edit-opp-account"
+                companyInputId="edit-opp-account-custom"
+                linkedHint={(name) =>
+                  `Deal will show under ${name} in Account Insights → Open Deals.`
+                }
+              />
               <div className={formDialogGrid}>
                 <div className={formDialogField}>
                   <Label htmlFor="edit-opp-amount">Amount</Label>

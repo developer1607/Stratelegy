@@ -12,6 +12,8 @@ import {
 import { api } from '@/api/client';
 import { showError, showSuccess } from '@/lib/toast';
 import { validateContactForm } from '@/lib/crmFormValidation';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { contactSourceOptions } from '@/lib/crmConfig';
 import {
   formDialogContent,
   formDialogHeader,
@@ -22,6 +24,7 @@ import {
 import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 
 export default function ImportContactsDialog({ open, onOpenChange, onImportComplete }) {
+  const { defaults, contactSources } = useCrmConfig({ enabled: open });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -86,8 +89,12 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
           ? extractResult.output
           : [extractResult.output];
 
+        const allowedSources = contactSourceOptions(contactSources);
         const validContacts = contacts.filter((c) => {
-          const errors = validateContactForm(c, { requireEmail: true });
+          const errors = validateContactForm(c, {
+            requireEmail: true,
+            allowedSources,
+          });
           return Object.keys(errors).length === 0;
         });
 
@@ -104,7 +111,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
               phone: c.phone || '',
               company: c.company || '',
               position: c.position || '',
-              source: c.source || 'email',
+              source: c.source || defaults.contactSource,
               priority: 'Standard',
               status: 'active',
             }))

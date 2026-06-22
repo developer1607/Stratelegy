@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,16 +20,18 @@ import {
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Filter, MoreHorizontal, Plus, Download, ChevronDown } from 'lucide-react';
-import { format } from 'date-fns';
-import { formatCurrency } from '@/utils';
+import { Search, MoreHorizontal, Plus, Download, ChevronDown } from 'lucide-react';
+import { format, subMonths } from 'date-fns';
+import { formatCurrency, createPageUrl } from '@/utils';
 import { recentMonthLabels, safeParseDate } from '@/lib/crmHelpers';
 import { showError, showSuccess } from '@/lib/toast';
 import PermissionGate from '@/components/PermissionGate';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
 import LeadDialog from '@/components/forms/LeadDialog';
 import ContactDialog from '@/components/forms/ContactDialog';
 import OpportunityDialog from '@/components/forms/OpportunityDialog';
+import EditOpportunityDialog from '@/components/forms/EditOpportunityDialog';
 import ActivityDialog from '@/components/forms/ActivityDialog';
 import {
   BarChart,
@@ -45,29 +48,129 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 
+const PIPELINE_STAGE_COLORS = {
+  Prospecting: 'bg-blue-500',
+  Qualification: 'bg-cyan-500',
+  Proposal: 'bg-yellow-500',
+  Negotiation: 'bg-orange-500',
+  Won: 'bg-green-500',
+};
+
+function percentChange(current, previous) {
+  if (previous === 0) return current > 0 ? 100 : 0;
+  return ((current - previous) / previous) * 100;
+}
+
+function formatDelta(value) {
+  const sign = value > 0 ? '+' : '';
+  return `${sign}${value.toFixed(1)}%`;
+}
+
+function countInMonth(rows, dateField, monthKey) {
+  return rows.filter((row) => {
+    const date = safeParseDate(row[dateField]);
+    return date && format(date, 'yyyy-MM') === monthKey;
+  }).length;
+}
+
+function sumWonRevenueInMonth(opportunities, monthKey) {
+  return opportunities
+    .filter((o) => {
+      if (o.stage !== 'closed_won') return false;
+      const closeDate = safeParseDate(o.close_date) || safeParseDate(o.updated_date);
+      return closeDate && format(closeDate, 'yyyy-MM') === monthKey;
+    })
+    .reduce((sum, o) => sum + (o.amount || 0), 0);
+}
+
+function MiniSparkline({ data, type = 'line', color = '#10b981' }) {
+  if (!data.length) return <div className="mt-2 h-8" />;
+  return (
+    <div className="mt-2 h-8">
+      <ResponsiveContainer width="100%" height="100%">
+        {type === 'area' ? (
+          <AreaChart data={data}>
+            <Area type="monotone" dataKey="value" stroke={color} fill={color} fillOpacity={0.3} />
+          </AreaChart>
+        ) : (
+          <LineChart data={data}>
+            <Line type="monotone" dataKey="value" stroke={color} strokeWidth={2} dot={false} />
+          </LineChart>
+        )}
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+function MiniBars({ data, barClass = 'bg-cyan-400' }) {
+  const max = Math.max(...data.map((item) => item.value), 1);
+  return (
+    <div className="mt-2 h-8 flex items-end gap-1">
+      {data.map((item, index) => (
+        <div
+          key={index}
+          className={`flex-1 rounded-sm ${barClass}`}
+          style={{ height: `${Math.max(item.value > 0 ? 12 : 4, (item.value / max) * 100)}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function formatStageLabel(stage) {
+  if (!stage) return '—';
+  if (stage === 'closed_won') return 'Won';
+  if (stage === 'closed_lost') return 'Lost';
+  return stage.replace(/_/g, ' ');
+}
+
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { canWriteEntity, canReadEntity, isLoading: permsLoading } = usePermissions();
+  const canManageOpportunities = canWriteEntity('Opportunity');
+  const canReadLeads = canReadEntity('Lead');
+  const canReadOpportunities = canReadEntity('Opportunity');
+  const canReadActivities = canReadEntity('Activity');
+  const canReadCalendar = canReadEntity('CalendarEvent');
+  const canReadCrmConfig = canReadEntity('DefaultSettings');
+  const queriesEnabled = !permsLoading;
+  const { defaults } = useCrmConfig({ enabled: queriesEnabled && canReadCrmConfig });
+  const currency = defaults.currency;
   const queryClient = useQueryClient();
-  const [ownerFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('all');
   const [stageFilter, setStageFilter] = useState('all');
   const [sourceFilter, setSourceFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [activeDialog, setActiveDialog] = useState(null);
+  const [editOpportunityOpen, setEditOpportunityOpen] = useState(false);
+  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads', 'dashboard'],
     queryFn: () => api.entities.Lead.list('-created_date'),
     staleTime: 60_000,
+    enabled: queriesEnabled && canReadLeads,
   });
 
   const { data: opportunities = [] } = useQuery({
     queryKey: ['opportunities', 'dashboard'],
     queryFn: () => api.entities.Opportunity.list('-created_date'),
     staleTime: 60_000,
+    enabled: queriesEnabled && canReadOpportunities,
   });
 
   const { data: activities = [] } = useQuery({
     queryKey: ['activities', 'dashboard'],
-    queryFn: () => api.entities.Activity.list('-date', 10),
+    queryFn: () => api.entities.Activity.list('-date', 100),
     staleTime: 60_000,
+    enabled: queriesEnabled && canReadActivities,
+  });
+
+  const { data: calendarEvents = [] } = useQuery({
+    queryKey: ['calendarEvents', 'dashboard'],
+    queryFn: () => api.entities.CalendarEvent.list('start_date', 100),
+    staleTime: 60_000,
+    enabled: queriesEnabled && canReadCalendar,
   });
 
   const { data: defaultSettings } = useQuery({
@@ -77,16 +180,94 @@ export default function Dashboard() {
       return settings[0] || null;
     },
     staleTime: 60_000,
+    enabled: queriesEnabled && canReadCrmConfig,
   });
 
+  const ownerOptions = useMemo(() => {
+    const owners = new Set();
+    opportunities.forEach((opp) => {
+      if (opp.owner?.trim()) owners.add(opp.owner.trim());
+    });
+    return [...owners].sort((a, b) => a.localeCompare(b));
+  }, [opportunities]);
+
   const filteredOpportunities = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase();
     return opportunities.filter((opp) => {
       if (ownerFilter !== 'all' && opp.owner !== ownerFilter) return false;
       if (stageFilter !== 'all' && opp.stage !== stageFilter) return false;
       if (sourceFilter !== 'all' && opp.source !== sourceFilter) return false;
-      return true;
+      if (!query) return true;
+      return [opp.name, opp.account_name, opp.owner, opp.stage, opp.source]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(query));
     });
-  }, [opportunities, ownerFilter, stageFilter, sourceFilter]);
+  }, [opportunities, ownerFilter, stageFilter, sourceFilter, searchTerm]);
+
+  const monthBuckets = useMemo(() => recentMonthLabels(6), []);
+
+  const dashboardTrends = useMemo(() => {
+    const leadTrend = monthBuckets.map(({ key, label }) => ({
+      label,
+      value: countInMonth(leads, 'created_date', key),
+    }));
+    const dealsClosedTrend = monthBuckets.map(({ key, label }) => ({
+      label,
+      value: sumWonRevenueInMonth(opportunities, key),
+    }));
+    const revenueTrend = dealsClosedTrend;
+    const targetTrend = monthBuckets.map(({ key, label }) => {
+      const won = sumWonRevenueInMonth(opportunities, key);
+      const target = Number(defaultSettings?.monthly_sales_target) || 0;
+      return { label, value: target > 0 ? Math.round((won / target) * 100) : won };
+    });
+    const conversionTrend = monthBuckets.map(({ key, label }) => {
+      const monthLeads = leads.filter((lead) => {
+        const date = safeParseDate(lead.created_date);
+        return date && format(date, 'yyyy-MM') === key;
+      });
+      const won = monthLeads.filter((lead) => lead.status === 'won').length;
+      return {
+        label,
+        value: monthLeads.length > 0 ? Math.round((won / monthLeads.length) * 100) : 0,
+      };
+    });
+    const salesCycleTrend = monthBuckets.map(({ key, label }) => {
+      const wonOpps = opportunities.filter((opp) => {
+        if (opp.stage !== 'closed_won') return false;
+        const closeDate = safeParseDate(opp.close_date) || safeParseDate(opp.updated_date);
+        return closeDate && format(closeDate, 'yyyy-MM') === key;
+      });
+      if (!wonOpps.length) return { label, value: 0 };
+      const avgDays = Math.round(
+        wonOpps.reduce((sum, opp) => {
+          const created = safeParseDate(opp.created_date);
+          const closed = safeParseDate(opp.close_date) || safeParseDate(opp.updated_date);
+          if (!created || !closed) return sum;
+          return sum + Math.max(0, Math.floor((closed - created) / (1000 * 60 * 60 * 24)));
+        }, 0) / wonOpps.length
+      );
+      return { label, value: avgDays };
+    });
+
+    const currentMonthKey = format(new Date(), 'yyyy-MM');
+    const previousMonthKey = format(subMonths(new Date(), 1), 'yyyy-MM');
+    const leadsThisMonth = countInMonth(leads, 'created_date', currentMonthKey);
+    const leadsLastMonth = countInMonth(leads, 'created_date', previousMonthKey);
+    const revenueThisMonth = sumWonRevenueInMonth(opportunities, currentMonthKey);
+    const revenueLastMonth = sumWonRevenueInMonth(opportunities, previousMonthKey);
+
+    return {
+      leadTrend,
+      dealsClosedTrend,
+      revenueTrend,
+      targetTrend,
+      conversionTrend,
+      salesCycleTrend,
+      leadsDelta: percentChange(leadsThisMonth, leadsLastMonth),
+      revenueDelta: percentChange(revenueThisMonth, revenueLastMonth),
+    };
+  }, [leads, opportunities, defaultSettings, monthBuckets]);
 
   const kpis = useMemo(() => {
     const totalLeads = leads.length;
@@ -112,16 +293,16 @@ export default function Dashboard() {
         ? ((leads.filter((l) => l.status === 'won').length / leads.length) * 100).toFixed(1)
         : 0;
 
-    const wonLeads = leads.filter((l) => l.status === 'won');
+    const wonOpportunities = filteredOpportunities.filter((o) => o.stage === 'closed_won');
     const avgSalesCycle =
-      wonLeads.length > 0
+      wonOpportunities.length > 0
         ? Math.round(
-            wonLeads.reduce((sum, l) => {
-              const days = Math.floor(
-                (Date.now() - new Date(l.created_date).getTime()) / (1000 * 60 * 60 * 24)
-              );
-              return sum + days;
-            }, 0) / wonLeads.length
+            wonOpportunities.reduce((sum, opp) => {
+              const created = safeParseDate(opp.created_date);
+              const closed = safeParseDate(opp.close_date) || safeParseDate(opp.updated_date);
+              if (!created || !closed) return sum;
+              return sum + Math.max(0, Math.floor((closed - created) / (1000 * 60 * 60 * 24)));
+            }, 0) / wonOpportunities.length
           )
         : 0;
 
@@ -133,8 +314,10 @@ export default function Dashboard() {
       targetProgress,
       conversionRate,
       avgSalesCycle,
+      leadsDelta: dashboardTrends.leadsDelta,
+      revenueDelta: dashboardTrends.revenueDelta,
     };
-  }, [leads, filteredOpportunities, defaultSettings]);
+  }, [leads, filteredOpportunities, defaultSettings, dashboardTrends]);
 
   const pipelineData = useMemo(() => {
     const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won'];
@@ -181,6 +364,7 @@ export default function Dashboard() {
       }
     });
     return Object.values(performerMap)
+      .filter((performer) => performer.deals > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 3);
   }, [filteredOpportunities]);
@@ -200,18 +384,39 @@ export default function Dashboard() {
       .slice(0, 5);
   }, [filteredOpportunities]);
 
-  const upcomingActivities = useMemo(() => {
-    return activities.filter((a) => new Date(a.date) >= new Date()).slice(0, 3);
-  }, [activities]);
+  const upcomingEvents = useMemo(() => {
+    const now = new Date();
+    const futureActivities = activities
+      .filter((activity) => {
+        const date = safeParseDate(activity.date);
+        return date && date >= now && !activity.completed;
+      })
+      .map((activity) => ({
+        id: activity.id,
+        title: activity.description,
+        subtitle: activity.related_to_name || activity.type,
+        date: activity.date,
+        kind: 'activity',
+      }));
 
-  const stageColors = {
-    prospecting: 'bg-blue-500',
-    qualification: 'bg-cyan-500',
-    proposal: 'bg-yellow-500',
-    negotiation: 'bg-orange-500',
-    closed_won: 'bg-green-500',
-    closed_lost: 'bg-red-500',
-  };
+    const futureEvents = calendarEvents
+      .filter((event) => {
+        if (event.status && event.status !== 'scheduled') return false;
+        const date = safeParseDate(event.start_date);
+        return date && date >= now;
+      })
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        subtitle: event.related_to_name || event.event_type,
+        date: event.start_date,
+        kind: 'event',
+      }));
+
+    return [...futureActivities, ...futureEvents]
+      .sort((a, b) => safeParseDate(a.date) - safeParseDate(b.date))
+      .slice(0, 3);
+  }, [activities, calendarEvents]);
 
   const statusColors = {
     prospecting: 'bg-blue-100 text-blue-800',
@@ -226,6 +431,7 @@ export default function Dashboard() {
     queryClient.invalidateQueries({ queryKey: ['leads', 'dashboard'] });
     queryClient.invalidateQueries({ queryKey: ['opportunities', 'dashboard'] });
     queryClient.invalidateQueries({ queryKey: ['activities', 'dashboard'] });
+    queryClient.invalidateQueries({ queryKey: ['calendarEvents', 'dashboard'] });
   };
 
   const createLeadMutation = useMutation({
@@ -262,11 +468,39 @@ export default function Dashboard() {
     mutationFn: (data) => api.entities.Activity.create(data),
     onSuccess: () => {
       invalidateDashboard();
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
       setActiveDialog(null);
       showSuccess('Activity logged.');
     },
     onError: (error) => showError(error, 'Failed to log activity.'),
   });
+
+  const updateOpportunityMutation = useMutation({
+    mutationFn: ({ id, data }) => api.entities.Opportunity.update(id, data),
+    onSuccess: () => {
+      invalidateDashboard();
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      setEditOpportunityOpen(false);
+      setSelectedOpportunity(null);
+      showSuccess('Opportunity updated.');
+    },
+    onError: (error) => showError(error, 'Failed to update opportunity.'),
+  });
+
+  const deleteOpportunityMutation = useMutation({
+    mutationFn: (id) => api.entities.Opportunity.delete(id),
+    onSuccess: () => {
+      invalidateDashboard();
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
+      showSuccess('Opportunity deleted.');
+    },
+    onError: (error) => showError(error, 'Failed to delete opportunity.'),
+  });
+
+  const openOpportunity = (deal) => {
+    setSelectedOpportunity(deal);
+    setEditOpportunityOpen(true);
+  };
 
   const exportToCSV = () => {
     const headers = ['Name', 'Account', 'Amount', 'Stage', 'Owner', 'Close Date'];
@@ -355,17 +589,15 @@ export default function Dashboard() {
             </div>
             <div className="flex items-end gap-2">
               <span className="text-2xl sm:text-3xl font-bold">{kpis.totalLeads}</span>
-              <div className="text-xs text-green-600 mb-1">+5.3%</div>
-            </div>
-            <div className="mt-2 h-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={[{ v: 10 }, { v: 12 }, { v: 11 }, { v: 14 }, { v: 13 }, { v: 15 }]}
+              {kpis.leadsDelta !== 0 && (
+                <div
+                  className={`text-xs mb-1 ${kpis.leadsDelta >= 0 ? 'text-green-600' : 'text-red-600'}`}
                 >
-                  <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+                  {formatDelta(kpis.leadsDelta)}
+                </div>
+              )}
             </div>
+            <MiniSparkline data={dashboardTrends.leadTrend} />
           </CardContent>
         </Card>
 
@@ -376,18 +608,10 @@ export default function Dashboard() {
             </div>
             <div className="flex items-end gap-2">
               <span className="text-2xl sm:text-3xl font-bold">
-                {formatCurrency(kpis.dealsClosedValue, true)}
+                {formatCurrency(kpis.dealsClosedValue, currency, true)}
               </span>
             </div>
-            <div className="mt-2 h-8 flex items-end gap-1">
-              {[40, 55, 45, 70, 60, 80, 75].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 bg-cyan-400 rounded-sm"
-                  style={{ height: `${h}%` }}
-                ></div>
-              ))}
-            </div>
+            <MiniBars data={dashboardTrends.dealsClosedTrend} barClass="bg-cyan-400" />
           </CardContent>
         </Card>
 
@@ -398,19 +622,17 @@ export default function Dashboard() {
             </div>
             <div className="flex items-end gap-2">
               <span className="text-2xl sm:text-3xl font-bold">
-                {formatCurrency(kpis.revenueThisMonth, true)}
+                {formatCurrency(kpis.revenueThisMonth, currency, true)}
               </span>
-              <div className="text-xs text-green-600 mb-1">+15%</div>
-            </div>
-            <div className="mt-2 h-8 flex items-end gap-1">
-              {[30, 40, 50, 45, 60, 70, 80].map((h, i) => (
+              {kpis.revenueDelta !== 0 && (
                 <div
-                  key={i}
-                  className="flex-1 bg-green-400 rounded-sm"
-                  style={{ height: `${h}%` }}
-                ></div>
-              ))}
+                  className={`text-xs mb-1 ${kpis.revenueDelta >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                >
+                  {formatDelta(kpis.revenueDelta)}
+                </div>
+              )}
             </div>
+            <MiniBars data={dashboardTrends.revenueTrend} barClass="bg-green-400" />
           </CardContent>
         </Card>
 
@@ -421,22 +643,11 @@ export default function Dashboard() {
             </div>
             <div className="flex items-end gap-2">
               <span className="text-2xl sm:text-3xl font-bold">
-                {formatCurrency(kpis.salesTarget, true)}
+                {formatCurrency(kpis.salesTarget, currency, true)}
               </span>
               <div className="text-xs text-gray-600 mb-1">{kpis.targetProgress}%</div>
             </div>
-            <div className="mt-2 h-8 flex items-end gap-1">
-              {[30, 45, 60, 50, 70, 65, 75].map((h, i) => (
-                <div
-                  key={i}
-                  className="flex-1 rounded-sm"
-                  style={{
-                    height: `${h}%`,
-                    backgroundColor: i < 4 ? '#fbbf24' : '#3b82f6',
-                  }}
-                ></div>
-              ))}
-            </div>
+            <MiniBars data={dashboardTrends.targetTrend} barClass="bg-amber-400" />
           </CardContent>
         </Card>
 
@@ -448,21 +659,7 @@ export default function Dashboard() {
             <div className="flex items-end gap-2">
               <span className="text-2xl sm:text-3xl font-bold">{kpis.conversionRate}%</span>
             </div>
-            <div className="mt-2 h-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={[{ v: 25 }, { v: 28 }, { v: 30 }, { v: 29 }, { v: 32 }, { v: 31 }]}
-                >
-                  <Area
-                    type="monotone"
-                    dataKey="v"
-                    stroke="#8b5cf6"
-                    fill="#8b5cf6"
-                    fillOpacity={0.3}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
+            <MiniSparkline data={dashboardTrends.conversionTrend} type="area" color="#8b5cf6" />
           </CardContent>
         </Card>
 
@@ -475,15 +672,7 @@ export default function Dashboard() {
               <span className="text-2xl sm:text-3xl font-bold">{kpis.avgSalesCycle}</span>
               <span className="text-xs text-gray-600 mb-1">days</span>
             </div>
-            <div className="mt-2 h-8">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={[{ v: 30 }, { v: 28 }, { v: 29 }, { v: 27 }, { v: 26 }, { v: 26 }]}
-                >
-                  <Line type="monotone" dataKey="v" stroke="#10b981" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
+            <MiniSparkline data={dashboardTrends.salesCycleTrend} color="#10b981" />
           </CardContent>
         </Card>
       </div>
@@ -491,10 +680,19 @@ export default function Dashboard() {
       {/* Filters */}
       <div className="bg-white rounded-lg shadow mb-6 p-4">
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button variant="outline" size="sm" className="sm:w-auto">
-            <Filter className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">Filter</span>
-          </Button>
+          <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+            <SelectTrigger className="w-full sm:w-36">
+              <SelectValue placeholder="Owner" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Owners</SelectItem>
+              {ownerOptions.map((owner) => (
+                <SelectItem key={owner} value={owner}>
+                  {owner}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Select value={stageFilter} onValueChange={setStageFilter}>
             <SelectTrigger className="w-full sm:w-32">
@@ -507,16 +705,6 @@ export default function Dashboard() {
               <SelectItem value="proposal">Proposal</SelectItem>
               <SelectItem value="negotiation">Negotiation</SelectItem>
               <SelectItem value="closed_won">Won</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value="format">
-            <SelectTrigger className="w-full sm:w-32">
-              <SelectValue placeholder="Format" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="table">Table</SelectItem>
-              <SelectItem value="cards">Cards</SelectItem>
             </SelectContent>
           </Select>
 
@@ -538,14 +726,12 @@ export default function Dashboard() {
             <Input
               id="dashboard-stage-source-filter"
               name="dashboard-stage-source-filter"
-              placeholder="Stage: Source"
+              placeholder="Search deals..."
               className="pl-9 h-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
-          <Button variant="ghost" size="sm">
-            More...
-          </Button>
         </div>
       </div>
 
@@ -561,18 +747,18 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="stage" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value), currency)} />
                 <Bar dataKey="value" fill="#3b82f6" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
             <div className="flex flex-wrap gap-4 mt-4 text-xs">
-              {pipelineData.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
+              {pipelineData.map((item) => (
+                <div key={item.stage} className="flex items-center gap-2">
                   <div
-                    className={`w-3 h-3 rounded ${stageColors[item.stage.toLowerCase().replace(' ', '_')] || 'bg-gray-400'}`}
+                    className={`w-3 h-3 rounded ${PIPELINE_STAGE_COLORS[item.stage] || 'bg-gray-400'}`}
                   ></div>
                   <span className="text-gray-600">
-                    {item.stage}: {formatCurrency(item.value, true)}
+                    {item.stage}: {formatCurrency(item.value, currency, true)}
                   </span>
                 </div>
               ))}
@@ -593,7 +779,7 @@ export default function Dashboard() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip formatter={(value) => formatCurrency(Number(value), currency)} />
                 <Legend />
                 <Area
                   type="monotone"
@@ -623,9 +809,21 @@ export default function Dashboard() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle className="text-base sm:text-lg">Top Performing Sales Reps</CardTitle>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate(createPageUrl('Reports'))}>
+                    View Reports
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate(createPageUrl('Opportunities'))}>
+                    View Opportunities
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardHeader>
           <CardContent>
@@ -633,12 +831,15 @@ export default function Dashboard() {
               <div className="flex items-center justify-between text-xs text-gray-500 pb-2 border-b">
                 <span>Sales Rep</span>
                 <div className="flex gap-8">
-                  <span>Deals</span>
-                  <span>Owner</span>
+                  <span>Revenue</span>
+                  <span>Won Deals</span>
                 </div>
               </div>
-              {topPerformers.map((performer, idx) => (
-                <div key={idx} className="flex items-center justify-between">
+              {topPerformers.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-4">No closed deals yet</p>
+              ) : (
+                topPerformers.map((performer) => (
+                <div key={performer.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="w-8 h-8 bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-semibold">
                       {performer.name
@@ -648,25 +849,20 @@ export default function Dashboard() {
                     </Avatar>
                     <div>
                       <p className="text-sm font-medium">{performer.name}</p>
-                      <p className="text-xs text-gray-500">Top Admin</p>
+                      <p className="text-xs text-gray-500">
+                        {performer.deals} won deal{performer.deals === 1 ? '' : 's'}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-sm font-semibold">
-                      {formatCurrency(performer.value, true)}
+                      {formatCurrency(performer.value, currency, true)}
                     </span>
-                    <Badge
-                      className={
-                        performer.deals > 0
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-blue-100 text-blue-800'
-                      }
-                    >
-                      {performer.deals > 0 ? 'Won' : 'Active'}
-                    </Badge>
+                    <Badge className="bg-green-100 text-green-800">{performer.deals}</Badge>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -688,18 +884,19 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {leadSources.slice(0, 4).map((source, idx) => (
+              {leadSources.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-4">No lead sources yet</p>
+              ) : (
+                leadSources.slice(0, 4).map((source) => (
                 <div
-                  key={idx}
+                  key={source.source}
                   className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
                 >
-                  <div className="flex items-center gap-3">
-                    <Checkbox />
-                    <span className="text-sm">Follow up with {source.source}</span>
-                  </div>
-                  <span className="text-xs text-gray-500">{source.count}</span>
+                  <span className="text-sm capitalize">{source.source}</span>
+                  <span className="text-xs text-gray-500">{source.count} lead{source.count === 1 ? '' : 's'}</span>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
@@ -707,40 +904,44 @@ export default function Dashboard() {
         <Card>
           <CardHeader>
             <div className="flex justify-between items-center">
-              <CardTitle className="text-base sm:text-lg">Upcoming Activities</CardTitle>
+              <CardTitle className="text-base sm:text-lg">Upcoming Schedule</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 className="text-blue-600 h-8"
-                onClick={() => setActiveDialog('activity')}
+                onClick={() => navigate(createPageUrl('Calendar'))}
               >
                 <Plus className="w-4 h-4 mr-1" />
-                Add
+                View
               </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingActivities.length > 0 ? (
-                upcomingActivities.map((activity, idx) => (
+              {upcomingEvents.length > 0 ? (
+                upcomingEvents.map((item) => (
                   <div
-                    key={idx}
-                    className="flex items-center justify-between p-2 hover:bg-gray-50 rounded"
+                    key={`${item.kind}-${item.id}`}
+                    className="flex items-center justify-between p-2 hover:bg-gray-50 rounded cursor-pointer"
+                    onClick={() =>
+                      item.kind === 'event'
+                        ? navigate(createPageUrl('Calendar'))
+                        : setActiveDialog('activity')
+                    }
                   >
-                    <div className="flex items-center gap-3">
-                      <Checkbox />
-                      <div>
-                        <p className="text-sm">{activity.description}</p>
-                        <p className="text-xs text-gray-500">{activity.related_to_name}</p>
-                      </div>
+                    <div>
+                      <p className="text-sm">{item.title}</p>
+                      <p className="text-xs text-gray-500">
+                        {item.subtitle || (item.kind === 'event' ? 'Calendar event' : 'Activity')}
+                      </p>
                     </div>
                     <span className="text-xs text-gray-500">
-                      {new Date(activity.date).toLocaleDateString()}
+                      {safeParseDate(item.date)?.toLocaleDateString() || '—'}
                     </span>
                   </div>
                 ))
               ) : (
-                <p className="text-sm text-gray-500 text-center py-4">No upcoming activities</p>
+                <p className="text-sm text-gray-500 text-center py-4">No upcoming events</p>
               )}
             </div>
           </CardContent>
@@ -752,9 +953,21 @@ export default function Dashboard() {
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle className="text-base sm:text-lg">Recent Deals</CardTitle>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
-              <MoreHorizontal className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate(createPageUrl('Opportunities'))}>
+                  View all opportunities
+                </DropdownMenuItem>
+                <PermissionGate permission="can_export_data">
+                  <DropdownMenuItem onClick={exportToCSV}>Export deals</DropdownMenuItem>
+                </PermissionGate>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </CardHeader>
         <CardContent>
@@ -765,16 +978,27 @@ export default function Dashboard() {
                   <th className="text-left py-2 font-medium">Lead</th>
                   <th className="text-left py-2 font-medium">Company</th>
                   <th className="text-left py-2 font-medium">Deal Value</th>
-                  <th className="text-left py-2 font-medium">Status</th>
+                  <th className="text-left py-2 font-medium">Stage</th>
                   <th className="text-left py-2 font-medium">Owner</th>
                   <th className="text-left py-2 font-medium">Close Date</th>
-                  <th className="text-left py-2 font-medium">Status</th>
+                  <th className="text-left py-2 font-medium">Source</th>
                   <th className="w-8"></th>
                 </tr>
               </thead>
               <tbody>
-                {recentDeals.map((deal, idx) => (
-                  <tr key={idx} className="border-b hover:bg-gray-50">
+                {recentDeals.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-6 text-center text-sm text-gray-500">
+                      No recent deals
+                    </td>
+                  </tr>
+                ) : (
+                  recentDeals.map((deal) => (
+                    <tr
+                      key={deal.id}
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={() => openOpportunity(deal)}
+                    >
                     <td className="py-3">
                       <div className="flex items-center gap-2">
                         <Avatar className="w-8 h-8 bg-gray-200" />
@@ -785,35 +1009,45 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="text-sm">{deal.account_name}</td>
-                    <td className="text-sm font-semibold">{formatCurrency(deal.amount || 0)}</td>
+                    <td className="text-sm font-semibold">{formatCurrency(deal.amount || 0, currency)}</td>
                     <td>
                       <Badge className={statusColors[deal.stage] || 'bg-gray-100 text-gray-800'}>
-                        {deal.stage === 'closed_won' ? 'Won' : deal.stage}
+                        {formatStageLabel(deal.stage)}
                       </Badge>
                     </td>
                     <td>
                       <div className="flex items-center gap-2">
                         <Avatar className="w-6 h-6 bg-blue-100" />
-                        <span className="text-sm">{deal.owner}</span>
+                        <span className="text-sm">{deal.owner || '—'}</span>
                       </div>
                     </td>
                     <td className="text-sm text-gray-600">{formatCloseDate(deal.close_date)}</td>
-                    <td>
-                      <Badge variant="outline" className="text-xs">
-                        {deal.stage === 'closed_won'
-                          ? 'Contacted'
-                          : deal.stage === 'negotiation'
-                            ? 'Proposal'
-                            : 'Contacted'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                    <td className="text-sm text-gray-600 capitalize">{deal.source || '—'}</td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openOpportunity(deal)}>
+                            {canManageOpportunities ? 'Edit' : 'View'}
+                          </DropdownMenuItem>
+                          {canManageOpportunities && (
+                            <DropdownMenuItem
+                              className="text-red-600"
+                              onClick={() => deleteOpportunityMutation.mutate(deal.id)}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -855,6 +1089,21 @@ export default function Dashboard() {
         }}
         onSubmit={(data) => createActivityMutation.mutate(data)}
         isLoading={createActivityMutation.isPending}
+      />
+      <EditOpportunityDialog
+        open={editOpportunityOpen}
+        onOpenChange={(open) => {
+          if (!open && updateOpportunityMutation.isPending) return;
+          setEditOpportunityOpen(open);
+          if (!open) setSelectedOpportunity(null);
+        }}
+        opportunity={selectedOpportunity}
+        onSubmit={(data) =>
+          selectedOpportunity &&
+          updateOpportunityMutation.mutate({ id: selectedOpportunity.id, data })
+        }
+        isLoading={updateOpportunityMutation.isPending}
+        readOnly={!canManageOpportunities}
       />
     </div>
   );

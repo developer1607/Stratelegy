@@ -23,7 +23,6 @@ import {
   Activity,
   Users,
   TrendingUp,
-  AlertCircle,
   Award,
   Filter,
   ChevronDown,
@@ -31,6 +30,7 @@ import {
 } from 'lucide-react';
 import ContactDialog from '../components/forms/ContactDialog';
 import EditContactDialog from '../components/forms/EditContactDialog';
+import ActivityDialog from '../components/forms/ActivityDialog';
 import BusinessCardScanner from '../components/forms/BusinessCardScanner';
 import ImportContactsDialog from '../components/forms/ImportContactsDialog';
 import ContactKPICard from '../components/contacts/ContactKPICard';
@@ -55,7 +55,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { useEntityFullList } from '@/hooks/useEntityFullList';
 import { useCrmEntityCreate } from '@/hooks/useCrmEntityCreate';
+import {
+  contactPhoneHref,
+  contactEmailHref,
+  contactWhatsAppHref,
+} from '@/lib/contactActions';
 import { differenceInDays, isAfter, startOfMonth } from 'date-fns';
 import { showError, showSuccess } from '@/lib/toast';
 import { namesFromConfigItems, matchSearch, normalizeFilterText } from '@/lib/listFilters';
@@ -73,6 +79,7 @@ export default function Contacts() {
   const [scannedData, setScannedData] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showDetailsPanel, setShowDetailsPanel] = useState(false);
+  const [activityContact, setActivityContact] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: 'last_activity_date', direction: 'desc' });
   const [filters, setFilters] = useState({
     roles: [],
@@ -98,6 +105,11 @@ export default function Contacts() {
     queryKeyPrefix: 'contacts',
   });
 
+  const { data: allContacts = [] } = useEntityFullList('Contact', {
+    queryKeyPrefix: 'contacts',
+    sort: '-created_date',
+  });
+
   const { data: contactSources = [] } = useQuery({
     queryKey: ['contactSources'],
     queryFn: () => api.entities.ContactSource.list('order'),
@@ -121,6 +133,20 @@ export default function Contacts() {
     successMessage: 'Contact created.',
     errorMessage: 'Failed to create contact.',
     onCreated: resetPage,
+  });
+
+  const {
+    dialogOpen: activityDialogOpen,
+    setDialogOpen: setActivityDialogOpen,
+    handleDialogOpenChange: handleActivityDialogOpenChange,
+    submitCreate: submitActivity,
+    isCreating: isLoggingActivity,
+  } = useCrmEntityCreate({
+    entityName: 'Activity',
+    invalidateKeys: [['activities'], ['contacts']],
+    successMessage: 'Activity logged.',
+    errorMessage: 'Failed to log activity.',
+    onCreated: () => setActivityContact(null),
   });
 
   const handleDialogOpenChange = useCallback(
@@ -159,6 +185,11 @@ export default function Contacts() {
   const handleViewDetails = (contact) => {
     setSelectedContact(contact);
     setShowDetailsPanel(true);
+  };
+
+  const handleLogActivity = (contact) => {
+    setActivityContact(contact);
+    setActivityDialogOpen(true);
   };
 
   const handleInlineRoleChange = async (contactId, newRole) => {
@@ -202,10 +233,10 @@ export default function Contacts() {
   };
 
   const exportToCSV = () => {
-    if (contacts.length === 0) return;
+    if (contactsMatchingFilters.length === 0) return;
 
     const headers = ['Name', 'Email', 'Phone', 'Company', 'Position', 'Status', 'Source'];
-    const rows = contacts.map((contact) => [
+    const rows = contactsMatchingFilters.map((contact) => [
       contact.name || '',
       contact.email || '',
       contact.phone || '',
@@ -229,9 +260,9 @@ export default function Contacts() {
     window.URL.revokeObjectURL(url);
   };
 
-  // Filter and sort contacts
-  const filteredAndSortedContacts = useMemo(() => {
-    let filtered = contacts.filter((contact) => {
+  // Filter and sort contacts (table uses current page; KPIs/export use full list)
+  const contactPassesFilters = useCallback(
+    (contact) => {
       if (
         !matchSearch(contact, searchTerm, ['name', 'email', 'company', 'phone', 'position'])
       ) {
@@ -259,7 +290,6 @@ export default function Contacts() {
       )
         return false;
 
-      // No recent activity filter
       if (filters.noRecentActivity) {
         if (!contact.last_activity_date) return true;
         const daysSinceActivity = differenceInDays(new Date(), new Date(contact.last_activity_date));
@@ -267,7 +297,17 @@ export default function Contacts() {
       }
 
       return true;
-    });
+    },
+    [searchTerm, filters],
+  );
+
+  const contactsMatchingFilters = useMemo(
+    () => allContacts.filter(contactPassesFilters),
+    [allContacts, contactPassesFilters],
+  );
+
+  const filteredAndSortedContacts = useMemo(() => {
+    let filtered = contacts.filter(contactPassesFilters);
 
     // Sort
     if (sortConfig.key) {
@@ -290,24 +330,27 @@ export default function Contacts() {
     }
 
     return filtered;
-  }, [contacts, searchTerm, filters, sortConfig]);
+  }, [contacts, contactPassesFilters, sortConfig]);
+
+  const contactHasRecentActivity = useCallback((contact) => {
+    if (!contact.last_activity_date) return false;
+    return differenceInDays(new Date(), new Date(contact.last_activity_date)) < 30;
+  }, []);
 
   // Calculate KPIs
   const kpis = useMemo(() => {
     const total = contactsTotal;
-    const thisMonth = contacts.filter((c) =>
+    const thisMonth = contactsMatchingFilters.filter((c) =>
       isAfter(new Date(c.created_date), startOfMonth(new Date()))
     ).length;
-    const decisionMakers = contacts.filter(
+    const decisionMakers = contactsMatchingFilters.filter(
       (c) => c.role === 'Decision Maker' || c.role === 'Key Contact'
     ).length;
-    const noActivity = contacts.filter((c) => {
-      if (!c.last_activity_date) return true;
-      return differenceInDays(new Date(), new Date(c.last_activity_date)) >= 30;
-    }).length;
+    const recentActivity = contactsMatchingFilters.filter(contactHasRecentActivity).length;
+    const needsFollowUp = contactsMatchingFilters.length - recentActivity;
 
-    return { total, thisMonth, decisionMakers, noActivity };
-  }, [contacts, contactsTotal]);
+    return { total, thisMonth, decisionMakers, recentActivity, needsFollowUp };
+  }, [contactsMatchingFilters, contactsTotal, contactHasRecentActivity]);
 
   const priorityColors = {
     Key: 'bg-amber-100 text-amber-800 border-amber-300',
@@ -335,7 +378,7 @@ export default function Contacts() {
             </div>
             <div className="flex gap-3">
               <PermissionGate permission="can_export_data">
-                <Button variant="outline" onClick={exportToCSV} disabled={contacts.length === 0}>
+                <Button variant="outline" onClick={exportToCSV} disabled={contactsMatchingFilters.length === 0}>
                   <Download className="w-4 h-4 mr-2" />
                   Export CSV
                 </Button>
@@ -386,10 +429,15 @@ export default function Contacts() {
               iconColor="bg-amber-500"
             />
             <ContactKPICard
-              title="No Recent Activity"
-              value={kpis.noActivity}
-              icon={AlertCircle}
-              iconColor="bg-red-500"
+              title="Recent Activity"
+              value={kpis.recentActivity}
+              subtitle={
+                kpis.needsFollowUp > 0
+                  ? `${kpis.needsFollowUp} need follow-up (30+ days or none logged)`
+                  : 'All contacts active in the last 30 days'
+              }
+              icon={Activity}
+              iconColor="bg-green-500"
             />
           </div>
 
@@ -534,6 +582,7 @@ export default function Contacts() {
                             <Select
                               value={contact.role || ''}
                               onValueChange={(value) => handleInlineRoleChange(contact.id, value)}
+                              disabled={!canManage}
                             >
                               <SelectTrigger className="h-9 w-[140px] border-gray-300 hover:border-blue-400 transition-colors">
                                 <SelectValue placeholder="Set role" />
@@ -615,27 +664,77 @@ export default function Contacts() {
                           </TableCell>
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 hover:bg-green-100 hover:text-green-700 transition-colors"
-                              >
-                                <Phone className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 hover:bg-purple-100 hover:text-purple-700 transition-colors"
-                              >
-                                <Mail className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-9 w-9 hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                              >
-                                <MessageCircle className="w-4 h-4" />
-                              </Button>
+                              {contactPhoneHref(contact.phone) ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 hover:bg-green-100 hover:text-green-700 transition-colors"
+                                  asChild
+                                >
+                                  <a href={contactPhoneHref(contact.phone)} aria-label={`Call ${contact.name}`}>
+                                    <Phone className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9"
+                                  disabled
+                                  aria-label="No phone number"
+                                >
+                                  <Phone className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {contactEmailHref(contact.email) ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 hover:bg-purple-100 hover:text-purple-700 transition-colors"
+                                  asChild
+                                >
+                                  <a href={contactEmailHref(contact.email)} aria-label={`Email ${contact.name}`}>
+                                    <Mail className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9"
+                                  disabled
+                                  aria-label="No email"
+                                >
+                                  <Mail className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {contactWhatsAppHref(contact.phone) ? (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                                  asChild
+                                >
+                                  <a
+                                    href={contactWhatsAppHref(contact.phone)}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`WhatsApp ${contact.name}`}
+                                  >
+                                    <MessageCircle className="w-4 h-4" />
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9"
+                                  disabled
+                                  aria-label="No phone for WhatsApp"
+                                >
+                                  <MessageCircle className="w-4 h-4" />
+                                </Button>
+                              )}
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button
@@ -652,7 +751,9 @@ export default function Contacts() {
                                   </DropdownMenuItem>
                                   {canManage && (
                                     <>
-                                      <DropdownMenuItem>Log Activity</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleLogActivity(contact)}>
+                                        Log Activity
+                                      </DropdownMenuItem>
                                       <DropdownMenuItem
                                         className="text-red-600"
                                         onClick={() => deleteMutation.mutate(contact.id)}
@@ -726,14 +827,32 @@ export default function Contacts() {
                     )}
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Phone className="w-4 h-4 mr-1" />
-                      Call
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Mail className="w-4 h-4 mr-1" />
-                      Email
-                    </Button>
+                    {contactPhoneHref(contact.phone) ? (
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={contactPhoneHref(contact.phone)}>
+                          <Phone className="w-4 h-4 mr-1" />
+                          Call
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="flex-1" disabled>
+                        <Phone className="w-4 h-4 mr-1" />
+                        Call
+                      </Button>
+                    )}
+                    {contactEmailHref(contact.email) ? (
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={contactEmailHref(contact.email)}>
+                          <Mail className="w-4 h-4 mr-1" />
+                          Email
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button variant="outline" size="sm" className="flex-1" disabled>
+                        <Mail className="w-4 h-4 mr-1" />
+                        Email
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -804,6 +923,26 @@ export default function Contacts() {
         open={importDialogOpen}
         onOpenChange={setImportDialogOpen}
         onImportComplete={() => queryClient.invalidateQueries({ queryKey: ['contacts'] })}
+      />
+
+      <ActivityDialog
+        open={activityDialogOpen}
+        onOpenChange={(open) => {
+          handleActivityDialogOpenChange(open);
+          if (!open) setActivityContact(null);
+        }}
+        onSubmit={submitActivity}
+        isLoading={isLoggingActivity}
+        defaultType="Call"
+        initialRelated={
+          activityContact
+            ? {
+                type: 'Contact',
+                id: activityContact.id,
+                name: activityContact.name,
+              }
+            : null
+        }
       />
     </div>
   );

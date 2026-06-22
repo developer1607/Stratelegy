@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,6 @@ import {
   Users,
   Target,
   Edit2,
-  MessageCircle,
   MoreVertical,
 } from 'lucide-react';
 import {
@@ -38,6 +37,8 @@ import {
   endOfDay,
   addDays,
   isSameMonth,
+  addWeeks,
+  subWeeks,
 } from 'date-fns';
 import CalendarKPICard from '../components/calendar/CalendarKPICard';
 import CalendarFilters from '../components/calendar/CalendarFilters';
@@ -45,9 +46,24 @@ import EventDialog from '../components/calendar/EventDialog';
 import { safeParseDate } from '@/lib/crmHelpers';
 import { showError, showSuccess } from '@/lib/toast';
 import PermissionGate from '@/components/PermissionGate';
+import RelatedRecordLink, { hasRelatedRecord } from '@/components/crm/RelatedRecordLink';
+import { usePermissions } from '@/hooks/usePermissions';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+
+const WEEK_DAY_LABELS = {
+  sunday: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+  monday: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+};
 
 export default function Calendar() {
+  const { defaults } = useCrmConfig();
+  const weekStartsOn = defaults.weekStartsOn ?? 1;
+  const weekOptions = useMemo(() => ({ weekStartsOn }), [weekStartsOn]);
+  const dayLabels = weekStartsOn === 0 ? WEEK_DAY_LABELS.sunday : WEEK_DAY_LABELS.monday;
+  const { canReadEntity, isLoading: permsLoading } = usePermissions();
+  const queriesEnabled = !permsLoading && canReadEntity('CalendarEvent');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('month');
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -57,10 +73,15 @@ export default function Calendar() {
   });
   const queryClient = useQueryClient();
 
+  useEffect(() => {
+    if (defaults.calendarView) setViewMode(defaults.calendarView);
+  }, [defaults.calendarView]);
+
   const { data: events = [] } = useQuery({
     queryKey: ['calendarEvents'],
     queryFn: () => api.entities.CalendarEvent.list('-start_date', 500),
     staleTime: 60_000,
+    enabled: queriesEnabled,
   });
 
   const createMutation = useMutation({
@@ -96,12 +117,19 @@ export default function Calendar() {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
-  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const calendarStart = startOfWeek(monthStart, weekOptions);
+  const calendarEnd = endOfWeek(monthEnd, weekOptions);
+  const weekStart = startOfWeek(currentDate, weekOptions);
+  const weekEnd = endOfWeek(currentDate, weekOptions);
+  const calendarDays =
+    viewMode === 'week'
+      ? eachDayOfInterval({ start: weekStart, end: weekEnd })
+      : eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  const previousMonth = () => setCurrentDate(subMonths(currentDate, 1));
-  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const previousPeriod = () =>
+    setCurrentDate(viewMode === 'week' ? subWeeks(currentDate, 1) : subMonths(currentDate, 1));
+  const nextPeriod = () =>
+    setCurrentDate(viewMode === 'week' ? addWeeks(currentDate, 1) : addMonths(currentDate, 1));
   const goToToday = () => setCurrentDate(new Date());
 
   // Filter events
@@ -123,28 +151,28 @@ export default function Calendar() {
           matchDate = isSameDay(eventDate, addDays(today, 1));
         } else if (filters.dateRange === 'thisWeek') {
           matchDate = isWithinInterval(eventDate, {
-            start: startOfWeek(today),
-            end: endOfWeek(today),
+            start: startOfWeek(today, weekOptions),
+            end: endOfWeek(today, weekOptions),
           });
         } else if (filters.dateRange === 'nextWeek') {
-          const nextWeekStart = addDays(endOfWeek(today), 1);
+          const nextWeekStart = addDays(endOfWeek(today, weekOptions), 1);
           matchDate = isWithinInterval(eventDate, {
             start: nextWeekStart,
-            end: endOfWeek(nextWeekStart),
+            end: endOfWeek(nextWeekStart, weekOptions),
           });
         }
       }
 
       return matchSearch && matchType && matchDate;
     });
-  }, [events, searchTerm, filters]);
+  }, [events, searchTerm, filters, weekOptions]);
 
   // KPI calculations
   const kpis = useMemo(() => {
     const today = startOfDay(new Date());
     const todayEnd = endOfDay(today);
-    const weekStart = startOfWeek(today);
-    const weekEnd = endOfWeek(today);
+    const weekStartDay = startOfWeek(today, weekOptions);
+    const weekEndDay = endOfWeek(today, weekOptions);
 
     const todayEvents = events.filter((e) => {
       const eventDate = safeParseDate(e.start_date);
@@ -158,7 +186,7 @@ export default function Calendar() {
       return (
         eventDate &&
         e.event_type === 'meeting' &&
-        isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
+        isWithinInterval(eventDate, { start: weekStartDay, end: weekEndDay })
       );
     }).length;
 
@@ -167,12 +195,12 @@ export default function Calendar() {
       return (
         eventDate &&
         e.event_type === 'call' &&
-        isWithinInterval(eventDate, { start: weekStart, end: weekEnd })
+        isWithinInterval(eventDate, { start: weekStartDay, end: weekEndDay })
       );
     }).length;
 
     return { todayEvents, totalEvents, meetingsThisWeek, callsThisWeek };
-  }, [events]);
+  }, [events, weekOptions]);
 
   // Get events for a specific day
   const getEventsForDay = (day) => {
@@ -264,32 +292,24 @@ export default function Calendar() {
         <CalendarKPICard
           title="Today's Events"
           value={kpis.todayEvents}
-          trend="up"
-          trendValue="+3"
           icon={CalendarIcon}
           color="blue"
         />
         <CalendarKPICard
           title="Total Events"
           value={kpis.totalEvents}
-          trend="up"
-          trendValue="+34"
           icon={Target}
           color="green"
         />
         <CalendarKPICard
           title="Meetings This Week"
           value={kpis.meetingsThisWeek}
-          trend="up"
-          trendValue="+2"
           icon={Users}
           color="purple"
         />
         <CalendarKPICard
           title="Calls This Week"
           value={kpis.callsThisWeek}
-          trend="up"
-          trendValue="+3"
           icon={Phone}
           color="orange"
         />
@@ -302,16 +322,38 @@ export default function Calendar() {
             {/* Calendar Header */}
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                {format(currentDate, 'MMMM yyyy')}
+                {viewMode === 'week'
+                  ? `${format(weekStart, 'MMM d')} – ${format(weekEnd, 'MMM d, yyyy')}`
+                  : format(currentDate, 'MMMM yyyy')}
               </h2>
               <div className="flex gap-2">
-                <Button variant="outline" size="icon" onClick={previousMonth}>
+                <div className="hidden sm:flex rounded-md border overflow-hidden">
+                  <Button
+                    type="button"
+                    variant={viewMode === 'month' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setViewMode('month')}
+                  >
+                    Month
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={viewMode === 'week' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="rounded-none"
+                    onClick={() => setViewMode('week')}
+                  >
+                    Week
+                  </Button>
+                </div>
+                <Button variant="outline" size="icon" onClick={previousPeriod}>
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
                 <Button variant="outline" onClick={goToToday} className="hidden sm:flex">
                   Today
                 </Button>
-                <Button variant="outline" size="icon" onClick={nextMonth}>
+                <Button variant="outline" size="icon" onClick={nextPeriod}>
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
@@ -319,7 +361,7 @@ export default function Calendar() {
 
             {/* Days of Week */}
             <div className="grid grid-cols-7 gap-1 sm:gap-2 mb-2">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+              {dayLabels.map((day) => (
                 <div
                   key={day}
                   className="text-center text-xs sm:text-sm font-semibold text-gray-600 py-2"
@@ -333,7 +375,8 @@ export default function Calendar() {
             <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {calendarDays.map((day) => {
                 const isToday = isSameDay(day, new Date());
-                const isCurrentMonth = isSameMonth(day, currentDate);
+                const isCurrentMonth =
+                  viewMode === 'week' ? true : isSameMonth(day, currentDate);
                 const dayEvents = getEventsForDay(day);
 
                 return (
@@ -362,7 +405,11 @@ export default function Calendar() {
                               isToday ? 'bg-white/20 text-white' : `${color.bg} ${color.text}`
                             }`}
                             onClick={() => handleEdit(event)}
-                            title={event.title}
+                            title={
+                              hasRelatedRecord(event)
+                                ? `${event.title} · Linked: ${event.related_to_type} ${event.related_to_name}`
+                                : event.title
+                            }
                           >
                             <span
                               className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${isToday ? 'bg-white' : color.dot}`}
@@ -407,10 +454,12 @@ export default function Calendar() {
                               ? format(safeParseDate(event.start_date), 'MMM d, h:mm a')
                               : '—'}
                           </p>
-                          {event.related_to_name && (
-                            <p className="text-xs text-gray-500">
-                              {event.related_to_type}: {event.related_to_name}
-                            </p>
+                          {hasRelatedRecord(event) && (
+                            <RelatedRecordLink
+                              type={event.related_to_type}
+                              name={event.related_to_name}
+                              className="mt-1"
+                            />
                           )}
                         </div>
                         <div className="flex gap-1">
@@ -421,14 +470,6 @@ export default function Calendar() {
                             onClick={() => handleEdit(event)}
                           >
                             <Edit2 className="w-4 h-4" />
-                          </Button>
-                          {event.event_type === 'call' && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                              <Phone className="w-4 h-4" />
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MessageCircle className="w-4 h-4" />
                           </Button>
                         </div>
                       </div>
@@ -461,6 +502,13 @@ export default function Calendar() {
                             ? format(safeParseDate(event.start_date), 'EEEE, MMM d • h:mm a')
                             : '—'}
                         </p>
+                        {hasRelatedRecord(event) && (
+                          <RelatedRecordLink
+                            type={event.related_to_type}
+                            name={event.related_to_name}
+                            className="mt-1"
+                          />
+                        )}
                         {event.description && (
                           <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                             {event.description}

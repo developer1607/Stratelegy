@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,12 @@ import {
 import { buildAccountPayload, validateAccountForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import OwnerSelectField from '@/components/forms/OwnerSelectField';
+import ConfigNameSelect from '@/components/forms/ConfigNameSelect';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { accountTierOptions, industryOptions } from '@/lib/crmConfig';
+import { useAuth } from '@/lib/AuthContext';
+import { userOwnerLabel } from '@/lib/accountOwner';
 import {
   formDialogContent,
   formDialogHeader,
@@ -38,21 +44,48 @@ const EMPTY_FORM = {
   annual_revenue: '',
   employees: '',
   status: 'active',
+  tier: '',
+  owner: '',
 };
 
-export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading }) {
+export default function AccountDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isLoading,
+  tiers = [],
+  defaultTier = 'Standard',
+}) {
+  const { user } = useAuth();
+  const { defaults, accountTiers, industries } = useCrmConfig({ enabled: open });
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const validation = useCrmFormValidation(validateAccountForm);
+  const tierOptions = accountTierOptions(accountTiers, formData.tier);
+  const industryOpts = industryOptions(industries, formData.industry);
+  const validate = useCallback(
+    (data) =>
+      validateAccountForm(data, {
+        allowedTiers: tierOptions,
+        allowedIndustries: industryOpts,
+      }),
+    [tierOptions, industryOpts],
+  );
+  const validation = useCrmFormValidation(validate);
   const { resetValidation, validateSubmit } = validation;
+  const defaultOwner = userOwnerLabel(user);
 
   useEffect(() => {
     if (open) {
+      setFormData({
+        ...EMPTY_FORM,
+        tier: defaultTier || defaults.accountTier || tiers[0] || 'Standard',
+        owner: defaultOwner,
+      });
       resetValidation();
       return;
     }
     setFormData(EMPTY_FORM);
     resetValidation();
-  }, [open, resetValidation]);
+  }, [open, resetValidation, defaultTier, tiers, defaultOwner, defaults.accountTier]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -84,14 +117,27 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="industry">Industry</Label>
-                <Input
+                <ConfigNameSelect
                   id="industry"
                   value={formData.industry}
-                  onChange={(e) => validation.updateField('industry', e.target.value, formData, setFormData)}
-                  onBlur={() => validation.touchField('industry', formData)}
+                  onValueChange={(value) => validation.updateField('industry', value, formData, setFormData)}
+                  options={industryOpts}
+                  placeholder="Select industry"
                   className={validation.inputClassName('industry')}
                 />
                 <FieldError message={validation.fieldError('industry')} />
+              </div>
+              <div className={formDialogField}>
+                <Label htmlFor="tier">Tier</Label>
+                <ConfigNameSelect
+                  id="tier"
+                  value={formData.tier}
+                  onValueChange={(value) => validation.updateField('tier', value, formData, setFormData)}
+                  options={tierOptions.length ? tierOptions : tiers}
+                  placeholder="Select tier"
+                  className={validation.inputClassName('tier')}
+                />
+                <FieldError message={validation.fieldError('tier')} />
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="email">Email *</Label>
@@ -163,7 +209,18 @@ export default function AccountDialog({ open, onOpenChange, onSubmit, isLoading 
                 <FieldError message={validation.fieldError('employees')} />
               </div>
               <div className={formDialogField}>
-                <Label htmlFor="status">Status</Label>
+                <OwnerSelectField
+                  id="owner"
+                  value={formData.owner}
+                  onValueChange={(value) => validation.updateField('owner', value, formData, setFormData)}
+                  disabled={isLoading}
+                  error={validation.fieldError('owner')}
+                  inputClassName={validation.inputClassName('owner')}
+                  allowUnassigned={false}
+                />
+              </div>
+              <div className={formDialogField}>
+                <Label htmlFor="status">Account Status</Label>
                 <Select
                   value={formData.status}
                   onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}

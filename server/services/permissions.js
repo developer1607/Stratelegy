@@ -9,7 +9,7 @@ import {
   buildEntityWriteMap,
   hasPermissionKey,
   hasModuleMaster,
-  TICKET_ACTION_KEYS,
+  CRM_MODULE_KEYS,
 } from '../constants/permissionRegistry.js';
 import { getRolePermissionObject, getPortalRoleById } from './roles.js';
 import { createEntity, filterEntities, updateEntity } from './entities.js';
@@ -31,6 +31,24 @@ const ADMIN_ONLY_ENTITIES = new Set([
   'Industry',
   'DefaultSettings',
 ]);
+
+/** CRM lookup tables — readable by any portal user with CRM module access. */
+const CRM_REFERENCE_ENTITIES = new Set([
+  'ContactSource',
+  'LeadStage',
+  'ActivityType',
+  'AccountTier',
+  'Industry',
+  'DefaultSettings',
+]);
+
+function hasCrmModuleAccess(permissions) {
+  if (!permissions) return false;
+  if (hasModuleMaster(permissions, 'crm')) return true;
+  return CRM_MODULE_KEYS.some((key) => hasPermissionKey(permissions, key));
+}
+
+export { hasCrmModuleAccess };
 
 export { DEFAULT_PERMISSIONS, ADMIN_PERMISSIONS, PERMISSION_KEYS };
 
@@ -260,6 +278,9 @@ export async function applyPortalRoleOnUserCreate({ userId, userEmail, userName,
 export function canReadEntity(user, permissions, entityName) {
   if (!user) return false;
   if (user.role === 'admin') return true;
+  if (CRM_REFERENCE_ENTITIES.has(entityName)) {
+    return hasCrmModuleAccess(permissions);
+  }
   if (ADMIN_ONLY_ENTITIES.has(entityName)) return false;
   const key = ENTITY_READ_RULES[entityName];
   if (!key) return false;

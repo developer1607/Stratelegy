@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,17 +9,14 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { LEAD_STATUSES, toDateInputValue } from '@/lib/crmHelpers';
+import { toDateInputValue, todayDateMin } from '@/lib/crmHelpers';
 import { validateLeadForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import AccountSelectField from '@/components/forms/AccountSelectField';
+import ConfigNameSelect from '@/components/forms/ConfigNameSelect';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { contactSourceOptions, leadStageOptions } from '@/lib/crmConfig';
 import {
   formDialogContent,
   formDialogHeader,
@@ -38,17 +35,31 @@ export default function EditLeadDialog({
   isLoading,
   readOnly = false,
 }) {
+  const { leadStages, contactSources } = useCrmConfig({ enabled: open });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     company: '',
+    account_id: '',
     status: 'new',
     source: 'email',
     value: '',
     next_follow_up: '',
   });
-  const validation = useCrmFormValidation(validateLeadForm);
+  const [originalForm, setOriginalForm] = useState(null);
+  const stageOptions = leadStageOptions(leadStages, formData.status);
+  const sourceOptions = contactSourceOptions(contactSources, formData.source);
+  const validate = useCallback(
+    (data) =>
+      validateLeadForm(data, {
+        original: originalForm,
+        allowedStatuses: stageOptions,
+        allowedSources: sourceOptions,
+      }),
+    [originalForm, stageOptions, sourceOptions],
+  );
+  const validation = useCrmFormValidation(validate);
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
@@ -57,16 +68,19 @@ export default function EditLeadDialog({
 
   useEffect(() => {
     if (lead) {
-      setFormData({
+      const loaded = {
         name: lead.name || '',
         email: lead.email || '',
         phone: lead.phone || '',
         company: lead.company || '',
+        account_id: lead.account_id || '',
         status: lead.status || 'new',
         source: lead.source || 'email',
         value: lead.value || '',
         next_follow_up: toDateInputValue(lead.next_follow_up),
-      });
+      };
+      setFormData(loaded);
+      setOriginalForm(loaded);
       resetValidation();
     }
   }, [lead, resetValidation]);
@@ -128,51 +142,52 @@ export default function EditLeadDialog({
                 />
                 {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
-              <div className={formDialogField}>
-                <Label htmlFor="edit-lead-company">Company</Label>
-                <Input id="edit-lead-company" value={formData.company} disabled={readOnly} {...bind('company')} />
-                {!readOnly && <FieldError message={validation.fieldError('company')} />}
-              </div>
             </div>
+
+            <AccountSelectField
+              company={formData.company}
+              accountId={formData.account_id}
+              onCompanyChange={(company) =>
+                readOnly ? undefined : validation.updateField('company', company, formData, setFormData)
+              }
+              onAccountIdChange={(id) =>
+                readOnly ? undefined : validation.updateField('account_id', id, formData, setFormData)
+              }
+              onCompanyBlur={() => validation.touchField('company', formData)}
+              companyError={validation.fieldError('company')}
+              companyInputClassName={validation.inputClassName('company')}
+              disabled={readOnly}
+              accountSelectId="edit-lead-account"
+              companyInputId="edit-lead-company"
+              customValueLabel="Company name"
+              linkedHint={(name) =>
+                `When converted, the opportunity will link to account ${name}.`
+              }
+            />
 
             <div className={formDialogGrid}>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-status">Status</Label>
-                <Select
+                <ConfigNameSelect
+                  id="edit-lead-status"
                   value={formData.status}
                   onValueChange={(value) => validation.updateField('status', value, formData, setFormData)}
+                  options={stageOptions}
                   disabled={readOnly}
-                >
-                  <SelectTrigger id="edit-lead-status" className={validation.inputClassName('status')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                    {LEAD_STATUSES.map((status) => (
-                      <SelectItem key={status.value} value={status.value}>
-                        {status.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  className={validation.inputClassName('status')}
+                />
                 {!readOnly && <FieldError message={validation.fieldError('status')} />}
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-lead-source">Source</Label>
-                <Select
+                <ConfigNameSelect
+                  id="edit-lead-source"
                   value={formData.source}
                   onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
+                  options={sourceOptions}
                   disabled={readOnly}
-                >
-                  <SelectTrigger id="edit-lead-source" className={validation.inputClassName('source')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="website">Website</SelectItem>
-                    <SelectItem value="partner">Partner</SelectItem>
-                  </SelectContent>
-                </Select>
+                  className={validation.inputClassName('source')}
+                />
                 {!readOnly && <FieldError message={validation.fieldError('source')} />}
               </div>
             </div>
@@ -196,6 +211,7 @@ export default function EditLeadDialog({
                 <Input
                   id="edit-lead-follow-up"
                   type="date"
+                  min={todayDateMin()}
                   value={formData.next_follow_up}
                   disabled={readOnly}
                   {...bind('next_follow_up')}

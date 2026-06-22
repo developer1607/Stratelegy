@@ -64,6 +64,12 @@ export const ENTITY_REGISTRY = {
         optional: true,
         default: "active",
       },
+      tier: {
+        type: "string",
+        writable: true,
+        maxLength: 100,
+        optional: true,
+      },
       owner: { type: "string", writable: true, maxLength: 255, optional: true },
       ...crmTimestamps(),
     },
@@ -86,6 +92,12 @@ export const ENTITY_REGISTRY = {
         type: "string",
         writable: true,
         maxLength: 255,
+        optional: true,
+      },
+      account_id: {
+        type: "string",
+        writable: true,
+        maxLength: 36,
         optional: true,
       },
       position: {
@@ -139,6 +151,7 @@ export const ENTITY_REGISTRY = {
       { name: "idx_contacts_name", columns: ["name"] },
       { name: "idx_contacts_email", columns: ["email"] },
       { name: "idx_contacts_company", columns: ["company"] },
+      { name: "idx_contacts_account_id", columns: ["account_id"] },
       { name: "idx_contacts_created", columns: ["created_date"] },
     ],
   },
@@ -155,6 +168,12 @@ export const ENTITY_REGISTRY = {
         type: "string",
         writable: true,
         maxLength: 255,
+        optional: true,
+      },
+      account_id: {
+        type: "string",
+        writable: true,
+        maxLength: 36,
         optional: true,
       },
       status: {
@@ -182,6 +201,7 @@ export const ENTITY_REGISTRY = {
     indexes: [
       { name: "idx_leads_name", columns: ["name"] },
       { name: "idx_leads_status", columns: ["status"] },
+      { name: "idx_leads_account_id", columns: ["account_id"] },
       { name: "idx_leads_created", columns: ["created_date"] },
     ],
   },
@@ -196,6 +216,12 @@ export const ENTITY_REGISTRY = {
         type: "string",
         writable: true,
         maxLength: 255,
+        optional: true,
+      },
+      account_id: {
+        type: "string",
+        writable: true,
+        maxLength: 36,
         optional: true,
       },
       amount: { type: "decimal", writable: true, optional: true },
@@ -226,6 +252,7 @@ export const ENTITY_REGISTRY = {
       { name: "idx_opportunities_name", columns: ["name"] },
       { name: "idx_opportunities_stage", columns: ["stage"] },
       { name: "idx_opportunities_account", columns: ["account_name"] },
+      { name: "idx_opportunities_account_id", columns: ["account_id"] },
       { name: "idx_opportunities_created", columns: ["created_date"] },
     ],
   },
@@ -317,6 +344,12 @@ export const ENTITY_REGISTRY = {
         type: "string",
         writable: true,
         maxLength: 255,
+        optional: true,
+      },
+      related_to_id: {
+        type: "string",
+        writable: true,
+        maxLength: 36,
         optional: true,
       },
       status: {
@@ -419,7 +452,7 @@ export const ENTITY_REGISTRY = {
         writable: true,
         maxLength: 50,
         optional: true,
-        default: "B",
+        default: "Standard",
       },
       monthly_sales_target: {
         type: "decimal",

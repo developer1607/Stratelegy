@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -21,9 +20,7 @@ export default function AccountFilters({
   onClear,
 }) {
   const tierOptions =
-    tiers.length > 0
-      ? tiers.map((t) => (t === 'Key' ? 'Key Account' : t))
-      : ['Key Account', 'A', 'B', 'C'];
+    tiers.length > 0 ? tiers : ['Standard', 'Premium', 'Enterprise'];
 
   return (
     <Card>
@@ -91,26 +88,23 @@ export default function AccountFilters({
         </div>
 
         <div>
-          <Label className="text-sm font-semibold mb-3 block">Tier</Label>
-          <div className="space-y-2">
-            {tierOptions.map((tier) => (
-              <div key={tier} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`tier-${tier}`}
-                  checked={filters.tiers?.includes(tier)}
-                  onCheckedChange={(checked) => {
-                    const newTiers = checked
-                      ? [...(filters.tiers || []), tier]
-                      : (filters.tiers || []).filter((t) => t !== tier);
-                    onFilterChange('tiers', newTiers);
-                  }}
-                />
-                <label htmlFor={`tier-${tier}`} className="text-sm cursor-pointer">
+          <Label className="text-sm font-semibold mb-2 block">Tier</Label>
+          <Select
+            value={filters.tier || 'all'}
+            onValueChange={(value) => onFilterChange('tier', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="All tiers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All tiers</SelectItem>
+              {tierOptions.map((tier) => (
+                <SelectItem key={tier} value={tier}>
                   {tier}
-                </label>
-              </div>
-            ))}
-          </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </CardContent>
     </Card>

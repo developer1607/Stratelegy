@@ -7,6 +7,11 @@ import { X, Phone, Mail, MessageCircle, Building2, Calendar, Activity } from 'lu
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { format } from 'date-fns';
+import {
+  contactPhoneHref,
+  contactEmailHref,
+  contactWhatsAppHref,
+} from '@/lib/contactActions';
 
 export default function ContactDetailsPanel({ contact, onClose }) {
   const { data: activities = [] } = useQuery({
@@ -26,6 +31,10 @@ export default function ContactDetailsPanel({ contact, onClose }) {
   });
 
   if (!contact) return null;
+
+  const phoneHref = contactPhoneHref(contact.phone);
+  const emailHref = contactEmailHref(contact.email);
+  const whatsappHref = contactWhatsAppHref(contact.phone);
 
   const priorityColors = {
     Key: 'bg-amber-100 text-amber-800 border-amber-300',
@@ -49,7 +58,6 @@ export default function ContactDetailsPanel({ contact, onClose }) {
       </div>
 
       <div className="p-6 space-y-6">
-        {/* Profile Section */}
         <div className="text-center pb-6 border-b">
           <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl font-bold text-white">
@@ -90,23 +98,48 @@ export default function ContactDetailsPanel({ contact, onClose }) {
           )}
         </div>
 
-        {/* Quick Actions */}
         <div className="grid grid-cols-3 gap-2">
-          <Button variant="outline" size="sm" className="w-full">
-            <Phone className="w-4 h-4 mr-1" />
-            Call
-          </Button>
-          <Button variant="outline" size="sm" className="w-full">
-            <Mail className="w-4 h-4 mr-1" />
-            Email
-          </Button>
-          <Button variant="outline" size="sm" className="w-full">
-            <MessageCircle className="w-4 h-4 mr-1" />
-            WhatsApp
-          </Button>
+          {phoneHref ? (
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <a href={phoneHref}>
+                <Phone className="w-4 h-4 mr-1" />
+                Call
+              </a>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              <Phone className="w-4 h-4 mr-1" />
+              Call
+            </Button>
+          )}
+          {emailHref ? (
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <a href={emailHref}>
+                <Mail className="w-4 h-4 mr-1" />
+                Email
+              </a>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              <Mail className="w-4 h-4 mr-1" />
+              Email
+            </Button>
+          )}
+          {whatsappHref ? (
+            <Button variant="outline" size="sm" className="w-full" asChild>
+              <a href={whatsappHref} target="_blank" rel="noopener noreferrer">
+                <MessageCircle className="w-4 h-4 mr-1" />
+                WhatsApp
+              </a>
+            </Button>
+          ) : (
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              <MessageCircle className="w-4 h-4 mr-1" />
+              WhatsApp
+            </Button>
+          )}
         </div>
 
-        {/* Contact Info */}
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">Contact Information</CardTitle>
@@ -154,7 +187,6 @@ export default function ContactDetailsPanel({ contact, onClose }) {
           </CardContent>
         </Card>
 
-        {/* Tabs Section */}
         <Tabs defaultValue="activities" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="activities">Activities</TabsTrigger>

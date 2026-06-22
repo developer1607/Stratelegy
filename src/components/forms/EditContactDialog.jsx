@@ -9,16 +9,12 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { validateContactForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import ConfigNameSelect from '@/components/forms/ConfigNameSelect';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { contactSourceOptions } from '@/lib/crmConfig';
 import {
   formDialogContent,
   formDialogHeader,
@@ -28,6 +24,14 @@ import {
   formDialogForm,
   formDialogFooter,
 } from '@/lib/formDialog';
+import AccountSelectField from '@/components/forms/AccountSelectField';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function EditContactDialog({
   open,
@@ -37,11 +41,13 @@ export default function EditContactDialog({
   isLoading,
   readOnly = false,
 }) {
+  const { contactSources } = useCrmConfig({ enabled: open });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     company: '',
+    account_id: '',
     position: '',
     role: '',
     priority: 'Standard',
@@ -51,7 +57,15 @@ export default function EditContactDialog({
     company_size: '',
     last_activity_date: '',
   });
-  const validate = useCallback((data) => validateContactForm(data, { requireEmail: true }), []);
+  const sourceOptions = contactSourceOptions(contactSources, formData.source);
+  const validate = useCallback(
+    (data) =>
+      validateContactForm(data, {
+        requireEmail: true,
+        allowedSources: contactSourceOptions(contactSources, data.source),
+      }),
+    [contactSources],
+  );
   const validation = useCrmFormValidation(validate);
   const { resetValidation, validateSubmit } = validation;
 
@@ -66,6 +80,7 @@ export default function EditContactDialog({
         email: contact.email || '',
         phone: contact.phone || '',
         company: contact.company || '',
+        account_id: contact.account_id || '',
         position: contact.position || '',
         role: contact.role || '',
         priority: contact.priority || 'Standard',
@@ -120,12 +135,24 @@ export default function EditContactDialog({
                 <Input id="edit-contact-phone" type="tel" value={formData.phone} disabled={readOnly} {...bind('phone')} />
                 {!readOnly && <FieldError message={validation.fieldError('phone')} />}
               </div>
-              <div className={formDialogField}>
-                <Label htmlFor="edit-contact-company">Company</Label>
-                <Input id="edit-contact-company" value={formData.company} disabled={readOnly} {...bind('company')} />
-                {!readOnly && <FieldError message={validation.fieldError('company')} />}
-              </div>
             </div>
+
+            <AccountSelectField
+              company={formData.company}
+              accountId={formData.account_id}
+              onCompanyChange={(value) =>
+                readOnly ? undefined : validation.updateField('company', value, formData, setFormData)
+              }
+              onAccountIdChange={(id) =>
+                readOnly ? undefined : validation.updateField('account_id', id, formData, setFormData)
+              }
+              onCompanyBlur={() => validation.touchField('company', formData)}
+              companyError={validation.fieldError('company')}
+              companyInputClassName={validation.inputClassName('company')}
+              disabled={readOnly}
+              accountSelectId="edit-contact-account"
+              companyInputId="edit-contact-company"
+            />
 
             <div className={formDialogField}>
               <Label htmlFor="edit-contact-position">Position</Label>
@@ -153,22 +180,14 @@ export default function EditContactDialog({
               </div>
               <div className={formDialogField}>
                 <Label htmlFor="edit-contact-source">Source</Label>
-                <Select
+                <ConfigNameSelect
+                  id="edit-contact-source"
                   value={formData.source}
                   onValueChange={(value) => validation.updateField('source', value, formData, setFormData)}
+                  options={sourceOptions}
                   disabled={readOnly}
-                >
-                  <SelectTrigger id="edit-contact-source" className={validation.inputClassName('source')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
-                    <SelectItem value="call">Call</SelectItem>
-                    <SelectItem value="email">Email</SelectItem>
-                    <SelectItem value="website">Website</SelectItem>
-                    <SelectItem value="partner">Partner</SelectItem>
-                    <SelectItem value="referral">Referral</SelectItem>
-                  </SelectContent>
-                </Select>
+                  className={validation.inputClassName('source')}
+                />
                 {!readOnly && <FieldError message={validation.fieldError('source')} />}
               </div>
             </div>

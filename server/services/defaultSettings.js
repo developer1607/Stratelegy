@@ -1,5 +1,5 @@
 import { queryOne } from '../db/query.js';
-import { isEmailConfigured } from './email/mailer.js';
+import { isEmailOperational } from './email/mailer.js';
 
 export async function getDefaultSettingsRow() {
   return queryOne('SELECT * FROM default_settings ORDER BY created_date ASC LIMIT 1');
@@ -7,7 +7,7 @@ export async function getDefaultSettingsRow() {
 
 /** MFA defaults applied when creating users or completing invite registration. */
 export async function getNewUserMfaDefaults() {
-  if (!isEmailConfigured()) {
+  if (!(await isEmailOperational())) {
     return { enabled: false, forced: false };
   }
 

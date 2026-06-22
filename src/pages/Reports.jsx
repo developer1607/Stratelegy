@@ -19,13 +19,16 @@ import SalesOverviewTab from '../components/reports/SalesOverviewTab';
 import PipelineForecastTab from '../components/reports/PipelineForecastTab';
 import ActivityProductivityTab from '../components/reports/ActivityProductivityTab';
 import LeadSourcesTab from '../components/reports/LeadSourcesTab';
-import AccountHealthTab from '../components/reports/AccountHealthTab';
 import SavedReportsDialog from '../components/reports/SavedReportsDialog';
 import { Button } from '@/components/ui/button';
 import { showError } from '@/lib/toast';
 import { Bookmark } from 'lucide-react';
+import { monthBucketCounts } from '@/lib/kpiTrends';
+import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Reports() {
+  const { canReadEntity, isLoading: permsLoading } = usePermissions();
+  const queriesEnabled = !permsLoading;
   const [filters, setFilters] = useState({
     dateRange: 'quarter',
     stage: 'all',
@@ -43,26 +46,31 @@ export default function Reports() {
   const { data: accounts = [] } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => api.entities.Account.list(),
+    enabled: queriesEnabled && canReadEntity('Account'),
   });
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts'],
     queryFn: () => api.entities.Contact.list(),
+    enabled: queriesEnabled && canReadEntity('Contact'),
   });
 
   const { data: leads = [] } = useQuery({
     queryKey: ['leads'],
     queryFn: () => api.entities.Lead.list(),
+    enabled: queriesEnabled && canReadEntity('Lead'),
   });
 
   const { data: opportunities = [] } = useQuery({
     queryKey: ['opportunities'],
     queryFn: () => api.entities.Opportunity.list(),
+    enabled: queriesEnabled && canReadEntity('Opportunity'),
   });
 
   const { data: activities = [] } = useQuery({
     queryKey: ['activities'],
     queryFn: () => api.entities.Activity.list(),
+    enabled: queriesEnabled && canReadEntity('Activity'),
   });
 
   // Get unique owners
@@ -172,9 +180,9 @@ export default function Reports() {
         : 0;
 
     // Sparkline data for last 6 months
-    const generateSparkline = (_data) => {
-      return [65, 72, 68, 85, 78, 92].map((value) => ({ value }));
-    };
+    const leadTrend = monthBucketCounts(filteredLeads, 'created_date');
+    const wonTrend = monthBucketCounts(wonDeals, 'close_date');
+    const conversionTrend = monthBucketCounts(wonDeals, 'close_date');
 
     return {
       totalLeads,
@@ -186,9 +194,9 @@ export default function Reports() {
       conversionRate,
       pipelineValue,
       avgSalesCycle,
-      sparklineLeads: generateSparkline(),
-      sparklineWon: generateSparkline(),
-      sparklineConversion: generateSparkline(),
+      sparklineLeads: leadTrend.map((value) => ({ value })),
+      sparklineWon: wonTrend.map((value) => ({ value })),
+      sparklineConversion: conversionTrend.map((value) => ({ value })),
     };
   }, [filteredData]);
 
@@ -370,12 +378,6 @@ export default function Reports() {
           >
             Lead Sources
           </TabsTrigger>
-          <TabsTrigger
-            value="accounts"
-            className="text-xs sm:text-sm data-[state=active]:bg-blue-50 data-[state=active]:text-blue-700"
-          >
-            Account Health
-          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="sales">
@@ -402,14 +404,6 @@ export default function Reports() {
         <TabsContent value="sources">
           <LeadSourcesTab
             filteredLeads={filteredData.filteredLeads}
-            filteredOpportunities={filteredData.filteredOpportunities}
-          />
-        </TabsContent>
-
-        <TabsContent value="accounts">
-          <AccountHealthTab
-            filteredAccounts={filteredData.filteredAccounts}
-            filteredActivities={filteredData.filteredActivities}
             filteredOpportunities={filteredData.filteredOpportunities}
           />
         </TabsContent>

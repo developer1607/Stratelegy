@@ -3,9 +3,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/api/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Mail, AlertCircle, CheckCircle2, Shield } from 'lucide-react';
+import { Mail, AlertCircle, CheckCircle2, Shield, RefreshCw } from 'lucide-react';
 import { showError, showSuccess } from '@/lib/toast';
 import EmailTemplateEditor from './EmailTemplateEditor';
 
@@ -13,9 +14,24 @@ export default function EmailTemplatesPanel() {
   const [selectedId, setSelectedId] = useState('');
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, isFetching } = useQuery({
     queryKey: ['emailTemplates'],
     queryFn: () => api.email.listTemplates(),
+  });
+
+  const verifyMutation = useMutation({
+    mutationFn: () => api.email.verifyConnection(),
+    onSuccess: (result) => {
+      queryClient.setQueryData(['emailTemplates'], (prev) =>
+        prev ? { ...prev, status: result } : prev,
+      );
+      if (result.mail_enabled) {
+        showSuccess('SMTP connection verified.');
+      } else {
+        showError(null, result.connection_error || 'SMTP connection failed.');
+      }
+    },
+    onError: (err) => showError(err, 'SMTP connection test failed'),
   });
 
   const { data: defaultSettings } = useQuery({
@@ -43,6 +59,7 @@ export default function EmailTemplatesPanel() {
   const templates = data?.templates || [];
   const status = data?.status;
   const mailEnabled = Boolean(status?.mail_enabled);
+  const mailStatus = status?.status || (mailEnabled ? 'ready' : 'disabled');
 
   const activeId = selectedId || templates[0]?.id || '';
   const selectedMeta = templates.find((t) => t.id === activeId);
@@ -86,15 +103,25 @@ export default function EmailTemplatesPanel() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3">
-            {mailEnabled ? (
+            {mailStatus === 'ready' ? (
               <Badge className="bg-green-100 text-green-800 border-green-200 gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 Mail configured
               </Badge>
-            ) : (
+            ) : mailStatus === 'failed' ? (
+              <Badge variant="outline" className="border-red-300 text-red-800 gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                SMTP connection failed
+              </Badge>
+            ) : mailStatus === 'incomplete' ? (
               <Badge variant="outline" className="border-amber-300 text-amber-800 gap-1">
                 <AlertCircle className="w-3.5 h-3.5" />
                 Mail not configured
+              </Badge>
+            ) : (
+              <Badge variant="outline" className="border-amber-300 text-amber-800 gap-1">
+                <AlertCircle className="w-3.5 h-3.5" />
+                Mail disabled
               </Badge>
             )}
             {status?.from_address && (
@@ -103,8 +130,44 @@ export default function EmailTemplatesPanel() {
             {status?.smtp_host && (
               <span className="text-sm text-gray-600">SMTP: {status.smtp_host}</span>
             )}
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={verifyMutation.isPending || isFetching}
+              onClick={() => verifyMutation.mutate()}
+            >
+              <RefreshCw
+                className={`w-3.5 h-3.5 mr-1.5 ${verifyMutation.isPending ? 'animate-spin' : ''}`}
+              />
+              {verifyMutation.isPending ? 'Testing…' : 'Test connection'}
+            </Button>
           </div>
-          {!mailEnabled && (
+          {mailStatus === 'failed' && status?.connection_error && (
+            <p className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-md p-3">
+              {status.connection_error}
+              {status.env_configured && (
+                <>
+                  {' '}
+                  SMTP variables are set on the server, but authentication or connectivity failed.
+                  Update <code className="text-xs">SMTP_USER</code> and{' '}
+                  <code className="text-xs">SMTP_PASS</code> in the server environment, then test
+                  again.
+                </>
+              )}
+            </p>
+          )}
+          {mailStatus === 'incomplete' && (
+            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
+              Set <code className="text-xs">MAIL_ENABLED=true</code> and all SMTP variables on the
+              server
+              {status?.missing?.length ? (
+                <> — missing: {status.missing.join(', ')}</>
+              ) : null}
+              . Invites, ticket notifications, and email MFA require working outbound mail.
+            </p>
+          )}
+          {mailStatus === 'disabled' && (
             <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-3">
               Set <code className="text-xs">MAIL_ENABLED=true</code> and SMTP variables on the
               server. Invites, ticket notifications, and email MFA require outbound mail. Email MFA

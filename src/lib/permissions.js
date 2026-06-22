@@ -51,6 +51,15 @@ function hasAnyKey(permissions, keys) {
   return keys.some((k) => hasPermissionKey(permissions, k));
 }
 
+const CRM_REFERENCE_ENTITIES = new Set([
+  'ContactSource',
+  'LeadStage',
+  'ActivityType',
+  'AccountTier',
+  'Industry',
+  'DefaultSettings',
+]);
+
 /**
  * @typedef {Record<string, boolean> & { isAdmin: boolean }} PortalPermissions
  * @param {object|null|undefined} user
@@ -95,6 +104,9 @@ export function canAccessPage(permissions, pageName) {
 export function canReadEntity(permissions, entityName) {
   if (!permissions) return false;
   if (permissions.isAdmin) return true;
+  if (CRM_REFERENCE_ENTITIES.has(entityName)) {
+    return hasCrmModuleAccess(permissions);
+  }
   const key = ENTITY_READ_KEYS[entityName];
   if (!key) return false;
   return hasPermissionKey(permissions, key);

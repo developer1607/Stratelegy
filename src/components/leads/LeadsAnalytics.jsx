@@ -3,17 +3,45 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
   Bar,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  FunnelChart,
-  Funnel,
-  LabelList,
 } from "recharts";
+
+function ConversionFunnel({ data }) {
+  const maxValue = Math.max(...data.map((item) => item.value), 1);
+
+  return (
+    <div className="flex h-[250px] flex-col justify-center gap-2 py-2">
+      {data.map((item) => {
+        const widthPct =
+          item.value === 0 ? 12 : Math.max(18, (item.value / maxValue) * 100);
+
+        return (
+          <div key={item.name} className="flex items-center gap-3">
+            <div className="flex min-h-[44px] flex-1 items-center justify-center">
+              <div
+                className="flex h-10 items-center justify-center rounded-sm text-sm font-semibold text-white shadow-sm"
+                style={{
+                  width: `${widthPct}%`,
+                  backgroundColor: item.fill,
+                  minWidth: item.value > 0 ? "3rem" : "2.5rem",
+                }}
+                title={`${item.name}: ${item.value}`}
+              >
+                {item.value}
+              </div>
+            </div>
+            <span className="w-24 shrink-0 text-sm text-gray-700">{item.name}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function LeadsAnalytics({ leads }) {
   // Pipeline value by stage
@@ -43,9 +71,9 @@ export default function LeadsAnalytics({ leads }) {
     return Object.values(grouped).slice(-6);
   }, [leads]);
 
-  // Conversion funnel
+  // Conversion funnel — cumulative counts (leads that reached each stage or beyond)
   const funnelData = React.useMemo(() => {
-    const newCount = leads.filter((l) => l.status === "new").length;
+    const total = leads.length;
     const contactedCount = leads.filter((l) =>
       ["contacted", "qualified", "won"].includes(l.status),
     ).length;
@@ -55,7 +83,7 @@ export default function LeadsAnalytics({ leads }) {
     const wonCount = leads.filter((l) => l.status === "won").length;
 
     return [
-      { name: "New Leads", value: newCount, fill: "#3b82f6" },
+      { name: "New Leads", value: total, fill: "#3b82f6" },
       { name: "Contacted", value: contactedCount, fill: "#8b5cf6" },
       { name: "Qualified", value: qualifiedCount, fill: "#10b981" },
       { name: "Won", value: wonCount, fill: "#22c55e" },
@@ -111,22 +139,13 @@ export default function LeadsAnalytics({ leads }) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={250}>
-            <FunnelChart>
-              <Tooltip />
-              <Funnel dataKey="value" data={funnelData}>
-                <LabelList
-                  position="right"
-                  fill="#000"
-                  stroke="none"
-                  dataKey="name"
-                />
-                {funnelData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Funnel>
-            </FunnelChart>
-          </ResponsiveContainer>
+          {leads.length === 0 ? (
+            <p className="flex h-[250px] items-center justify-center text-sm text-gray-500">
+              No leads to display
+            </p>
+          ) : (
+            <ConversionFunnel data={funnelData} />
+          )}
         </CardContent>
       </Card>
     </div>

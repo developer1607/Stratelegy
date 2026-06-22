@@ -29,7 +29,7 @@ import {
   verifyMfaEmailChallenge,
   userRequiresMfaEmail,
 } from "../services/mfaEmail.js";
-import { isEmailConfigured } from "../services/email/mailer.js";
+import { isEmailOperational } from "../services/email/mailer.js";
 import { auditLog } from "../services/auditLog.js";
 import { queryOne } from "../db/query.js";
 
@@ -74,7 +74,13 @@ router.post("/login", async (req, res, next) => {
     const { user, tokenVersion } = authResult;
 
     const userRow = await queryOne("SELECT * FROM users WHERE id = ?", [user.id]);
-    if (userRequiresMfaEmail(userRow) && isEmailConfigured()) {
+    if (userRequiresMfaEmail(userRow)) {
+      if (!(await isEmailOperational())) {
+        return res.status(503).json({
+          message:
+            'Email MFA is enabled for your account but outbound mail is not working. Contact an administrator to fix SMTP settings.',
+        });
+      }
       const challenge = await createMfaEmailChallenge(user.id, "login");
       await auditLog(req, "login_mfa_challenge", {
         actorUserId: user.id,
@@ -171,7 +177,7 @@ router.post("/mfa/resend", mfaRateLimiter, async (req, res, next) => {
 
 router.post("/mfa/enable/start", requireAuth, mfaRateLimiter, async (req, res, next) => {
   try {
-    if (!isEmailConfigured()) {
+    if (!(await isEmailOperational())) {
       return res.status(503).json({
         message: "Email is not configured. Contact an administrator to enable email MFA.",
       });
@@ -249,11 +255,15 @@ router.post("/mfa/disable", requireAuth, async (req, res, next) => {
   }
 });
 
-router.get("/me", requireAuth, (req, res) => {
-  res.json({
-    ...req.user,
-    email_mfa_available: isEmailConfigured(),
-  });
+router.get("/me", requireAuth, async (req, res, next) => {
+  try {
+    res.json({
+      ...req.user,
+      email_mfa_available: await isEmailOperational(),
+    });
+  } catch (e) {
+    next(e);
+  }
 });
 
 router.patch("/me", requireAuth, async (req, res, next) => {
@@ -289,7 +299,7 @@ router.patch("/me", requireAuth, async (req, res, next) => {
     res.json({
       ...updated,
       password_changed: passwordChanged,
-      email_mfa_available: isEmailConfigured(),
+      email_mfa_available: await isEmailOperational(),
     });
   } catch (e) {
     next(e);

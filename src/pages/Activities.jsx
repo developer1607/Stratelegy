@@ -13,6 +13,7 @@ import ActivitiesAnalytics from '../components/activities/ActivitiesAnalytics';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { filterByDateRange, matchFieldIncludes, matchSearch, namesFromConfigItems, uniqueOwners } from '@/lib/listFilters';
+import { monthBucketCounts, sparklineHeights } from '@/lib/kpiTrends';
 import { showError, showSuccess } from '@/lib/toast';
 import PermissionGate from '@/components/PermissionGate';
 import { useCrmEntityCreate } from '@/hooks/useCrmEntityCreate';
@@ -145,6 +146,33 @@ export default function Activities() {
     };
   }, [filteredActivities]);
 
+  const activityTrends = useMemo(() => {
+    const volumeTrend = monthBucketCounts(filteredActivities, 'date');
+    const emailTrend = monthBucketCounts(
+      filteredActivities.filter((a) => a.type === 'Email'),
+      'date',
+    );
+    const callTrend = monthBucketCounts(
+      filteredActivities.filter((a) => a.type === 'Call'),
+      'date',
+    );
+    const meetingTrend = monthBucketCounts(
+      filteredActivities.filter((a) => a.type === 'Meeting'),
+      'date',
+    );
+    const noteTrend = monthBucketCounts(
+      filteredActivities.filter((a) => a.type === 'Note'),
+      'date',
+    );
+    return {
+      volumeChart: sparklineHeights(volumeTrend),
+      emailChart: sparklineHeights(emailTrend),
+      callChart: sparklineHeights(callTrend),
+      meetingChart: sparklineHeights(meetingTrend),
+      noteChart: sparklineHeights(noteTrend),
+    };
+  }, [filteredActivities]);
+
   const priorityActivities = useMemo(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -210,45 +238,38 @@ export default function Activities() {
         <ActivityKPICard
           title="Activities Today"
           value={kpis.activitiesToday}
-          trend="up"
-          trendValue="+23%"
-          chartData={[60, 70, 65, 80, 75, 85]}
+          chartData={activityTrends.volumeChart}
           color="blue"
         />
         <ActivityKPICard
           title="Overdue Activities"
           value={kpis.overdueActivities}
           subText="Due now"
-          trend="down"
-          trendValue="2h overdue"
-          chartData={[40, 50, 45, 60, 55, 50]}
+          chartData={activityTrends.volumeChart}
           color="red"
         />
         <ActivityKPICard
           title="Emails Sent"
           value={kpis.emailsSent}
-          subText="+7 today"
-          chartData={[30, 40, 50, 60, 70, 80]}
+          chartData={activityTrends.emailChart}
           color="cyan"
         />
         <ActivityKPICard
           title="Calls Logged"
           value={kpis.callsLogged}
-          subText="+4 today"
-          chartData={[50, 55, 60, 65, 70, 75]}
+          chartData={activityTrends.callChart}
           color="green"
         />
         <ActivityKPICard
           title="Meetings Scheduled"
           value={kpis.meetingsScheduled}
-          subText="+1h 12m"
-          chartData={[40, 50, 55, 60, 70, 65]}
+          chartData={activityTrends.meetingChart}
           color="purple"
         />
         <ActivityKPICard
           title="Tasks/Notes"
           value={kpis.notesLogged}
-          chartData={[30, 35, 40, 45, 50, 55]}
+          chartData={activityTrends.noteChart}
           color="green"
         />
       </div>
@@ -260,9 +281,6 @@ export default function Activities() {
             <div className="p-4 border-b">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Priority Activities</h2>
-                <Button variant="ghost" size="sm">
-                  More
-                </Button>
               </div>
               <Tabs value={priorityTab} onValueChange={setPriorityTab}>
                 <TabsList className="grid w-full grid-cols-4">
@@ -342,9 +360,6 @@ export default function Activities() {
           <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">Activity Timeline</h2>
-              <Button variant="ghost" size="sm">
-                •••
-              </Button>
             </div>
 
             {isLoading ? (

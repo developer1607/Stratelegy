@@ -196,6 +196,59 @@ async function syncContactLastActivity(activity) {
   );
 }
 
+const ACCOUNT_LINK_ENTITIES = new Set(['Contact', 'Lead', 'Opportunity']);
+
+async function resolveAccountLink(entityName, data) {
+  if (!ACCOUNT_LINK_ENTITIES.has(entityName)) return data;
+  if (!data.account_id) return data;
+
+  const row = await queryOne('SELECT id, name FROM accounts WHERE id = ? LIMIT 1', [
+    data.account_id,
+  ]);
+  if (!row) return data;
+
+  if (entityName === 'Contact' || entityName === 'Lead') {
+    return { ...data, company: row.name, account_id: row.id };
+  }
+  if (entityName === 'Opportunity') {
+    return { ...data, account_name: row.name, account_id: row.id };
+  }
+  return data;
+}
+
+async function cascadeAccountRename(accountId, oldName, newName) {
+  if (!accountId || !newName || oldName === newName) return;
+
+  await execute(
+    'UPDATE contacts SET company = ?, updated_date = NOW() WHERE account_id = ?',
+    [newName, accountId]
+  );
+  await execute(
+    'UPDATE leads SET company = ?, updated_date = NOW() WHERE account_id = ?',
+    [newName, accountId]
+  );
+  await execute(
+    'UPDATE opportunities SET account_name = ?, updated_date = NOW() WHERE account_id = ?',
+    [newName, accountId]
+  );
+
+  // Legacy rows linked by name only (no account_id yet)
+  if (oldName) {
+    await execute(
+      'UPDATE contacts SET company = ?, account_id = ?, updated_date = NOW() WHERE company = ? AND (account_id IS NULL OR account_id = ?)',
+      [newName, accountId, oldName, accountId]
+    );
+    await execute(
+      'UPDATE leads SET company = ?, account_id = ?, updated_date = NOW() WHERE company = ? AND (account_id IS NULL OR account_id = ?)',
+      [newName, accountId, oldName, accountId]
+    );
+    await execute(
+      'UPDATE opportunities SET account_name = ?, account_id = ?, updated_date = NOW() WHERE account_name = ? AND (account_id IS NULL OR account_id = ?)',
+      [newName, accountId, oldName, accountId]
+    );
+  }
+}
+
 function buildFilterClause(entityName, filterQuery) {
   const def = getEntityDef(entityName);
   const conditions = ['1=1'];
@@ -298,6 +351,12 @@ export async function createEntity(entityName, data) {
   if (entityName === 'Activity') {
     normalized = await resolveActivityRelations(normalized);
   }
+  if (entityName === 'CalendarEvent') {
+    normalized = await resolveActivityRelations(normalized);
+  }
+  if (ACCOUNT_LINK_ENTITIES.has(entityName)) {
+    normalized = await resolveAccountLink(entityName, normalized);
+  }
   validateRequired(entityName, normalized);
   const values = pickWritable(entityName, normalized, { forCreate: true });
 
@@ -327,6 +386,12 @@ export async function updateEntity(entityName, id, data) {
   if (entityName === 'Activity') {
     normalized = await resolveActivityRelations(normalized, oldRecord);
   }
+  if (entityName === 'CalendarEvent') {
+    normalized = await resolveActivityRelations(normalized, oldRecord);
+  }
+  if (ACCOUNT_LINK_ENTITIES.has(entityName)) {
+    normalized = await resolveAccountLink(entityName, normalized);
+  }
   const values = pickWritable(entityName, normalized, { forUpdate: true });
   const keys = Object.keys(values);
   if (keys.length === 0) return oldRecord;
@@ -336,6 +401,14 @@ export async function updateEntity(entityName, id, data) {
     ...Object.values(values),
     id,
   ]);
+
+  if (entityName === 'Account') {
+    const newName = values.name ?? oldRecord?.name;
+    const oldName = oldRecord?.name;
+    if (newName && oldName && newName !== oldName) {
+      await cascadeAccountRename(id, oldName, newName);
+    }
+  }
 
   const record = await getEntity(entityName, id);
   if (entityName === 'Activity') {

@@ -28,13 +28,6 @@ let unsubscribePermissionStream = null;
 
 function subscribeToPermissionEvents(callback) {
   permissionEventSubscribers.add(callback);
-  if (!unsubscribePermissionStream) {
-    unsubscribePermissionStream = api.entities.UserPermissions.subscribe(
-      (event) => {
-        for (const cb of [...permissionEventSubscribers]) cb(event);
-      },
-    );
-  }
   return () => {
     permissionEventSubscribers.delete(callback);
     if (permissionEventSubscribers.size === 0 && unsubscribePermissionStream) {
@@ -42,6 +35,13 @@ function subscribeToPermissionEvents(callback) {
       unsubscribePermissionStream = null;
     }
   };
+}
+
+function ensurePermissionStream(isAdmin) {
+  if (!isAdmin || unsubscribePermissionStream) return;
+  unsubscribePermissionStream = api.entities.UserPermissions.subscribe((event) => {
+    for (const cb of [...permissionEventSubscribers]) cb(event);
+  });
 }
 
 export function usePermissions() {
@@ -64,8 +64,12 @@ export function usePermissions() {
     refetchOnMount: "always",
   });
 
+  const permissions = resolvePermissions(user, storedPermissions);
+  const isAdmin = permissions.isAdmin;
+
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
+    ensurePermissionStream(isAdmin);
     const unsubscribe = subscribeToPermissionEvents((event) => {
       if (
         event.data?.user_id === user.id ||
@@ -78,14 +82,12 @@ export function usePermissions() {
       }
     });
     return unsubscribe;
-  }, [user, refetch, queryClient]);
-
-  const permissions = resolvePermissions(user, storedPermissions);
+  }, [user, isAdmin, refetch, queryClient]);
 
   return {
     permissions,
     isLoading: isLoading && !!user,
-    isAdmin: permissions.isAdmin,
+    isAdmin,
     canAccessPage: (pageName) => canAccessPage(permissions, pageName),
     canReadEntity: (entityName) => canReadEntity(permissions, entityName),
     canWriteEntity: (entityName) => canWriteEntity(permissions, entityName),

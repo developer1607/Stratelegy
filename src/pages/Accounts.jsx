@@ -3,16 +3,10 @@ import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, Building2, MoreVertical, Download, Star } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Plus, Search, Building2, MoreVertical, Download, Star, Filter } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Avatar } from '@/components/ui/avatar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -33,45 +27,82 @@ import AccountKPICard from '../components/accounts/AccountKPICard';
 import PermissionGate from '@/components/PermissionGate';
 import AccountFilters from '../components/accounts/AccountFilters';
 import AccountInsightsDialog from '../components/accounts/AccountInsightsDialog';
-import { activityMatchesAccount } from '@/lib/crmHelpers';
+import {
+  activitiesForAccount,
+  opportunityMatchesAccount,
+  isOpenOpportunity,
+} from '@/lib/accountLinking';
+import {
+  monthBucketCounts,
+  sparklineHeights,
+  percentChange,
+  formatTrendDelta,
+} from '@/lib/kpiTrends';
 import { matchFieldEquals, matchSearch, namesFromConfigItems, uniqueOwners, revenueInRange } from '@/lib/listFilters';
+import { displayAccountOwner, ownerInitials, userOwnerLabel } from '@/lib/accountOwner';
 import { showError, showSuccess } from '@/lib/toast';
 import { usePermissions } from '@/hooks/usePermissions';
 
 export default function Accounts() {
-  const { canWriteEntity } = usePermissions();
+  const { canWriteEntity, canReadEntity, isLoading: permsLoading } = usePermissions();
   const canManage = canWriteEntity('Account');
+  const canReadAccounts = canReadEntity('Account');
+  const canReadActivities = canReadEntity('Activity');
+  const canReadContacts = canReadEntity('Contact');
+  const canReadOpportunities = canReadEntity('Opportunity');
+  const canReadCalendar = canReadEntity('CalendarEvent');
+  const canReadCrmConfig = canReadEntity('Industry');
+  const queriesEnabled = !permsLoading;
   const [searchTerm, setSearchTerm] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [insightsDialogOpen, setInsightsDialogOpen] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState(null);
   const [filters, setFilters] = useState({
     owner: 'all',
     industry: 'all',
     revenue: 'all',
-    tiers: [],
+    tier: 'all',
   });
   const queryClient = useQueryClient();
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => api.entities.Account.list('-created_date'),
+    enabled: queriesEnabled && canReadAccounts,
   });
 
   const { data: activities = [] } = useQuery({
     queryKey: ['activities'],
     queryFn: () => api.entities.Activity.list('-date'),
+    enabled: queriesEnabled && canReadActivities,
   });
 
   const { data: contacts = [] } = useQuery({
     queryKey: ['contacts'],
     queryFn: () => api.entities.Contact.list('-created_date'),
+    enabled: queriesEnabled && canReadContacts,
   });
 
   const { data: opportunities = [] } = useQuery({
     queryKey: ['opportunities'],
     queryFn: () => api.entities.Opportunity.list('-created_date'),
+    enabled: queriesEnabled && canReadOpportunities,
+  });
+
+  const { data: calendarEvents = [] } = useQuery({
+    queryKey: ['calendarEvents'],
+    queryFn: () => api.entities.CalendarEvent.list('-start_date', 500),
+    staleTime: 60_000,
+    enabled: queriesEnabled && canReadCalendar,
+  });
+
+  const { data: userDirectory = [] } = useQuery({
+    queryKey: ['users', 'directory'],
+    queryFn: () => api.users.directory(),
+    staleTime: 5 * 60_000,
+    enabled: queriesEnabled && canReadAccounts,
   });
 
   const createMutation = useMutation({
@@ -89,6 +120,9 @@ export default function Accounts() {
     mutationFn: ({ id, data }) => api.entities.Account.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
+      queryClient.invalidateQueries({ queryKey: ['leads'] });
+      queryClient.invalidateQueries({ queryKey: ['opportunities'] });
       setEditDialogOpen(false);
       setSelectedAccount(null);
       showSuccess('Account updated.');
@@ -105,65 +139,78 @@ export default function Accounts() {
     onError: (error) => showError(error, 'Failed to delete account.'),
   });
 
+  const { data: accountTiers = [] } = useQuery({
+    queryKey: ['accountTiers'],
+    queryFn: () => api.entities.AccountTier.list('order'),
+    enabled: queriesEnabled && canReadCrmConfig,
+  });
+
+  const { data: defaultSettings } = useQuery({
+    queryKey: ['defaultSettings'],
+    queryFn: async () => {
+      const settings = await api.entities.DefaultSettings.list();
+      return settings[0] || null;
+    },
+    staleTime: 60_000,
+    enabled: queriesEnabled && canReadCrmConfig,
+  });
+
+  const tierOptions = useMemo(
+    () => namesFromConfigItems(accountTiers),
+    [accountTiers]
+  );
+
+  const defaultAccountTier = useMemo(() => {
+    const configured = defaultSettings?.default_account_tier;
+    if (configured && tierOptions.includes(configured)) return configured;
+    return tierOptions[0] || 'Standard';
+  }, [defaultSettings, tierOptions]);
+
+  const topTierName = useMemo(() => {
+    if (!accountTiers.length) return 'Enterprise';
+    return [...accountTiers].sort((a, b) => (a.order ?? 0) - (b.order ?? 0)).at(-1)?.name || 'Enterprise';
+  }, [accountTiers]);
+
+  const resolveAccountTier = (account) => {
+    if (account.tier && tierOptions.includes(account.tier)) return account.tier;
+    if (defaultAccountTier) return defaultAccountTier;
+    return tierOptions[0] || 'Standard';
+  };
+
   const enrichedAccounts = useMemo(() => {
     return accounts.map((account) => {
-      const accountActivities = activities.filter((a) => activityMatchesAccount(a, account));
+      const accountActivities = activitiesForAccount(account, activities, {
+        contacts,
+        opportunities,
+      });
       const lastActivity =
         accountActivities.length > 0
           ? new Date(Math.max(...accountActivities.map((a) => new Date(a.date))))
           : null;
 
       const openDeals = opportunities.filter(
-        (o) =>
-          o.account_name === account.name && o.stage !== 'closed_won' && o.stage !== 'closed_lost'
+        (o) => opportunityMatchesAccount(o, account) && isOpenOpportunity(o)
       ).length;
 
       const overdueActivities = accountActivities.filter(
         (a) => new Date(a.date) < new Date() && !a.completed
       ).length;
 
-      // Assign random tier for demo (in real app, this would be in the entity)
-      const tier =
-        account.annual_revenue > 1000000
-          ? 'Key'
-          : account.annual_revenue > 500000
-            ? 'A'
-            : account.annual_revenue > 100000
-              ? 'B'
-              : 'C';
-
-      // Calculate health status
-      const daysSinceLastActivity = lastActivity
-        ? Math.floor((Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24))
-        : 999;
-
-      const health =
-        overdueActivities > 0
-          ? 'Needs Attention'
-          : daysSinceLastActivity > 30
-            ? 'At Risk'
-            : 'Healthy';
-
       return {
         ...account,
-        tier,
+        tier: resolveAccountTier(account),
         lastActivity,
         openDeals,
         overdueActivities,
-        health,
-        owner: account.owner || account.created_by || '',
+        displayOwner: displayAccountOwner(account),
       };
     });
-  }, [accounts, activities, opportunities]);
+  }, [accounts, activities, contacts, opportunities, defaultAccountTier, tierOptions]);
 
   const { data: industries = [] } = useQuery({
     queryKey: ['industries'],
     queryFn: () => api.entities.Industry.list('order'),
-  });
-
-  const { data: accountTiers = [] } = useQuery({
-    queryKey: ['accountTiers'],
-    queryFn: () => api.entities.AccountTier.list('order'),
+    enabled: queriesEnabled && canReadCrmConfig,
   });
 
   const industryOptions = useMemo(() => {
@@ -174,18 +221,13 @@ export default function Accounts() {
     );
   }, [industries, enrichedAccounts]);
 
-  const tierOptions = useMemo(() => {
-    const fromConfig = namesFromConfigItems(accountTiers);
-    const fromData = [...new Set(enrichedAccounts.map((a) => a.tier).filter(Boolean))];
-    return [...new Set([...fromConfig, ...fromData])].sort((a, b) =>
+  const ownerOptions = useMemo(() => {
+    const fromAccounts = uniqueOwners(enrichedAccounts, ['owner']);
+    const fromUsers = userDirectory.map((user) => userOwnerLabel(user)).filter(Boolean);
+    return [...new Set([...fromAccounts, ...fromUsers])].sort((a, b) =>
       a.localeCompare(b, undefined, { sensitivity: 'base' })
     );
-  }, [accountTiers, enrichedAccounts]);
-
-  const ownerOptions = useMemo(
-    () => uniqueOwners(enrichedAccounts, ['owner', 'created_by']),
-    [enrichedAccounts]
-  );
+  }, [enrichedAccounts, userDirectory]);
 
   const filteredAccounts = useMemo(() => {
     return enrichedAccounts.filter((account) => {
@@ -197,14 +239,9 @@ export default function Accounts() {
         'website',
       ]);
       const matchIndustry = matchFieldEquals(account.industry, filters.industry);
-      const matchTier =
-        filters.tiers.length === 0 ||
-        filters.tiers.some((tier) => {
-          if (tier === 'Key Account') return account.tier === 'Key' || account.tier === 'Key Account';
-          return matchFieldEquals(account.tier, tier);
-        });
+      const matchTier = filters.tier === 'all' || matchFieldEquals(account.tier, filters.tier);
       const matchOwner =
-        filters.owner === 'all' || matchFieldEquals(account.owner || account.created_by, filters.owner);
+        filters.owner === 'all' || matchFieldEquals(account.displayOwner, filters.owner);
       const matchRevenue = revenueInRange(account.annual_revenue, filters.revenue);
 
       return matchSearchTerm && matchIndustry && matchTier && matchOwner && matchRevenue;
@@ -214,7 +251,7 @@ export default function Accounts() {
   const kpis = useMemo(() => {
     const totalAccounts = enrichedAccounts.length;
     const activeAccounts = enrichedAccounts.filter((a) => a.status === 'active').length;
-    const keyAccounts = enrichedAccounts.filter((a) => a.tier === 'Key').length;
+    const keyAccounts = enrichedAccounts.filter((a) => a.tier === topTierName).length;
     const totalRevenue = opportunities
       .filter((o) => o.stage === 'closed_won')
       .reduce((sum, o) => sum + (o.amount || 0), 0);
@@ -227,7 +264,38 @@ export default function Accounts() {
       totalRevenue,
       overdueAccounts,
     };
-  }, [enrichedAccounts, opportunities]);
+  }, [enrichedAccounts, opportunities, topTierName]);
+
+  const accountKpiTrends = useMemo(() => {
+    const createdTrend = monthBucketCounts(accounts, 'created_date');
+    const activeTrend = monthBucketCounts(
+      accounts.filter((a) => a.status === 'active'),
+      'created_date',
+    );
+    const keyTrend = monthBucketCounts(
+      accounts.filter((a) => (a.tier || defaultAccountTier) === topTierName),
+      'created_date',
+    );
+    const revenueTrend = monthBucketCounts(
+      opportunities.filter((o) => o.stage === 'closed_won'),
+      'close_date',
+    );
+    const totalDelta = formatTrendDelta(
+      percentChange(createdTrend.at(-1) ?? 0, createdTrend.at(-2) ?? 0),
+    );
+
+    return {
+      totalChart: sparklineHeights(createdTrend),
+      activeChart: sparklineHeights(activeTrend),
+      keyChart: sparklineHeights(keyTrend),
+      revenueChart: sparklineHeights(revenueTrend),
+      totalDelta,
+      activeDelta: formatTrendDelta(
+        percentChange(activeTrend.at(-1) ?? 0, activeTrend.at(-2) ?? 0),
+      ),
+      keyDelta: formatTrendDelta(percentChange(keyTrend.at(-1) ?? 0, keyTrend.at(-2) ?? 0)),
+    };
+  }, [accounts, opportunities, topTierName, defaultAccountTier]);
 
   const handleEdit = (account) => {
     setSelectedAccount(account);
@@ -244,7 +312,7 @@ export default function Accounts() {
   };
 
   const clearFilters = () => {
-    setFilters({ owner: 'all', industry: 'all', revenue: 'all', tiers: [] });
+    setFilters({ owner: 'all', industry: 'all', revenue: 'all', tier: 'all' });
   };
 
   const exportToCSV = () => {
@@ -258,9 +326,8 @@ export default function Accounts() {
       'Website',
       'Annual Revenue',
       'Employees',
-      'Status',
+      'Account Status',
       'Tier',
-      'Health',
     ];
     const rows = filteredAccounts.map((account) => [
       account.name || '',
@@ -272,7 +339,6 @@ export default function Accounts() {
       account.employees || '',
       account.status || '',
       account.tier || '',
-      account.health || '',
     ]);
 
     const csvContent = [
@@ -291,21 +357,15 @@ export default function Accounts() {
 
   const getTierBadge = (tier) => {
     const colors = {
+      Standard: 'bg-gray-100 text-gray-800',
+      Premium: 'bg-blue-100 text-blue-800',
+      Enterprise: 'bg-yellow-100 text-yellow-800',
       Key: 'bg-yellow-100 text-yellow-800',
       A: 'bg-green-100 text-green-800',
       B: 'bg-blue-100 text-blue-800',
       C: 'bg-gray-100 text-gray-800',
     };
     return colors[tier] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getHealthBadge = (health) => {
-    const colors = {
-      Healthy: 'bg-green-100 text-green-800',
-      'At Risk': 'bg-yellow-100 text-yellow-800',
-      'Needs Attention': 'bg-red-100 text-red-800',
-    };
-    return colors[health] || 'bg-gray-100 text-gray-800';
   };
 
   return (
@@ -344,88 +404,103 @@ export default function Accounts() {
         <AccountKPICard
           title="Total Accounts"
           value={kpis.totalAccounts}
-          trend="up"
-          trendValue="+2%"
-          chartData={[50, 60, 55, 70, 65, 75]}
+          trend={
+            accountKpiTrends.totalDelta
+              ? accountKpiTrends.totalDelta.startsWith('-')
+                ? 'down'
+                : 'up'
+              : undefined
+          }
+          trendValue={accountKpiTrends.totalDelta || undefined}
+          chartData={accountKpiTrends.totalChart}
           color="blue"
         />
         <AccountKPICard
           title="Active Accounts"
           value={kpis.activeAccounts}
-          trend="up"
-          trendValue="+2%"
-          chartData={[55, 60, 58, 68, 65, 72]}
+          trend={
+            accountKpiTrends.activeDelta
+              ? accountKpiTrends.activeDelta.startsWith('-')
+                ? 'down'
+                : 'up'
+              : undefined
+          }
+          trendValue={accountKpiTrends.activeDelta || undefined}
+          chartData={accountKpiTrends.activeChart}
           color="green"
         />
         <AccountKPICard
           title="Key Accounts"
           value={kpis.keyAccounts}
-          trend="up"
-          trendValue="+5%"
-          chartData={[40, 45, 50, 55, 58, 62]}
+          trend={
+            accountKpiTrends.keyDelta
+              ? accountKpiTrends.keyDelta.startsWith('-')
+                ? 'down'
+                : 'up'
+              : undefined
+          }
+          trendValue={accountKpiTrends.keyDelta || undefined}
+          chartData={accountKpiTrends.keyChart}
           color="cyan"
         />
         <AccountKPICard
           title="Total Revenue"
           value={`$${(kpis.totalRevenue / 1000000).toFixed(1)}M`}
-          trend="up"
-          trendValue="+3.6%"
-          chartData={[60, 65, 70, 75, 78, 82]}
+          chartData={accountKpiTrends.revenueChart}
           color="purple"
         />
         <AccountKPICard
           title="Overdue Activities"
           value={kpis.overdueAccounts}
-          chartData={[30, 35, 40, 38, 42, 45]}
           color="red"
         />
       </div>
 
       <div className="flex gap-6">
         <div className="flex-1">
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-lg shadow mb-4 lg:mb-0">
             <div className="p-4 border-b">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Select value="table">
-                  <SelectTrigger className="w-full sm:w-32">
-                    <SelectValue placeholder="View" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="table">Table</SelectItem>
-                    <SelectItem value="cards">Cards</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select value="format">
-                  <SelectTrigger className="w-full sm:w-32">
-                    <SelectValue placeholder="Format" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="standard">Standard</SelectItem>
-                    <SelectItem value="detailed">Detailed</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Button variant="outline" size="sm">
-                  More
-                </Button>
-
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <Input
-                    placeholder="Search accounts..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-9"
-                  />
+              <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+                <div className="relative flex-1 max-w-md space-y-1.5">
+                  <Label htmlFor="accounts-search">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <Input
+                      id="accounts-search"
+                      placeholder="Search accounts..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-9 h-9"
+                    />
+                  </div>
                 </div>
-
-                <Button variant="outline" size="sm" onClick={exportToCSV}>
-                  Export CSV
+                <Button
+                  type="button"
+                  variant={showFilters ? 'default' : 'outline'}
+                  className="w-full sm:w-auto"
+                  onClick={() => setShowFilters((open) => !open)}
+                >
+                  <Filter className="w-4 h-4 mr-2" />
+                  Filters
                 </Button>
               </div>
             </div>
+          </div>
 
+          {showFilters && (
+            <div className="mb-4 lg:hidden">
+              <AccountFilters
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                industries={industryOptions}
+                tiers={tierOptions}
+                owners={ownerOptions}
+                onClear={clearFilters}
+              />
+            </div>
+          )}
+
+          <div className="bg-white rounded-lg shadow">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -436,20 +511,19 @@ export default function Accounts() {
                     <TableHead>Tier</TableHead>
                     <TableHead>Owner</TableHead>
                     <TableHead>Last Activity</TableHead>
-                    <TableHead>Status</TableHead>
                     <TableHead className="w-12"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                         Loading...
                       </TableCell>
                     </TableRow>
                   ) : filteredAccounts.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                      <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                         No accounts found
                       </TableCell>
                     </TableRow>
@@ -458,7 +532,7 @@ export default function Accounts() {
                       <TableRow
                         key={account.id}
                         className={`cursor-pointer hover:bg-gray-50 ${
-                          account.tier === 'Key' ? 'bg-yellow-50/30' : ''
+                          account.tier === topTierName ? 'bg-yellow-50/30' : ''
                         } ${account.overdueActivities > 0 ? 'border-l-4 border-l-red-500' : ''}`}
                         onClick={() => handleViewInsights(account)}
                       >
@@ -470,7 +544,7 @@ export default function Accounts() {
                             <div>
                               <div className="flex items-center gap-2">
                                 <p className="font-medium">{account.name}</p>
-                                {account.tier === 'Key' && (
+                                {account.tier === topTierName && (
                                   <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
                                 )}
                                 {account.overdueActivities > 0 && (
@@ -495,12 +569,9 @@ export default function Accounts() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Avatar className="w-6 h-6 bg-blue-100 text-blue-600 text-xs font-semibold flex items-center justify-center">
-                              {account.owner
-                                ?.split(' ')
-                                .map((n) => n[0])
-                                .join('') || 'A'}
+                              {ownerInitials(account.displayOwner)}
                             </Avatar>
-                            <span className="text-sm">{account.owner}</span>
+                            <span className="text-sm">{account.displayOwner || '—'}</span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -509,9 +580,6 @@ export default function Accounts() {
                               ? new Date(account.lastActivity).toLocaleDateString()
                               : 'No activity'}
                           </span>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getHealthBadge(account.health)}>{account.health}</Badge>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -587,6 +655,8 @@ export default function Accounts() {
           createMutation.mutate(data);
         }}
         isLoading={createMutation.isPending && dialogOpen}
+        tiers={tierOptions}
+        defaultTier={defaultAccountTier}
       />
 
       <EditAccountDialog
@@ -599,6 +669,8 @@ export default function Accounts() {
         onSubmit={(data) => updateMutation.mutate({ id: selectedAccount.id, data })}
         isLoading={updateMutation.isPending && editDialogOpen}
         readOnly={!canManage}
+        tiers={tierOptions}
+        defaultTier={defaultAccountTier}
       />
 
       <AccountInsightsDialog
@@ -606,6 +678,7 @@ export default function Accounts() {
         onOpenChange={setInsightsDialogOpen}
         account={selectedAccount}
         activities={activities}
+        calendarEvents={calendarEvents}
         contacts={contacts}
         opportunities={opportunities}
       />

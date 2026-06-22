@@ -1,6 +1,6 @@
 import { config } from '../../config.js';
 import { EMAIL_TEMPLATES } from './templates/index.js';
-import { isEmailConfigured, sendRenderedEmail } from './mailer.js';
+import { isEmailEnvConfigured, sendRenderedEmail, getEmailOperationalStatus } from './mailer.js';
 import {
   getTemplateContent,
   renderTemplateContent,
@@ -216,12 +216,6 @@ export async function sendTestTemplateEmail(templateId, { to, content } = {}) {
 
 export { saveTemplateOverride, resetTemplateOverride } from './templateOverrides.js';
 
-export function getEmailSystemStatus() {
-  return {
-    mail_enabled: isEmailConfigured(),
-    smtp_host: config.mail.host || null,
-    from_address: config.mail.from || null,
-    app_name: config.appName,
-    app_base_url: config.appBaseUrl,
-  };
+export async function getEmailSystemStatus(options) {
+  return getEmailOperationalStatus(options);
 }

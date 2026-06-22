@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { api } from '@/api/client';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -31,10 +31,12 @@ import {
 import { Badge } from '@/components/ui/badge';
 import TablePagination from '@/components/ui/table-pagination';
 import { usePaginatedEntityList } from '@/hooks/usePaginatedEntityList';
+import { useEntityFullList } from '@/hooks/useEntityFullList';
 import { useCrmEntityCreate } from '@/hooks/useCrmEntityCreate';
 import { showError, showSuccess } from '@/lib/toast';
 import { formatCurrency } from '@/utils';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
 
 const STAGES = [
   'prospecting',
@@ -55,7 +57,9 @@ const STAGE_COLORS = {
 };
 
 export default function Opportunities() {
-  const { canWriteEntity } = usePermissions();
+  const { canWriteEntity, canReadEntity, isLoading: permsLoading } = usePermissions();
+  const { defaults } = useCrmConfig({ enabled: !permsLoading && canReadEntity('DefaultSettings') });
+  const currency = defaults.currency;
   const canManage = canWriteEntity('Opportunity');
   const [searchTerm, setSearchTerm] = useState('');
   const [stageFilter, setStageFilter] = useState('all');
@@ -77,6 +81,11 @@ export default function Opportunities() {
   } = usePaginatedEntityList('Opportunity', {
     sort: '-created_date',
     queryKeyPrefix: 'opportunities',
+  });
+
+  const { data: allOpportunities = [] } = useEntityFullList('Opportunity', {
+    queryKeyPrefix: 'opportunities',
+    sort: '-created_date',
   });
 
   useEffect(() => {
@@ -126,15 +135,25 @@ export default function Opportunities() {
     }
   };
 
-  const filteredOpportunities = useMemo(() => {
-    let result = opportunities.filter((opp) => {
+  const opportunityPassesFilters = useCallback(
+    (opp) => {
       const matchSearch =
         opp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         opp.account_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         opp.owner?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchStage = stageFilter === 'all' || opp.stage === stageFilter;
       return matchSearch && matchStage;
-    });
+    },
+    [searchTerm, stageFilter],
+  );
+
+  const opportunitiesMatchingFilters = useMemo(
+    () => allOpportunities.filter(opportunityPassesFilters),
+    [allOpportunities, opportunityPassesFilters],
+  );
+
+  const filteredOpportunities = useMemo(() => {
+    let result = opportunities.filter(opportunityPassesFilters);
 
     result.sort((a, b) => {
       let aVal = a[sortColumn];
@@ -149,13 +168,13 @@ export default function Opportunities() {
     });
 
     return result;
-  }, [opportunities, searchTerm, stageFilter, sortColumn, sortDirection]);
+  }, [opportunities, opportunityPassesFilters, sortColumn, sortDirection]);
 
   const kpis = useMemo(() => {
-    const open = filteredOpportunities.filter((o) =>
+    const open = opportunitiesMatchingFilters.filter((o) =>
       ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(o.stage)
     );
-    const won = filteredOpportunities.filter((o) => o.stage === 'closed_won');
+    const won = opportunitiesMatchingFilters.filter((o) => o.stage === 'closed_won');
     const pipelineValue = open.reduce((sum, o) => sum + (o.amount || 0), 0);
     const wonValue = won.reduce((sum, o) => sum + (o.amount || 0), 0);
     return {
@@ -165,11 +184,11 @@ export default function Opportunities() {
       wonCount: won.length,
       wonValue,
     };
-  }, [filteredOpportunities, opportunitiesTotal]);
+  }, [opportunitiesMatchingFilters, opportunitiesTotal]);
 
   const exportToCSV = () => {
     const headers = ['Name', 'Account', 'Amount', 'Stage', 'Probability', 'Close Date', 'Owner'];
-    const rows = filteredOpportunities.map((opp) => [
+    const rows = opportunitiesMatchingFilters.map((opp) => [
       opp.name,
       opp.account_name || '',
       opp.amount || 0,
@@ -230,11 +249,11 @@ export default function Opportunities() {
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-xs text-gray-500 uppercase">Pipeline value</p>
-          <p className="text-2xl font-bold">{formatCurrency(kpis.pipelineValue, true)}</p>
+          <p className="text-2xl font-bold">{formatCurrency(kpis.pipelineValue, currency, true)}</p>
         </div>
         <div className="bg-white rounded-lg border p-4">
           <p className="text-xs text-gray-500 uppercase">Won value</p>
-          <p className="text-2xl font-bold">{formatCurrency(kpis.wonValue, true)}</p>
+          <p className="text-2xl font-bold">{formatCurrency(kpis.wonValue, currency, true)}</p>
         </div>
       </div>
 
@@ -307,7 +326,7 @@ export default function Opportunities() {
                 >
                   <TableCell className="font-medium">{opp.name}</TableCell>
                   <TableCell>{opp.account_name || '—'}</TableCell>
-                  <TableCell>{formatCurrency(opp.amount || 0, true)}</TableCell>
+                  <TableCell>{formatCurrency(opp.amount || 0, currency, true)}</TableCell>
                   <TableCell>
                     <Badge className={STAGE_COLORS[opp.stage] || 'bg-gray-100 text-gray-700'}>
                       {(opp.stage || 'prospecting').replace(/_/g, ' ')}

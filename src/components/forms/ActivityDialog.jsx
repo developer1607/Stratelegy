@@ -22,6 +22,9 @@ import {
 import { validateActivityForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import ConfigNameSelect from '@/components/forms/ConfigNameSelect';
+import { useCrmConfig } from '@/hooks/useCrmConfig';
+import { activityTypeOptions } from '@/lib/crmConfig';
 import {
   formDialogContent,
   formDialogHeader,
@@ -52,9 +55,21 @@ function toPayload(formData) {
   };
 }
 
-export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading, defaultType }) {
+export default function ActivityDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isLoading,
+  defaultType,
+  initialRelated = null,
+}) {
+  const { defaults, activityTypes } = useCrmConfig({ enabled: open });
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const validate = useCallback((data) => validateActivityForm(toPayload(data)), []);
+  const typeOptions = activityTypeOptions(activityTypes, formData.type);
+  const validate = useCallback(
+    (data) => validateActivityForm(toPayload(data), { allowedTypes: typeOptions }),
+    [typeOptions],
+  );
   const validation = useCrmFormValidation(validate);
   const { resetValidation, validateSubmit, revalidate } = validation;
 
@@ -62,11 +77,14 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
     if (!open) return;
     setFormData({
       ...EMPTY_FORM,
-      type: defaultType || 'Call',
+      type: defaultType || defaults.activityType,
       date: new Date().toISOString().slice(0, 16),
+      related_to_type: initialRelated?.type || '',
+      related_to_id: initialRelated?.id || '',
+      related_to_name: initialRelated?.name || '',
     });
     resetValidation();
-  }, [open, defaultType, resetValidation]);
+  }, [open, defaultType, initialRelated, resetValidation, defaults.activityType]);
 
   const { data: relatedEntities = [] } = useQuery({
     queryKey: ['crm-related-entities', formData.related_to_type],
@@ -121,21 +139,13 @@ export default function ActivityDialog({ open, onOpenChange, onSubmit, isLoading
             <div className={formDialogGrid}>
               <div className={formDialogField}>
                 <Label htmlFor="activity-type">Activity Type *</Label>
-                <Select
+                <ConfigNameSelect
+                  id="activity-type"
                   value={formData.type}
                   onValueChange={(value) => validation.updateField('type', value, formData, setFormData)}
-                >
-                  <SelectTrigger id="activity-type" className={validation.inputClassName('type')}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent {...selectContentProps}>
-                    <SelectItem value="Call">Call</SelectItem>
-                    <SelectItem value="Email">Email</SelectItem>
-                    <SelectItem value="Meeting">Meeting</SelectItem>
-                    <SelectItem value="Task">Task</SelectItem>
-                    <SelectItem value="Note">Note</SelectItem>
-                  </SelectContent>
-                </Select>
+                  options={typeOptions}
+                  className={validation.inputClassName('type')}
+                />
                 <FieldError message={validation.fieldError('type')} />
               </div>
               <div className={formDialogField}>

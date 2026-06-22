@@ -19,6 +19,7 @@ import {
 import { validateOpportunityForm } from '@/lib/crmFormValidation';
 import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
 import FieldError from '@/components/forms/FieldError';
+import AccountSelectField from '@/components/forms/AccountSelectField';
 import {
   formDialogContent,
   formDialogHeader,
@@ -41,6 +42,7 @@ const STAGES = [
 const EMPTY_FORM = {
   name: '',
   account_name: '',
+  account_id: '',
   amount: '',
   stage: 'prospecting',
   probability: '',
@@ -49,19 +51,27 @@ const EMPTY_FORM = {
   source: '',
 };
 
-export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoading }) {
+export default function OpportunityDialog({
+  open,
+  onOpenChange,
+  onSubmit,
+  isLoading,
+  initialData = null,
+  title = 'Create Opportunity',
+}) {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const validation = useCrmFormValidation(validateOpportunityForm);
   const { resetValidation, validateSubmit } = validation;
 
   useEffect(() => {
-    if (open) {
+    if (!open) {
+      setFormData(EMPTY_FORM);
       resetValidation();
       return;
     }
-    setFormData(EMPTY_FORM);
     resetValidation();
-  }, [open, resetValidation]);
+    setFormData(initialData ? { ...EMPTY_FORM, ...initialData } : EMPTY_FORM);
+  }, [open, initialData, resetValidation]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -78,7 +88,7 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={formDialogContent('sm')}>
         <DialogHeader className={formDialogHeader}>
-          <DialogTitle>Create Opportunity</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <form noValidate onSubmit={handleSubmit} className={formDialogForm}>
           <div className={formDialogBody}>
@@ -95,17 +105,24 @@ export default function OpportunityDialog({ open, onOpenChange, onSubmit, isLoad
                 />
                 <FieldError message={validation.fieldError('name')} />
               </div>
-              <div className={formDialogField}>
-                <Label htmlFor="opp-account">Account</Label>
-                <Input
-                  id="opp-account"
-                  value={formData.account_name}
-                  onChange={(e) => validation.updateField('account_name', e.target.value, formData, setFormData)}
-                  onBlur={() => validation.touchField('account_name', formData)}
-                  className={validation.inputClassName('account_name')}
-                />
-                <FieldError message={validation.fieldError('account_name')} />
-              </div>
+              <AccountSelectField
+                value={formData.account_name}
+                accountId={formData.account_id}
+                onValueChange={(accountName) =>
+                  validation.updateField('account_name', accountName, formData, setFormData)
+                }
+                onAccountIdChange={(id) =>
+                  validation.updateField('account_id', id, formData, setFormData)
+                }
+                onCompanyBlur={() => validation.touchField('account_name', formData)}
+                companyError={validation.fieldError('account_name')}
+                companyInputClassName={validation.inputClassName('account_name')}
+                accountSelectId="opp-account"
+                companyInputId="opp-account-custom"
+                linkedHint={(name) =>
+                  `Deal will show under ${name} in Account Insights → Open Deals.`
+                }
+              />
               <div className={formDialogGrid}>
                 <div className={formDialogField}>
                   <Label htmlFor="opp-amount">Amount</Label>

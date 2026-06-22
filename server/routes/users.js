@@ -1,5 +1,7 @@
 import { Router } from 'express';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireAdmin, requireAuth } from '../middleware/auth.js';
+import { attachPermissions } from '../middleware/permissions.js';
+import { hasCrmModuleAccess } from '../services/permissions.js';
 import {
   createUser,
   inviteUser,
@@ -9,6 +11,7 @@ import {
   updateUserSupportRouting,
   setUserMfaEmailSettings,
   disableMfaEmailForUser,
+  listUsersDirectory,
 } from '../services/users.js';
 import { auditLog } from '../services/auditLog.js';
 import {
@@ -20,6 +23,18 @@ import {
 import { PERMISSION_KEYS } from '../constants/permissions.js';
 
 const router = Router();
+
+router.get('/directory', requireAuth, attachPermissions, async (req, res, next) => {
+  try {
+    if (!hasCrmModuleAccess(req.permissions)) {
+      return res.status(403).json({ message: 'You do not have permission to view this data' });
+    }
+    const users = await listUsersDirectory();
+    res.json({ users });
+  } catch (e) {
+    next(e);
+  }
+});
 
 router.post('/', requireAdmin, async (req, res, next) => {
   try {

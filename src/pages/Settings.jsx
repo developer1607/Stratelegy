@@ -21,6 +21,8 @@ import EmailTemplatesPanel from '../components/settings/EmailTemplatesPanel';
 import PortalReferencePanel from '../components/settings/PortalReferencePanel';
 import { usePermissions } from '@/hooks/usePermissions';
 import AccessDenied from '@/components/AccessDenied';
+import { invalidateCrmConfig } from '@/lib/crmConfig';
+import { downloadImportTemplate } from '@/lib/importTemplates';
 
 export default function Settings() {
   const { isAdmin, isLoading } = usePermissions();
@@ -29,6 +31,7 @@ export default function Settings() {
   const [exportingEntity, setExportingEntity] = useState(null);
   const queryClient = useQueryClient();
   const adminQueriesEnabled = isAdmin && !isLoading;
+  const refreshCrmConfig = () => invalidateCrmConfig(queryClient);
 
   const { data: contactSources = [] } = useQuery({
     queryKey: ['contactSources'],
@@ -79,12 +82,12 @@ export default function Settings() {
 
   const createSettingsMutation = useMutation({
     mutationFn: (data) => api.entities.DefaultSettings.create(data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defaultSettings'] }),
+    onSuccess: refreshCrmConfig,
   });
 
   const updateSettingsMutation = useMutation({
     mutationFn: ({ id, data }) => api.entities.DefaultSettings.update(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['defaultSettings'] }),
+    onSuccess: refreshCrmConfig,
   });
 
   const handleUpdateSettings = async (field, value) => {
@@ -161,25 +164,9 @@ export default function Settings() {
     }
   };
 
-  const downloadTemplate = (type) => {
-    const templates = {
-      contacts:
-        'name,email,phone,company,position,source\nJohn Doe,john@example.com,+1234567890,Acme Inc,Sales Manager,email',
-      accounts:
-        'name,industry,website,phone,email,annual_revenue,employees,status\nAcme Inc,Technology,acme.com,+1234567890,info@acme.com,1000000,50,active',
-      leads:
-        'name,email,phone,company,status,source,value\nJane Smith,jane@example.com,+1234567890,Beta Corp,new,website,50000',
-    };
+  const downloadTemplate = (type) => downloadImportTemplate(type);
 
-    const csv = templates[type];
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${type}_template.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-  };
+  const configMutation = (promise) => promise.then(refreshCrmConfig);
 
   if (isLoading) {
     return (
@@ -215,97 +202,37 @@ export default function Settings() {
               <ConfigListManager
                 title="Contact Sources"
                 items={contactSources}
-                onAdd={(data) =>
-                  api.entities.ContactSource.create(data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['contactSources'] })
-                  )
-                }
-                onUpdate={(id, data) =>
-                  api.entities.ContactSource.update(id, data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['contactSources'] })
-                  )
-                }
-                onDelete={(id) =>
-                  api.entities.ContactSource.delete(id).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['contactSources'] })
-                  )
-                }
+                onAdd={(data) => configMutation(api.entities.ContactSource.create(data))}
+                onUpdate={(id, data) => configMutation(api.entities.ContactSource.update(id, data))}
+                onDelete={(id) => configMutation(api.entities.ContactSource.delete(id))}
               />
               <ConfigListManager
                 title="Lead Stages"
                 items={leadStages}
-                onAdd={(data) =>
-                  api.entities.LeadStage.create(data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['leadStages'] })
-                  )
-                }
-                onUpdate={(id, data) =>
-                  api.entities.LeadStage.update(id, data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['leadStages'] })
-                  )
-                }
-                onDelete={(id) =>
-                  api.entities.LeadStage.delete(id).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['leadStages'] })
-                  )
-                }
+                onAdd={(data) => configMutation(api.entities.LeadStage.create(data))}
+                onUpdate={(id, data) => configMutation(api.entities.LeadStage.update(id, data))}
+                onDelete={(id) => configMutation(api.entities.LeadStage.delete(id))}
               />
               <ConfigListManager
                 title="Activity Types"
                 items={activityTypes}
-                onAdd={(data) =>
-                  api.entities.ActivityType.create(data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['activityTypes'] })
-                  )
-                }
-                onUpdate={(id, data) =>
-                  api.entities.ActivityType.update(id, data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['activityTypes'] })
-                  )
-                }
-                onDelete={(id) =>
-                  api.entities.ActivityType.delete(id).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['activityTypes'] })
-                  )
-                }
+                onAdd={(data) => configMutation(api.entities.ActivityType.create(data))}
+                onUpdate={(id, data) => configMutation(api.entities.ActivityType.update(id, data))}
+                onDelete={(id) => configMutation(api.entities.ActivityType.delete(id))}
               />
               <ConfigListManager
                 title="Account Tiers"
                 items={accountTiers}
-                onAdd={(data) =>
-                  api.entities.AccountTier.create(data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['accountTiers'] })
-                  )
-                }
-                onUpdate={(id, data) =>
-                  api.entities.AccountTier.update(id, data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['accountTiers'] })
-                  )
-                }
-                onDelete={(id) =>
-                  api.entities.AccountTier.delete(id).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['accountTiers'] })
-                  )
-                }
+                onAdd={(data) => configMutation(api.entities.AccountTier.create(data))}
+                onUpdate={(id, data) => configMutation(api.entities.AccountTier.update(id, data))}
+                onDelete={(id) => configMutation(api.entities.AccountTier.delete(id))}
               />
               <ConfigListManager
                 title="Industries"
                 items={industries}
-                onAdd={(data) =>
-                  api.entities.Industry.create(data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['industries'] })
-                  )
-                }
-                onUpdate={(id, data) =>
-                  api.entities.Industry.update(id, data).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['industries'] })
-                  )
-                }
-                onDelete={(id) =>
-                  api.entities.Industry.delete(id).then(() =>
-                    queryClient.invalidateQueries({ queryKey: ['industries'] })
-                  )
-                }
+                onAdd={(data) => configMutation(api.entities.Industry.create(data))}
+                onUpdate={(id, data) => configMutation(api.entities.Industry.update(id, data))}
+                onDelete={(id) => configMutation(api.entities.Industry.delete(id))}
               />
             </div>
           </TabsContent>
@@ -356,9 +283,9 @@ export default function Settings() {
                 <div className="space-y-2">
                   <Label>Default Account Tier</Label>
                   <Input
-                    value={defaultSettings?.default_account_tier || 'B'}
+                    value={defaultSettings?.default_account_tier || 'Standard'}
                     onChange={(e) => handleUpdateSettings('default_account_tier', e.target.value)}
-                    placeholder="B"
+                    placeholder="Standard"
                   />
                 </div>
                 <div className="space-y-2">

@@ -63,6 +63,43 @@ export function safeParseDate(value) {
   return isValid(d) ? d : null;
 }
 
+const padTwo = (n) => String(n).padStart(2, '0');
+
+/** Min value for type="date" inputs — today in local timezone */
+export function todayDateMin() {
+  return format(new Date(), 'yyyy-MM-dd');
+}
+
+/** Min value for type="datetime-local" inputs — now in local timezone */
+export function nowDatetimeLocalMin() {
+  const d = new Date();
+  return `${d.getFullYear()}-${padTwo(d.getMonth() + 1)}-${padTwo(d.getDate())}T${padTwo(d.getHours())}:${padTwo(d.getMinutes())}`;
+}
+
+/** Later of now or start — for scheduled event end picker */
+export function datetimeMinForEnd(startValue) {
+  const nowMin = nowDatetimeLocalMin();
+  if (!startValue) return nowMin;
+  return String(startValue) > nowMin ? String(startValue) : nowMin;
+}
+
+export function isPastDate(value) {
+  if (!value) return false;
+  const d = parseISO(String(value).replace(' ', 'T'));
+  if (!isValid(d)) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const cmp = new Date(d);
+  cmp.setHours(0, 0, 0, 0);
+  return cmp < today;
+}
+
+export function isPastDatetime(value) {
+  if (!value) return false;
+  const d = new Date(String(value).replace(' ', 'T'));
+  return !Number.isNaN(d.getTime()) && d < new Date();
+}
+
 export function calendarEventToForm(event) {
   if (!event) return null;
   return {
@@ -74,6 +111,7 @@ export function calendarEventToForm(event) {
     location: event.location || '',
     related_to_type: event.related_to_type || '',
     related_to_name: event.related_to_name || '',
+    related_to_id: event.related_to_id || '',
     status: event.status || 'scheduled',
   };
 }
@@ -88,6 +126,7 @@ export function calendarFormToPayload(formData) {
     location: formData.location || undefined,
     related_to_type: formData.related_to_type || undefined,
     related_to_name: formData.related_to_name || undefined,
+    related_to_id: formData.related_to_id || undefined,
     status: formData.status,
   };
 }

@@ -273,6 +273,7 @@ export const api = {
   },
 
   users: {
+    directory: () => request("GET", "/api/users/directory").then((r) => r.users || []),
     createUser: ({
       email,
       password,
@@ -407,5 +408,6 @@ export const api = {
     sendTestTemplate: (id, { to, content }) =>
       request("POST", `/api/email/templates/${id}/test`, { to, content }),
     status: () => request("GET", "/api/email/status"),
+    verifyConnection: () => request("POST", "/api/email/verify"),
   },
 };
