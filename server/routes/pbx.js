@@ -206,9 +206,7 @@ router.get(
     try {
       const domain = isPbxDomainRestricted(req.permissions)
         ? await requireDomainFromRequest(req)
-        : req.query.domain
-          ? await domainFromRequest(req)
-          : null;
+        : await domainFromRequest(req);
       res.json(await pbx.getE911ReviewOverview(domain, pbxDomainOpts(req)));
     } catch (err) {
       next(err);

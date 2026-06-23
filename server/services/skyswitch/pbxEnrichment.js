@@ -21,6 +21,33 @@ function normalizePhoneKey(value) {
   return d || null;
 }
 
+/** 11-digit US E.164 (leading 1) for SkySwitch E911 routes. */
+export function toE911Phone11(value) {
+  const d = digitsOnly(value);
+  if (d.length >= 11) return d.slice(-11);
+  if (d.length === 10) return `1${d}`;
+  return null;
+}
+
+function phoneListItemNumber(item) {
+  if (item == null) return '';
+  if (typeof item === 'string') return item;
+  return item.phone_number || item.number || item.did || '';
+}
+
+export function filterE911ForDomainPhones(phoneNumbers, e911Endpoints) {
+  const keys = new Set();
+  for (const item of toArray(phoneNumbers)) {
+    const key = normalizePhoneKey(phoneListItemNumber(item));
+    if (key) keys.add(key);
+  }
+  if (!keys.size) return [];
+  return toArray(e911Endpoints).filter((item) => {
+    const key = normalizePhoneKey(item.phone_number);
+    return key && keys.has(key);
+  });
+}
+
 /** Derive online / offline / unknown from common SkySwitch subscriber fields. */
 export function deriveOnlineStatus(raw) {
   const explicit = pick(raw, 'online', 'is_online', 'registered');
@@ -137,12 +164,35 @@ export function filterTrunkGroupsForDomain(trunkGroups, domain) {
   return rows.filter((item) => String(item.domain || '').trim().toLowerCase() === target);
 }
 
+/** Domain DIDs with E911 status — E911 is provisioned per phone number, not PBX extension. */
+export function buildE911DomainPhoneRows(phoneNumbers, e911Endpoints) {
+  const e911ByPhone = indexE911ByPhone(e911Endpoints);
+  return toArray(phoneNumbers).map((item) => {
+    const raw = phoneListItemNumber(item);
+    const phone11 = toE911Phone11(raw);
+    const lookupKey = normalizePhoneKey(phone11 || raw);
+    const e911 = lookupKey ? e911ByPhone.get(lookupKey) : null;
+    const civic = e911?.location?.address?.civic_address || {};
+    const los = e911?.location?.level_of_service || {};
+
+    return {
+      phone_number: phone11 || raw,
+      e911_status: e911 ? 'Provisioned' : 'Not provisioned',
+      routing_status: los.routing_status || '—',
+      location: civic.city ? [civic.city, civic.state].filter(Boolean).join(', ') : '—',
+      name: civic.name || '—',
+      msag_status: los.msag_status || '—',
+    };
+  });
+}
+
 /** Merge subscriber + E911 for domain-scoped operational review. */
 export function buildE911DomainReview(subscribers, e911Endpoints, domain) {
   const e911ByPhone = indexE911ByPhone(e911Endpoints);
   const rows = normalizeSubscriberList(subscribers).map((sub) => {
     const callerKey = normalizePhoneKey(sub.caller_id);
     const e911 = callerKey ? e911ByPhone.get(callerKey) : null;
+    const dialableCallerId = callerKey ? sub.caller_id : null;
     const civic = e911?.location?.address?.civic_address || {};
     const los = e911?.location?.level_of_service || {};
     const locationLabel = civic.city
@@ -157,7 +207,7 @@ export function buildE911DomainReview(subscribers, e911Endpoints, domain) {
       caller_id: sub.caller_id,
       site: sub.site,
       wan_ip: sub.wan_ip,
-      phone_number: e911?.phone_number || sub.caller_id,
+      phone_number: e911?.phone_number || dialableCallerId || null,
       e911_status: e911 ? 'Provisioned' : 'Not provisioned',
       routing_status: los.routing_status || '—',
       registration_status:

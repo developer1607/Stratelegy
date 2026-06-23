@@ -116,7 +116,6 @@ export const PBX_NAV_GROUPS = [
 export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "PBXDashboard",
   "PBXDomains",
-  "E911Review",
   "E911Reports",
   "PBXReportE911",
   "PBXReports",

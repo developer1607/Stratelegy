@@ -12,10 +12,12 @@ import {
   normalizeSubscriberList,
   buildEndpointStats,
   buildE911DomainReview,
+  buildE911DomainPhoneRows,
   buildExtensionOfflineRows,
   filterMosJournalRows,
   countSipAlgWarnings,
   filterE911ForDomain,
+  filterE911ForDomainPhones,
   filterTrunkGroupsForDomain,
 } from './pbxEnrichment.js';
 
@@ -688,18 +690,22 @@ export async function getEndpointControlOverview(domain, domainOpts = {}) {
 
 export async function getE911ReviewOverview(domain, domainOpts = {}) {
   const resolved = domain ? await resolveDomain(domain, domainOpts) : null;
-  const [allProvisioned, subscribers] = await Promise.all([
+  const [allProvisioned, subscribers, domainPhoneList] = await Promise.all([
     listE911Endpoints().catch(() => []),
     resolved ? listSubscribers(resolved).catch(() => []) : Promise.resolve([]),
+    resolved ? listPbxPhoneNumbers(resolved).catch(() => []) : Promise.resolve([]),
   ]);
 
   const provisioned = resolved
-    ? filterE911ForDomain(subscribers, allProvisioned)
+    ? filterE911ForDomainPhones(domainPhoneList, allProvisioned)
     : allProvisioned;
 
   return {
     provisioned,
-    domainReview: resolved ? buildE911DomainReview(subscribers, provisioned, resolved) : null,
+    domainPhones: resolved ? buildE911DomainPhoneRows(domainPhoneList, allProvisioned) : null,
+    domainReview: resolved
+      ? buildE911DomainReview(subscribers, allProvisioned, resolved)
+      : null,
   };
 }
 
