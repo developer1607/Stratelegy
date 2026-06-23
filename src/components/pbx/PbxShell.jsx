@@ -155,7 +155,7 @@ export function PbxDataTable({ columns, rows, emptyMessage = 'No records found.'
                 typeof rowClassName === 'function' ? rowClassName(row) : rowClassName || '';
               return (
                 <tr
-                  key={row.id || row.user || row.phone_number || row.domain || idx}
+                  key={row.id || row.user || row.domain || `${row.phone_number ?? 'row'}-${idx}`}
                   className={`border-b last:border-0 hover:bg-gray-50 ${extraClass}`.trim()}
                 >
                   {columns.map((col) => (

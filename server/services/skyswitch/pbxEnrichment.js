@@ -42,10 +42,26 @@ export function filterE911ForDomainPhones(phoneNumbers, e911Endpoints) {
     if (key) keys.add(key);
   }
   if (!keys.size) return [];
-  return toArray(e911Endpoints).filter((item) => {
+  return dedupeE911ByPhone(
+    toArray(e911Endpoints).filter((item) => {
+      const key = normalizePhoneKey(item.phone_number);
+      return key && keys.has(key);
+    })
+  );
+}
+
+/** SkySwitch may return the same DID with different formatting — keep one row per number. */
+export function dedupeE911ByPhone(endpoints) {
+  const map = new Map();
+  for (const item of toArray(endpoints)) {
     const key = normalizePhoneKey(item.phone_number);
-    return key && keys.has(key);
-  });
+    if (!key) continue;
+    const existing = map.get(key);
+    if (!existing || digitsOnly(item.phone_number).length > digitsOnly(existing.phone_number).length) {
+      map.set(key, item);
+    }
+  }
+  return [...map.values()];
 }
 
 /** Derive online / offline / unknown from common SkySwitch subscriber fields. */

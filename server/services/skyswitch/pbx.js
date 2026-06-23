@@ -18,6 +18,7 @@ import {
   countSipAlgWarnings,
   filterE911ForDomain,
   filterE911ForDomainPhones,
+  dedupeE911ByPhone,
   filterTrunkGroupsForDomain,
 } from './pbxEnrichment.js';
 
@@ -691,7 +692,9 @@ export async function getEndpointControlOverview(domain, domainOpts = {}) {
 export async function getE911ReviewOverview(domain, domainOpts = {}) {
   const resolved = domain ? await resolveDomain(domain, domainOpts) : null;
   const [allProvisioned, subscribers, domainPhoneList] = await Promise.all([
-    listE911Endpoints().catch(() => []),
+    listE911Endpoints()
+      .then((rows) => dedupeE911ByPhone(rows))
+      .catch(() => []),
     resolved ? listSubscribers(resolved).catch(() => []) : Promise.resolve([]),
     resolved ? listPbxPhoneNumbers(resolved).catch(() => []) : Promise.resolve([]),
   ]);

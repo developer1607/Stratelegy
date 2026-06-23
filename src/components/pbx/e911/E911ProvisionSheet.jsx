@@ -27,6 +27,7 @@ export default function E911ProvisionSheet({
   onOpenChange,
   onSuccess,
   initialData,
+  loadExisting = false,
 }) {
   const isEdit = !!phoneNumber;
   const [form, setForm] = useState(EMPTY_E911_FORM);
@@ -38,9 +39,16 @@ export default function E911ProvisionSheet({
     isFetching,
   } = useQuery({
     queryKey: ['pbx-e911-detail', phoneNumber],
-    queryFn: () => pbxApi.e911Detail(phoneNumber),
-    enabled: open && isEdit,
-    retry: 1,
+    queryFn: async () => {
+      try {
+        return await pbxApi.e911Detail(phoneNumber);
+      } catch (err) {
+        if (err?.status === 404) return null;
+        throw err;
+      }
+    },
+    enabled: open && isEdit && loadExisting,
+    retry: false,
   });
 
   const countriesQuery = useQuery({
@@ -74,18 +82,18 @@ export default function E911ProvisionSheet({
       setValidationSummary(null);
       return;
     }
-    if (isEdit) {
+    if (loadExisting) {
       const source = detail || initialData;
       setForm(mapE911ToForm(source));
       return;
     }
     setForm(EMPTY_E911_FORM);
-  }, [open, isEdit, detail, initialData]);
+  }, [open, loadExisting, detail, initialData]);
 
   const mutation = useMutation({
     mutationFn: () => pbxApi.provisionE911(phoneNumber, form),
     onSuccess: () => {
-      toast.success(isEdit ? 'E911 updated' : 'E911 provisioned');
+      toast.success(loadExisting ? 'E911 updated' : 'E911 provisioned');
       onOpenChange(false);
       onSuccess?.();
     },
@@ -113,7 +121,7 @@ export default function E911ProvisionSheet({
     },
   });
 
-  const loadingExisting = open && isEdit && (isLoading || isFetching) && !detail && !initialData;
+  const loadingExisting = open && loadExisting && (isLoading || isFetching) && !detail && !initialData;
   const loadingGeo = countriesQuery.isLoading || statesQuery.isLoading;
   const canValidate = e911AddressFieldsComplete(form) && !loadingExisting;
 
@@ -145,9 +153,9 @@ export default function E911ProvisionSheet({
           }}
         >
           <SheetHeader>
-            <SheetTitle>{isEdit ? 'Update E911' : 'Provision E911'}</SheetTitle>
+            <SheetTitle>{loadExisting ? 'Update E911' : 'Provision E911'}</SheetTitle>
             <SheetDescription>
-              {isEdit
+              {loadExisting
                 ? 'Review the current emergency location and update as needed.'
                 : 'Enter emergency location details for this phone number.'}
             </SheetDescription>

@@ -68,6 +68,7 @@ function E911Content({ domain }) {
   }, [domain, domainPhones.length]);
 
   const editRecord = editPhone ? findProvisionedRecord(provisioned, editPhone) : null;
+  const editIsProvisioned = Boolean(editRecord);
 
   const renderE911Actions = (row, { phoneSource = 'phone_number', isProvisioned } = {}) => {
     const phone = normalizeE911Phone(row[phoneSource] ?? row.caller_id);
@@ -301,6 +302,7 @@ function E911Content({ domain }) {
       <E911ProvisionSheet
         phoneNumber={editPhone || ''}
         initialData={editRecord}
+        loadExisting={editIsProvisioned}
         open={!!editPhone}
         onOpenChange={(open) => !open && setEditPhone(null)}
         onSuccess={refresh}
