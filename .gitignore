@@ -39,9 +39,10 @@ coverage/
 # Self-hosted data
 data/
 
+# Documentation — local / not shared
+portfolio/
+docs/
+/*.md
+
 # Cursor — local IDE/agent config (not shared)
 .cursor/
-/engineering.md
-/README.md
-/ENGINEERING.md
-/apiDocumentation.md
