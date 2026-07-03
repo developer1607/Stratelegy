@@ -4,7 +4,7 @@ import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading, PbxStatGrid } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
-import ProvisionHubUserDialog from '@/components/pbx/endpoints/ProvisionHubUserDialog';
+import CreateEndpointDialog from '@/components/pbx/endpoints/CreateEndpointDialog';
 import UnprovisionHubUserAction from '@/components/pbx/endpoints/UnprovisionHubUserAction';
 import SubscriberExpandPanel from '@/components/pbx/endpoints/SubscriberExpandPanel';
 import ResyncPhoneAction from '@/components/pbx/endpoints/ResyncPhoneAction';
@@ -211,9 +211,6 @@ function EndpointContent({ domain }) {
           options={typeOptions}
           allLabel="All hub types"
         />
-        <PermissionGate pbxAction="manageEndpoints">
-          <ProvisionHubUserDialog domain={domain} onSuccess={refresh} />
-        </PermissionGate>
       </PbxListToolbar>
 
       <Tabs defaultValue="subscribers">
@@ -249,13 +246,9 @@ function EndpointContent({ domain }) {
                       <th className="px-3 py-2.5 text-left font-semibold">Warning</th>
                       <th className="px-3 py-2.5 text-left font-semibold">Geo Node</th>
                       <th className="px-3 py-2.5 text-right w-12">
-                        <span
-                          className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-blue-500 text-white"
-                          aria-hidden
-                        >
-                          <Plus className="h-4 w-4" />
-                        </span>
-                        <span className="sr-only">Add endpoint</span>
+                        <PermissionGate pbxAction="manageEndpoints" fallback={<span className="sr-only">Add endpoint</span>}>
+                          <CreateEndpointDialog domain={domain} onSuccess={refresh} />
+                        </PermissionGate>
                       </th>
                     </tr>
                   </thead>

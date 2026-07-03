@@ -140,6 +140,9 @@ export const pbxApi = {
   cdrs: (params) => pbxGet("/cdrs", params),
   exportCdrs: (params) => pbxDownload("/cdrs/export", params),
   phones: (domain) => pbxGet("/phones", { domain }),
+  createPhone: (domain, body) => pbxRequest("POST", "/phones", body, { domain }),
+  deletePhone: (macAddress, domain) =>
+    pbxRequest("DELETE", `/phones/${encodeURIComponent(macAddress)}`, undefined, { domain }),
   phoneDetail: (macAddress, domain) =>
     pbxGet(`/phones/${encodeURIComponent(macAddress)}`, { domain }),
   resyncPhone: (macAddress, domain) =>
@@ -151,6 +154,15 @@ export const pbxApi = {
     ),
   endpointControlOverview: (domain) =>
     pbxGet("/endpoint-control/overview", { domain }),
+  createEndpoint: (domain, body) =>
+    pbxRequest("POST", "/endpoint-control/subscribers", body, { domain }),
+  deleteEndpoint: (domain, user, opts = {}) =>
+    pbxRequest(
+      "DELETE",
+      `/endpoint-control/subscribers/${encodeURIComponent(user)}`,
+      undefined,
+      { domain, delete_phone: opts.deletePhone === false ? "false" : "true" },
+    ),
   endpointDetail: (domain, user) =>
     pbxGet(`/endpoint-control/subscribers/${encodeURIComponent(user)}/detail`, {
       domain,

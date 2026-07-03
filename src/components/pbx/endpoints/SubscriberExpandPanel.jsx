@@ -34,6 +34,9 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import PermissionGate from '@/components/PermissionGate';
 import ResyncPhoneAction from '@/components/pbx/endpoints/ResyncPhoneAction';
+import DeleteSubscriberAction from '@/components/pbx/endpoints/DeleteSubscriberAction';
+import DeletePhoneAction from '@/components/pbx/endpoints/DeletePhoneAction';
+import AddPhoneAction from '@/components/pbx/endpoints/AddPhoneAction';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canPbxAction } from '@/lib/permissions';
 import { toast } from 'sonner';
@@ -263,6 +266,14 @@ export default function SubscriberExpandPanel({ domain, subscriber, onUpdated })
               </Button>
             </>
           ) : null}
+          {canManage ? (
+            <DeleteSubscriberAction
+              domain={domain}
+              user={subscriber.user}
+              name={detail.name}
+              onSuccess={onUpdated}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -351,11 +362,23 @@ export default function SubscriberExpandPanel({ domain, subscriber, onUpdated })
         <div className="space-y-3">
           <div className="space-y-0.5">
             <label className="text-[11px] text-gray-500">MAC</label>
-            <div className="h-8 border-b border-gray-300 flex items-center">
+            <div className="h-8 border-b border-gray-300 flex items-center justify-between gap-2">
               {mac ? (
                 <span className="text-sm text-cyan-700">{mac}</span>
               ) : (
-                <span className="text-sm text-gray-500">—</span>
+                <>
+                  <span className="text-sm text-gray-500">No device</span>
+                  {canManage ? (
+                    <AddPhoneAction
+                      domain={domain}
+                      extension={detail.user}
+                      onSuccess={() => {
+                        detailQ.refetch();
+                        onUpdated?.();
+                      }}
+                    />
+                  ) : null}
+                </>
               )}
             </div>
           </div>
@@ -454,6 +477,16 @@ export default function SubscriberExpandPanel({ domain, subscriber, onUpdated })
               Resync Phone
             </ActionLink>
           )}
+          {mac ? (
+            <DeletePhoneAction
+              domain={domain}
+              macAddress={mac}
+              onSuccess={() => {
+                detailQ.refetch();
+                onUpdated?.();
+              }}
+            />
+          ) : null}
         </PermissionGate>
         <ActionLink icon={Lock} disabled>
           Secure Yealink Phone GUI

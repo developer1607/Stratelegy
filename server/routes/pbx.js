@@ -233,6 +233,20 @@ router.get(
   }
 );
 
+router.post(
+  '/phones',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.status(201).json(await hybridPbx.createPhone(domain, req.body || {}));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 router.get(
   '/phones/:macAddress',
   requireAnyPbxPermission('can_view_endpoint_control', 'can_access_pbx'),
@@ -295,6 +309,20 @@ router.patch(
   }
 );
 
+router.delete(
+  '/phones/:macAddress',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.deletePhoneRecord(domain, req.params.macAddress));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
 router.get(
   '/domains',
   requireAnyPbxPermission('can_view_pbx_domains_page', 'can_access_pbx_domain_scoped'),
@@ -343,6 +371,35 @@ router.get(
     try {
       const domain = await domainFromRequest(req);
       res.json(await hybridPbx.getEndpointInventory(domain));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/endpoint-control/subscribers',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.status(201).json(await hybridPbx.createEndpoint(domain, req.body || {}));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/endpoint-control/subscribers/:user',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const deletePhone = req.query.delete_phone !== 'false';
+      res.json(await hybridPbx.deleteEndpoint(domain, req.params.user, { deletePhone }));
     } catch (err) {
       next(err);
     }

@@ -430,6 +430,182 @@ export async function updateSubscriber(domain, user, updates = {}) {
   return getEndpointDetail(domain, user);
 }
 
+function normalizeMac(value) {
+  return String(value ?? '')
+    .replace(/[^a-fA-F0-9]/g, '')
+    .toLowerCase();
+}
+
+function requireExtension(user) {
+  const extension = String(user ?? '').trim();
+  if (!extension) {
+    const err = new Error('Extension is required');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+  return extension;
+}
+
+export async function createSubscriber(domain, fields = {}) {
+  const user = requireExtension(fields.user);
+  const params = new URLSearchParams({
+    object: 'subscriber',
+    action: 'create',
+    domain,
+    user,
+    first_name: String(fields.first_name || user).trim(),
+    last_name: String(fields.last_name || '').trim(),
+    dial_plan: String(fields.dial_plan || `${domain}_${user}`).trim(),
+    dial_policy: String(fields.dial_policy || 'US and Canada').trim(),
+    scope: String(fields.scope || 'Basic User').trim(),
+    srv_code: String(fields.srv_code || 'system-user').trim(),
+  });
+
+  const optionalFields = {
+    email: fields.email,
+    group: fields.department || fields.group,
+    callid_nmbr: fields.caller_id || fields.callid_nmbr,
+    callid_name: fields.caller_id_name || fields.callid_name,
+    callid_emgr: fields.e911_caller_id || fields.callid_emgr,
+    time_zone: fields.time_zone,
+    site: fields.site,
+    message: fields.notes || fields.message,
+  };
+  for (const [key, value] of Object.entries(optionalFields)) {
+    if (value != null && String(value).trim() !== '') {
+      params.set(key, String(value).trim());
+    }
+  }
+
+  await pbxRequest('POST', '', { body: params });
+
+  const site = fields.site != null ? String(fields.site).trim() : '';
+  if (site && !params.has('site')) {
+    await pbxRequestV2('PUT', `domains/${encodeURIComponent(domain)}/users/${encodeURIComponent(user)}`, {
+      body: { site },
+    }).catch(() => updateSubscriber(domain, user, { site }));
+  }
+
+  return getSubscriber(domain, user);
+}
+
+export async function deleteSubscriber(domain, user) {
+  const extension = requireExtension(user);
+  await pbxRequest('POST', '', {
+    body: new URLSearchParams({
+      object: 'subscriber',
+      action: 'delete',
+      domain,
+      user: extension,
+    }),
+  });
+  return { domain, user: extension, deleted: true };
+}
+
+export async function createPhone(domain, fields = {}) {
+  const mac = normalizeMac(fields.mac);
+  if (!mac) {
+    const err = new Error('MAC address is required');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+
+  const params = new URLSearchParams({
+    object: 'mac',
+    action: 'create',
+    domain,
+    mac,
+    model: String(fields.model || 'generic').trim(),
+    transport: String(fields.transport || 'UDP').trim(),
+  });
+
+  const territory = getPbxTerritory();
+  if (territory) params.set('territory', territory);
+
+  const phoneExt = fields.phone_ext || fields.user || fields.extension;
+  if (phoneExt) params.set('phone_ext', String(phoneExt).trim());
+
+  if (fields.notes) params.set('notes', String(fields.notes).trim());
+
+  await pbxRequest('POST', '', { body: params });
+  return getPhone(domain, mac);
+}
+
+export async function deletePhoneRecord(domain, macAddress) {
+  const mac = normalizeMac(macAddress);
+  if (!mac) {
+    const err = new Error('MAC address is required');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+
+  const params = new URLSearchParams({
+    object: 'mac',
+    action: 'delete',
+    domain,
+    mac,
+  });
+  const territory = getPbxTerritory();
+  if (territory) params.set('territory', territory);
+
+  await pbxRequest('POST', '', { body: params });
+  return { domain, mac, deleted: true };
+}
+
+export async function createEndpoint(domain, body = {}) {
+  const user = requireExtension(body.user);
+  const existing = await getSubscriber(domain, user).catch(() => null);
+  if (existing) {
+    const err = new Error(`Extension ${user} already exists on this domain`);
+    err.status = 409;
+    err.expose = true;
+    throw err;
+  }
+
+  const subscriber = await createSubscriber(domain, body);
+
+  let phone = null;
+  if (body.mac) {
+    phone = await createPhone(domain, {
+      mac: body.mac,
+      model: body.model,
+      transport: body.transport,
+      phone_ext: user,
+      notes: body.phone_notes,
+    });
+  }
+
+  let messaging = null;
+  if (body.provision_messaging && body.device_user) {
+    messaging = await legacyPbx.provisionHubUser({
+      user,
+      domain,
+      device_user: String(body.device_user).trim(),
+      name: body.messaging_name || subscriber.name || user,
+      user_type: body.user_type || 'skyswitch-pbx',
+    });
+  }
+
+  const detail = await getEndpointDetail(domain, user);
+  return { subscriber: detail.subscriber, phone: detail.phone || phone, messaging };
+}
+
+export async function deleteEndpoint(domain, user, { deletePhone = true } = {}) {
+  const extension = requireExtension(user);
+  const detail = await getEndpointDetail(domain, extension).catch(() => null);
+  const mac = detail?.phone?.mac || detail?.subscriber?.mac_address || null;
+
+  if (deletePhone && mac) {
+    await deletePhoneRecord(domain, mac).catch(() => null);
+  }
+
+  await deleteSubscriber(domain, extension);
+  return { domain, user: extension, deleted: true };
+}
+
 export async function updatePhone(domain, mac, updates = {}) {
   const params = new URLSearchParams({
     object: 'mac',
