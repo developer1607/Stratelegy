@@ -100,7 +100,6 @@ export const pbxApi = {
     pbxRequest("DELETE", `/reports/${encodeURIComponent(reportId)}`),
   downloadReportFile: (fileId) =>
     pbxGet(`/reports/files/${encodeURIComponent(fileId)}/download`),
-  troubleshooting: (domain) => pbxGet("/troubleshooting", { domain }),
   uiConfig: (domain, config_name) =>
     pbxGet("/ui-config", { domain, config_name }),
   faxAtas: () => pbxGet("/fax-atas"),

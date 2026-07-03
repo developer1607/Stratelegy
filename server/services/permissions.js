@@ -334,7 +334,6 @@ function moduleForPage(pageName) {
       'E911Reports',
       'PBXReports',
       'PBXMosScores',
-      'Troubleshooting',
       'SIPTrunks',
     ].includes(pageName)
   ) {

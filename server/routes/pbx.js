@@ -57,11 +57,19 @@ async function requireDomainFromRequest(req) {
   return domain;
 }
 
+function normalizeJournalIdentifier(value) {
+  if (value == null || value === '') return undefined;
+  const text = String(value).trim();
+  const territory = text.split('.').find((part) => /^\d{4,}$/.test(part));
+  return territory || text;
+}
+
 async function journalIdentifierFromRequest(req) {
-  if (!isPbxDomainRestricted(req.permissions)) {
-    return req.query.identifier || undefined;
+  if (isPbxDomainRestricted(req.permissions)) {
+    return normalizeJournalIdentifier(await requireDomainFromRequest(req));
   }
-  return await requireDomainFromRequest(req);
+  const raw = req.query.identifier || req.query.domain || (await domainFromRequest(req));
+  return normalizeJournalIdentifier(raw);
 }
 
 async function assertPhoneInAssignedDomain(req, phoneNumber) {
@@ -112,7 +120,6 @@ router.use(
     'can_view_e911_reports',
     'can_view_pbx_reports_page',
     'can_view_mos_scores_page',
-    'can_view_troubleshooting',
     'can_view_sip_trunks',
     'can_view_extensions_page',
     'can_view_call_logs_page',
@@ -138,7 +145,7 @@ router.use(async (req, res, next) => {
   return blockPbxDomainScopedWrite(req, res, next);
 });
 
-router.get('/status', requirePbxPermission('can_view_troubleshooting'), async (_req, res, next) => {
+router.get('/status', requirePbxPermission('can_view_pbx_dashboard'), async (_req, res, next) => {
   try {
     res.json(await pbx.getPbxStatus());
   } catch (err) {
@@ -148,7 +155,7 @@ router.get('/status', requirePbxPermission('can_view_troubleshooting'), async (_
 
 router.get(
   '/hybrid/status',
-  requirePbxPermission('can_view_troubleshooting'),
+  requirePbxPermission('can_view_pbx_dashboard'),
   async (_req, res, next) => {
     try {
       res.json(await hybridPbx.getPbxApiStatus());
@@ -642,7 +649,7 @@ router.get(
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
-      res.json(await pbx.getExtensionOfflineOverview(domain, pbxDomainOpts(req)));
+      res.json(await hybridPbx.getOfflineExtensionOverview(domain, pbxDomainOpts(req)));
     } catch (err) {
       next(err);
     }
@@ -1137,23 +1144,8 @@ router.delete(
 );
 
 router.get(
-  '/troubleshooting',
-  requirePbxPermission('can_view_troubleshooting'),
-  async (req, res, next) => {
-    try {
-      const domain = await domainFromRequest(req);
-      res.json(
-        await pbx.getTroubleshootingSnapshot(domain, req.permissions, pbxDomainOpts(req))
-      );
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-router.get(
   '/ui-config',
-  requireAnyPbxPermission('can_view_sip_alg', 'can_view_troubleshooting'),
+  requirePbxPermission('can_view_sip_alg'),
   async (req, res, next) => {
     try {
       const { config_name: configName } = req.query;

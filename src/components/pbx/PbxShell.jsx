@@ -76,9 +76,10 @@ export function PbxError({ error }) {
       <p className="text-sm mt-1">
         {displayError(error, 'Load failed.')}
       </p>
-      {error.data?.code === 'skyswitch_log_scope_required' && (
+      {error.data?.code === 'skyswitch_log_scope_required' &&
+      displayError(error, 'Load failed.') !== 'Call logs unavailable.' ? (
         <p className="text-sm mt-2">Call logs unavailable.</p>
-      )}
+      ) : null}
       {error.data?.code === 'pbx_domain_scope_required' && (
         <p className="text-sm mt-2">
           Use the domain-specific live views under PBX, or ask an admin for account-wide report access.

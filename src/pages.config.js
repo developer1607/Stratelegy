@@ -37,7 +37,6 @@ import SIPTrunks from "./pages/SIPTrunks";
 import SupportDashboard from "./pages/SupportDashboard";
 import SupportTicketDetail from "./pages/SupportTicketDetail";
 import SupportTickets from "./pages/SupportTickets";
-import Troubleshooting from "./pages/Troubleshooting";
 import UserManagement from "./pages/UserManagement";
 import Voicemail from "./pages/Voicemail";
 import __Layout from "./Layout.jsx";
@@ -76,7 +75,6 @@ export const PAGES = {
   SupportDashboard,
   SupportTicketDetail,
   SupportTickets,
-  Troubleshooting,
   UserManagement,
   Voicemail,
 };

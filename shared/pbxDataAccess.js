@@ -3,7 +3,7 @@ import { isPbxDomainRestricted } from "./pbxDomainAccess.js";
 
 /** PBX data scopes → permission keys that grant read access. */
 export const PBX_DATA_SCOPES = {
-  connection: ["can_view_troubleshooting"],
+  connection: ["can_view_pbx_dashboard"],
   domains: ["can_view_pbx_domains_page"],
   dashboard: ["can_view_pbx_dashboard"],
   extensions: ["can_view_extensions_page"],
@@ -20,7 +20,6 @@ export const PBX_DATA_SCOPES = {
   mosScores: ["can_view_mos_scores_page", "can_view_call_logs_page"],
   callLogs: ["can_view_call_logs_page"],
   voicemail: ["can_view_voicemail_page"],
-  troubleshooting: ["can_view_troubleshooting"],
   sipAlg: ["can_view_sip_alg"],
 };
 

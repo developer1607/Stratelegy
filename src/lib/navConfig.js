@@ -10,7 +10,6 @@ import {
   BookOpen,
   UserCog,
   Briefcase,
-  ShieldAlert,
   Phone,
   PhoneCall,
   Route,
@@ -95,7 +94,6 @@ export const PBX_NAV_GROUPS = [
     items: [
       { name: "Call Logs", icon: Phone, path: "CallLogs" },
       { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
-      { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
       { name: "SIP ALG", icon: Settings, path: "SIPALG" },
     ],
   },

@@ -28,7 +28,7 @@ export default function CallLogs() {
   return (
     <PbxShell
       title="Call Logs"
-      description="Audit and activity logs"
+      description="PBX call detail records and activity journals"
       requiresDomain={false}
     >
       <LogsContent />
@@ -82,104 +82,6 @@ function downloadTextFile(filename, content, mimeType = "text/plain;charset=utf-
   URL.revokeObjectURL(url);
 }
 
-function AuditTab({ search, startDate, endDate }) {
-  const [resourceFilter, setResourceFilter] = useState("all");
-  const [actionFilter, setActionFilter] = useState("all");
-
-  const actionsQ = useQuery({
-    queryKey: ["pbx-audit-actions"],
-    queryFn: () => pbxApi.auditActions(),
-    retry: false,
-  });
-
-  const auditQ = useQuery({
-    queryKey: ["pbx-audit-logs", startDate, endDate],
-    queryFn: () =>
-      pbxApi.auditLogs({ start_date: startDate, end_date: endDate, page: 1 }),
-    retry: false,
-  });
-
-  const rawRows = useMemo(() => {
-    const data = auditQ.data;
-    return (Array.isArray(data) ? data : data?.data || []).map((item) => ({
-      id: item.id,
-      request_id: item.request_id,
-      resource: item.resource,
-      action: item.action,
-      user_id: item.user_id,
-      created_at: item.created_at,
-      ip_address: item.ip_address,
-    }));
-  }, [auditQ.data]);
-
-  const resourceOptions = useMemo(() => {
-    const fromApi = (actionsQ.data || []).map((item) => item.resource);
-    const fromRows = uniqueFieldValues(rawRows, "resource");
-    return [...new Set([...fromApi, ...fromRows].filter(Boolean))].sort();
-  }, [actionsQ.data, rawRows]);
-
-  const actionOptions = useMemo(() => {
-    const fromApi = (actionsQ.data || []).map((item) => item.action);
-    const fromRows = uniqueFieldValues(rawRows, "action");
-    return [...new Set([...fromApi, ...fromRows].filter(Boolean))].sort();
-  }, [actionsQ.data, rawRows]);
-
-  const rows = useMemo(() => {
-    return rawRows.filter((row) => {
-      if (
-        !matchSearch(row, search, [
-          "resource",
-          "action",
-          "user_id",
-          "request_id",
-          "ip_address",
-        ])
-      ) {
-        return false;
-      }
-      if (!matchSelect(row.resource, resourceFilter)) return false;
-      if (!matchSelect(row.action, actionFilter)) return false;
-      return true;
-    });
-  }, [rawRows, search, resourceFilter, actionFilter]);
-
-  if (auditQ.isLoading) return <PbxLoading />;
-  if (auditQ.error) return <PbxError error={auditQ.error} />;
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        <PbxFilterSelect
-          value={resourceFilter}
-          onValueChange={setResourceFilter}
-          options={resourceOptions}
-          allLabel="All resources"
-          className="w-[160px]"
-        />
-        <PbxFilterSelect
-          value={actionFilter}
-          onValueChange={setActionFilter}
-          options={actionOptions}
-          allLabel="All actions"
-          className="w-[140px]"
-        />
-      </div>
-      <PbxDataTable
-        columns={[
-          { key: "created_at", label: "Time" },
-          { key: "resource", label: "Resource" },
-          { key: "action", label: "Action" },
-          { key: "user_id", label: "User" },
-          { key: "request_id", label: "Request ID" },
-          { key: "ip_address", label: "IP" },
-        ]}
-        rows={rows}
-        emptyMessage="No audit logs match your filters."
-      />
-    </div>
-  );
-}
-
 function JournalTab({ search, startDate, endDate, domain, domainRestricted }) {
   const [moduleFilter, setModuleFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
@@ -192,7 +94,6 @@ function JournalTab({ search, startDate, endDate, domain, domainRestricted }) {
         end_date: endDate,
         page: 1,
         domain,
-        identifier: domain,
       }),
     retry: false,
     enabled: !domainRestricted || !!domain,
@@ -298,12 +199,20 @@ function CdrTab({ search, startDate, endDate, domain, domainRestricted }) {
     end_date: formatCdrDateTime(endDate, true),
     domain,
     user: userFilter || undefined,
+    type: typeFilter === "all" ? undefined : typeFilter,
     page: 1,
     per_page: 50,
   };
 
   const cdrQ = useQuery({
-    queryKey: ["pbx-cdrs", params.start_date, params.end_date, domain, userFilter],
+    queryKey: [
+      "pbx-cdrs",
+      params.start_date,
+      params.end_date,
+      domain,
+      userFilter,
+      typeFilter,
+    ],
     queryFn: () => pbxApi.cdrs(params),
     retry: false,
     enabled: !domainRestricted || !!domain,
@@ -403,16 +312,13 @@ function LogsContent() {
     <Tabs defaultValue="cdrs" className="space-y-4">
       <TabsList>
         <TabsTrigger value="cdrs">PBX CDRs</TabsTrigger>
-        {!domainRestricted && <TabsTrigger value="audit">Audit logs</TabsTrigger>}
         <TabsTrigger value="journals">Journals</TabsTrigger>
       </TabsList>
 
       <PbxListToolbar
         search={search}
         onSearchChange={setSearch}
-        searchPlaceholder={
-          domainRestricted ? "Search module, action, identifier…" : "Search resource, action, user, IP…"
-        }
+        searchPlaceholder="Search calls, module, action, identifier…"
       >
         <DateRange
           startDate={startDate}
@@ -431,12 +337,6 @@ function LogsContent() {
           domainRestricted={domainRestricted}
         />
       </TabsContent>
-
-      {!domainRestricted && (
-        <TabsContent value="audit">
-          <AuditTab search={search} startDate={startDate} endDate={endDate} />
-        </TabsContent>
-      )}
 
       <TabsContent value="journals">
         <JournalTab

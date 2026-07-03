@@ -368,13 +368,6 @@ export const PERMISSION_DEFS = [
     section: 'Screens',
     page: 'Voicemail',
   },
-  {
-    key: 'can_view_troubleshooting',
-    label: 'Troubleshooting',
-    module: 'pbx',
-    section: 'Screens',
-    page: 'Troubleshooting',
-  },
   { key: 'can_view_sip_alg', label: 'SIP ALG', module: 'pbx', section: 'Screens', page: 'SIPALG' },
   {
     key: 'can_view_make_call_page',

@@ -11,7 +11,7 @@ import {
   formatWanLan,
 } from './normalize.js';
 import * as legacyPbx from '../skyswitch/pbx.js';
-import { buildEndpointStats } from '../skyswitch/pbxEnrichment.js';
+import { buildEndpointStats, buildExtensionOfflineRows } from '../skyswitch/pbxEnrichment.js';
 
 export { cdrRowsToCsv };
 
@@ -790,6 +790,34 @@ export async function getEndpointInventory(domain) {
       legacyOverview.messagingUsers || [],
       legacyOverview.sipAlgWarningCount || 0
     ),
+  };
+}
+
+/** Offline extensions + fax ATAs — extension rows use PBX device/MAC signals. */
+export async function getOfflineExtensionOverview(domain, domainOpts = {}) {
+  const resolved = await legacyPbx.resolveDomain(domain, domainOpts).catch(() => domain);
+  const [inventory, faxBundle] = await Promise.all([
+    getEndpointInventory(resolved).catch(() => ({
+      domain: resolved,
+      subscribers: [],
+      messagingUsers: [],
+      phones: [],
+      devices: [],
+      stats: null,
+    })),
+    legacyPbx.getOfflineEndpoints(resolved).catch(() => ({
+      domain: resolved,
+      offlineFaxAtas: [],
+      faxAtas: [],
+      messagingUsers: [],
+    })),
+  ]);
+
+  return {
+    domain: inventory.domain || faxBundle.domain || resolved,
+    fax: faxBundle,
+    extensionOffline: buildExtensionOfflineRows(inventory.subscribers || []),
+    extensionCount: (inventory.subscribers || []).length,
   };
 }
 

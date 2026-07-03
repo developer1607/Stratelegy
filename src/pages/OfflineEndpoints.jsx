@@ -4,6 +4,7 @@ import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
+import { EndpointStatusCell } from '@/components/pbx/endpoints/EndpointCells';
 import FaxAtaActions from '@/components/pbx/endpoints/FaxAtaActions';
 import SubscriberDetailSheet from '@/components/pbx/endpoints/SubscriberDetailSheet';
 import { Button } from '@/components/ui/button';
@@ -121,7 +122,7 @@ function OfflineContent({ domain }) {
                         site: row.site,
                         department: row.department,
                         notes: row.notes,
-                        online_status: 'offline',
+                        online_status: row.online_status || 'offline',
                         downtime: row.downtime,
                       })
                     }
@@ -132,13 +133,18 @@ function OfflineContent({ domain }) {
               },
               { key: 'extension', label: 'Ext' },
               { key: 'name', label: 'Name' },
+              {
+                key: 'online_status',
+                label: 'Status',
+                render: (row) => <EndpointStatusCell row={{ online_status: row.online_status }} />,
+              },
               { key: 'email_report_status', label: 'Email report' },
               { key: 'filtered', label: 'Filtered' },
               { key: 'notes', label: 'Notes' },
               { key: 'downtime', label: 'Downtime' },
             ]}
             rows={extensionRows}
-            emptyMessage="No offline extensions detected (status fields may be unavailable from API)."
+            emptyMessage="No unregistered extensions with provisioned phones for this domain."
           />
         </TabsContent>
 
