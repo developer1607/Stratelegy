@@ -408,7 +408,7 @@ router.delete(
 
 router.get(
   '/endpoint-control/subscribers/:user/detail',
-  requirePbxPermission('can_view_endpoint_control'),
+  requireAnyPbxPermission('can_view_endpoint_control', 'can_view_extensions_page'),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -691,7 +691,31 @@ router.get(
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
-      res.json(await pbx.listSubscribers(domain, 'subscriber'));
+      if (!domain) return res.json([]);
+      const telcoSubs = await pbx.listSubscribers(domain, 'subscriber');
+      const inventory = await hybridPbx.getEndpointInventory(domain).catch(() => ({ subscribers: [] }));
+      const byUser = new Map(
+        (inventory.subscribers || []).map((row) => [String(row.user || '').toLowerCase(), row])
+      );
+      res.json(
+        telcoSubs.map((row) => {
+          const enriched = byUser.get(String(row.user || '').toLowerCase());
+          if (!enriched) {
+            return { ...row, online_status: 'no_device' };
+          }
+          return {
+            ...row,
+            online_status: enriched.online_status,
+            mac_address: enriched.mac_address,
+            model: enriched.model,
+            transport: enriched.transport,
+            site: enriched.site || row.site,
+            department: enriched.department || row.department || row.group,
+            notes: enriched.notes || row.notes,
+            wan_ip: enriched.wan_ip || row.wan_ip,
+          };
+        })
+      );
     } catch (err) {
       next(err);
     }

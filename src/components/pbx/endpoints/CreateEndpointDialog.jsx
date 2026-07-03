@@ -53,13 +53,23 @@ const TRANSPORT_OPTIONS = [
   { value: 'TLS', label: 'TLS' },
 ];
 
-export default function CreateEndpointDialog({ domain, onSuccess, trigger = 'headerIcon' }) {
+export default function CreateEndpointDialog({
+  domain,
+  onSuccess,
+  trigger = 'headerIcon',
+  variant = 'endpoint',
+}) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...DEFAULT_FORM });
 
   useEffect(() => {
     if (open) setForm({ ...DEFAULT_FORM });
   }, [open]);
+
+  const isExtension = variant === 'extension';
+  const addLabel = isExtension ? 'Add extension' : 'Add endpoint';
+  const dialogTitle = isExtension ? 'Add extension' : 'Add endpoint';
+  const submitLabel = isExtension ? 'Create extension' : 'Create endpoint';
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -83,7 +93,7 @@ export default function CreateEndpointDialog({ domain, onSuccess, trigger = 'hea
             : undefined,
       }),
     onSuccess: () => {
-      toast.success('Endpoint created');
+      toast.success(isExtension ? 'Extension created' : 'Endpoint created');
       setOpen(false);
       onSuccess?.();
     },
@@ -100,7 +110,7 @@ export default function CreateEndpointDialog({ domain, onSuccess, trigger = 'hea
     trigger === 'toolbar' ? (
       <Button size="sm">
         <Plus className="h-4 w-4 mr-1.5" />
-        Add endpoint
+        {addLabel}
       </Button>
     ) : (
       <button
@@ -124,7 +134,7 @@ export default function CreateEndpointDialog({ domain, onSuccess, trigger = 'hea
           }}
         >
           <DialogHeader>
-            <DialogTitle>Add endpoint</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>
               Creates a PBX subscriber on the selected domain. Optionally provision a MAC/phone and
               messaging hub user when those APIs apply.
@@ -238,7 +248,7 @@ export default function CreateEndpointDialog({ domain, onSuccess, trigger = 'hea
 
           <DialogFooter>
             <Button type="submit" disabled={!canSubmit || mutation.isPending}>
-              {mutation.isPending ? 'Creating…' : 'Create endpoint'}
+              {mutation.isPending ? 'Creating…' : submitLabel}
             </Button>
           </DialogFooter>
         </form>

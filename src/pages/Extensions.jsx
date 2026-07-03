@@ -1,10 +1,15 @@
 import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
+import CreateEndpointDialog from '@/components/pbx/endpoints/CreateEndpointDialog';
+import { EndpointStatusCell } from '@/components/pbx/endpoints/EndpointCells';
 import SubscriberDetailSheet from '@/components/pbx/endpoints/SubscriberDetailSheet';
+import DeleteEntitlementAction from '@/components/pbx/extensions/DeleteEntitlementAction';
+import EntitlementFormDialog from '@/components/pbx/extensions/EntitlementFormDialog';
+import PermissionGate from '@/components/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
@@ -18,9 +23,19 @@ export default function Extensions() {
 }
 
 function ExtensionsContent({ domain }) {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [groupFilter, setGroupFilter] = useState('all');
   const [detailSub, setDetailSub] = useState(null);
+
+  const refreshExtensions = () => {
+    queryClient.invalidateQueries({ queryKey: ['pbx-extensions', domain] });
+    queryClient.invalidateQueries({ queryKey: ['pbx-endpoint-control', domain] });
+  };
+
+  const refreshEntitlements = () => {
+    queryClient.invalidateQueries({ queryKey: ['pbx-entitlements', domain] });
+  };
 
   const {
     data = [],
@@ -70,14 +85,16 @@ function ExtensionsContent({ domain }) {
       },
       { key: 'user', label: 'Extension' },
       { key: 'name', label: 'Name' },
+      {
+        key: 'online_status',
+        label: 'Status',
+        render: (row) => <EndpointStatusCell row={row} />,
+      },
       { key: 'subscriber_login', label: 'Login' },
       { key: 'caller_id', label: 'Caller ID' },
       { key: 'email_address', label: 'Email' },
       { key: 'group', label: 'Group' },
-      {
-        key: 'scope',
-        label: 'Scope',
-      },
+      { key: 'scope', label: 'Scope' },
     ],
     []
   );
@@ -89,6 +106,7 @@ function ExtensionsContent({ domain }) {
         ? Object.values(entitlementsQ.data)
         : [];
     return list.map((item, idx) => ({
+      ...item,
       id: item.id ?? idx,
       subscriber: item.subscriber || '—',
       offering: item.offering?.name || item.offering_name || '—',
@@ -121,6 +139,14 @@ function ExtensionsContent({ domain }) {
               options={groupOptions}
               allLabel="All groups"
             />
+            <PermissionGate pbxAction="manageEndpoints" fallback={null}>
+              <CreateEndpointDialog
+                domain={domain}
+                variant="extension"
+                trigger="toolbar"
+                onSuccess={refreshExtensions}
+              />
+            </PermissionGate>
           </PbxListToolbar>
           <PbxDataTable
             columns={extensionColumns}
@@ -129,7 +155,12 @@ function ExtensionsContent({ domain }) {
           />
         </TabsContent>
 
-        <TabsContent value="entitlements" className="mt-4">
+        <TabsContent value="entitlements" className="space-y-4 mt-4">
+          <div className="flex justify-end">
+            <PermissionGate pbxAction="manageRouting" fallback={null}>
+              <EntitlementFormDialog domain={domain} onSuccess={refreshEntitlements} />
+            </PermissionGate>
+          </div>
           {entitlementsQ.isLoading ? (
             <PbxLoading />
           ) : entitlementsQ.error ? (
@@ -140,6 +171,27 @@ function ExtensionsContent({ domain }) {
                 { key: 'subscriber', label: 'Subscriber' },
                 { key: 'offering', label: 'Offering' },
                 { key: 'offer_option', label: 'Option' },
+                {
+                  key: 'actions',
+                  label: '',
+                  render: (row) => (
+                    <div className="flex flex-wrap gap-2 justify-end">
+                      <PermissionGate pbxAction="manageRouting" fallback={null}>
+                        <EntitlementFormDialog
+                          domain={domain}
+                          entitlement={row}
+                          onSuccess={refreshEntitlements}
+                          trigger={
+                            <Button type="button" variant="outline" size="sm">
+                              Edit
+                            </Button>
+                          }
+                        />
+                        <DeleteEntitlementAction entitlement={row} onSuccess={refreshEntitlements} />
+                      </PermissionGate>
+                    </div>
+                  ),
+                },
               ]}
               rows={entitlementRows}
               emptyMessage="No entitlements for this domain."
@@ -153,6 +205,7 @@ function ExtensionsContent({ domain }) {
         subscriber={detailSub}
         open={!!detailSub}
         onOpenChange={(open) => !open && setDetailSub(null)}
+        onUpdated={refreshExtensions}
       />
     </div>
   );
