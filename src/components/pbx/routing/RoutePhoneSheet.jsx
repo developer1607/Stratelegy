@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import PbxFormField from '@/components/pbx/shared/PbxFormField';
+import PbxFormSelect from '@/components/pbx/shared/PbxFormSelect';
 import { mapRouteToForm } from '@/components/pbx/shared/pbxFormMappers';
 import { toast } from 'sonner';
 
@@ -104,11 +105,14 @@ export default function RoutePhoneSheet({
                 value={form.treatment}
                 onChange={(e) => setForm({ ...form, treatment: e.target.value })}
               />
-              <PbxFormField
+              <PbxFormSelect
                 label="Enabled"
-                value={form.enable}
-                onChange={(e) => setForm({ ...form, enable: e.target.value })}
-                placeholder="yes / no"
+                value={form.enable === 'no' ? 'no' : 'yes'}
+                onValueChange={(enable) => setForm({ ...form, enable })}
+                options={[
+                  { value: 'yes', label: 'Yes — route active' },
+                  { value: 'no', label: 'No — route disabled' },
+                ]}
               />
               <PbxFormField
                 label="Notes"

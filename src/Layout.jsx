@@ -113,7 +113,7 @@ export default function Layout({ children, currentPageName }) {
     PBX_PAGES.includes(currentPageName) &&
     (canViewPbxDomains(permissions) || isPbxDomainRestricted(permissions)) &&
     (!PBX_PAGES_NO_DOMAIN_BAR.has(currentPageName) ||
-      (isPbxDomainRestricted(permissions) && currentPageName !== "PBXDashboard"));
+      isPbxDomainRestricted(permissions));
 
   const layoutBody = (
     <div className="flex h-screen bg-gray-50">

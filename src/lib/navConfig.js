@@ -23,7 +23,6 @@ import {
   Mail,
   LineChart,
   Cpu,
-  FileDown,
 } from "lucide-react";
 import { PBX_OPERATIONAL_REPORT_PAGES } from "@shared/pbxReportPages.js";
 
@@ -48,19 +47,14 @@ export const SUPPORT_NAV = [
 const PBX_REPORT_NAV_ICONS = {
   offlineEndpoints: Activity,
   deviceMonitoring: Cpu,
-  domainExport: FileDown,
   e911: Mail,
-  sipAlg: Settings,
-  sipTrunk: Briefcase,
-  vulnerabilityCheck: ShieldAlert,
-  voicemail: Voicemail,
 };
 
 export const PBX_NAV_GROUPS = [
   {
     label: "Overview",
     items: [
-      { name: "Dashboard", icon: LayoutDashboard, path: "PBXDashboard" },
+      { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
       { name: "Domains", icon: Globe, path: "PBXDomains" },
     ],
   },
@@ -68,7 +62,6 @@ export const PBX_NAV_GROUPS = [
     label: "Users & Endpoints",
     items: [
       { name: "Extensions", icon: Hash, path: "Extensions" },
-      { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
       { name: "Offline Endpoints", icon: Activity, path: "OfflineEndpoints" },
     ],
   },
@@ -114,7 +107,6 @@ export const PBX_NAV_GROUPS = [
 
 /** Account-wide PBX screens — no global domain selector (domain is picked on-page or not needed). */
 export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
-  "PBXDashboard",
   "PBXDomains",
   "E911Reports",
   "PBXReportE911",

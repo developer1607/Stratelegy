@@ -24,7 +24,7 @@ export default function PBXDomains() {
   } = usePbxDomain();
   const { canAccessPage, permissions } = usePermissions();
   const assignedCount = getAssignedPbxDomains(permissions).length;
-  const canOpenDashboard = canAccessPage("PBXDashboard");
+  const canOpenEndpointControl = canAccessPage("EndpointControl");
   const [search, setSearch] = useState("");
   const [resellerFilter, setResellerFilter] = useState("all");
 
@@ -118,14 +118,14 @@ export default function PBXDomains() {
               "Select domain"
             )}
           </Button>
-          {canOpenDashboard ? (
+          {canOpenEndpointControl ? (
             <Button asChild size="sm" variant="outline">
               <Link
-                to={`${createPageUrl("PBXDashboard")}?domain=${encodeURIComponent(row.domain)}`}
+                to={`${createPageUrl("EndpointControl")}?domain=${encodeURIComponent(row.domain)}`}
                 onClick={() => !row.isSelected && setDomain(row.domain)}
               >
                 <ExternalLink className="h-4 w-4 mr-1" />
-                Dashboard
+                Endpoint Control
               </Link>
             </Button>
           ) : null}
@@ -198,15 +198,15 @@ export default function PBXDomains() {
                     </p>
                   ) : null}
                 </div>
-                {canOpenDashboard ? (
+                {canOpenEndpointControl ? (
                   <Button
                     asChild
                     className="bg-[#F07020] hover:bg-[#e06518] shrink-0"
                   >
                     <Link
-                      to={`${createPageUrl("PBXDashboard")}?domain=${encodeURIComponent(selectedRecord.domain)}`}
+                      to={`${createPageUrl("EndpointControl")}?domain=${encodeURIComponent(selectedRecord.domain)}`}
                     >
-                      Open PBX dashboard
+                      Open endpoint control
                     </Link>
                   </Button>
                 ) : null}

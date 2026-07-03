@@ -1,40 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { pbxApi } from '@/api/pbx';
 import { createPageUrl } from '@/utils';
 import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
 import { usePermissions } from '@/hooks/usePermissions';
-import { canViewPbxConnectionStatus, canViewPbxDomains } from '@/lib/permissions';
-import { Badge } from '@/components/ui/badge';
+import { canViewPbxDomains } from '@/lib/permissions';
 import { Loader2 } from 'lucide-react';
 import { displayError } from '@/lib/errors';
-
-export function PbxStatusBadge() {
-  const { permissions } = usePermissions();
-  const showStatus = canViewPbxConnectionStatus(permissions);
-
-  const { data } = useQuery({
-    queryKey: ['pbx-status'],
-    queryFn: () => pbxApi.status(),
-    staleTime: 60_000,
-    enabled: showStatus,
-  });
-
-  if (!showStatus || !data) return null;
-  if (!data.configured) {
-    return (
-      <Badge variant="outline" className="text-amber-700 border-amber-300">
-        SkySwitch not configured
-      </Badge>
-    );
-  }
-  return data.connected ? (
-    <Badge className="bg-green-600 hover:bg-green-600">SkySwitch connected</Badge>
-  ) : (
-    <Badge variant="destructive">SkySwitch offline</Badge>
-  );
-}
 
 export default function PbxShell({ title, description, children, actions, requiresDomain = true }) {
   const { domain, domains, isLoading, error, canListDomains } = usePbxDomain();
@@ -45,10 +16,7 @@ export default function PbxShell({ title, description, children, actions, requir
     <div className="p-4 sm:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
-            <PbxStatusBadge />
-          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{title}</h1>
           {description && <p className="text-gray-500 mt-1">{description}</p>}
         </div>
         {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}

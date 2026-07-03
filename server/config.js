@@ -56,6 +56,14 @@ export const config = {
     defaultDomain: process.env.SKYSWITCH_DEFAULT_DOMAIN || '',
     scope: process.env.SKYSWITCH_SCOPE || '*',
   },
+  pbx: {
+    enabled: process.env.PBX_ENABLED !== 'false',
+    apiBaseUrl: process.env.PBX_API_URL || '',
+    clientId: process.env.PBX_CLIENT_ID || '',
+    clientSecret: process.env.PBX_CLIENT_SECRET || '',
+    username: process.env.PBX_USERNAME || '',
+    password: process.env.PBX_PASSWORD || '',
+  },
 };
 
 function isLocalhostUrl(url) {
@@ -99,6 +107,17 @@ export function assertProductionConfig() {
       console.warn(
         `[config] SKYSWITCH_SCOPE is missing: ${scopeStatus.missing.join(', ')} — Call Logs and E911 Reports may return 403`
       );
+    }
+  }
+  if (config.pbx.enabled) {
+    const missing = [];
+    if (!config.pbx.apiBaseUrl) missing.push('PBX_API_URL');
+    if (!config.pbx.clientId) missing.push('PBX_CLIENT_ID');
+    if (!config.pbx.clientSecret) missing.push('PBX_CLIENT_SECRET');
+    if (!config.pbx.username) missing.push('PBX_USERNAME');
+    if (!config.pbx.password) missing.push('PBX_PASSWORD');
+    if (missing.length) {
+      console.warn(`[config] PBX enabled but missing: ${missing.join(', ')}`);
     }
   }
   if (!config.emailWebhookSecret) {

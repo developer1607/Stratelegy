@@ -27,6 +27,12 @@ function TroubleshootingContent({ domain }) {
     queryFn: () => pbxApi.troubleshooting(domain),
     enabled: !!domain,
   });
+  const hybridQ = useQuery({
+    queryKey: ['pbx-hybrid-status'],
+    queryFn: () => pbxApi.hybridStatus(),
+    enabled: showConnection,
+    retry: false,
+  });
 
   const stats = useMemo(() => {
     if (!data) return [];
@@ -51,7 +57,7 @@ function TroubleshootingContent({ domain }) {
       {showConnection && data.status ? (
         <div className="bg-white rounded-lg shadow p-6 flex items-center justify-between gap-4 flex-wrap">
           <div>
-            <p className="text-sm text-gray-500">API connection</p>
+            <p className="text-sm text-gray-500">Telco API connection</p>
             <p className="text-lg font-semibold text-gray-900 mt-1">
               {data.status?.connected ? 'Connected' : 'Not connected'}
             </p>
@@ -68,12 +74,41 @@ function TroubleshootingContent({ domain }) {
         </div>
       ) : null}
 
+      {showConnection && hybridQ.data ? (
+        <div className="bg-white rounded-lg shadow p-6 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-sm text-gray-500">PBX API connection</p>
+            <p className="text-lg font-semibold text-gray-900 mt-1">
+              {hybridQ.data.connected ? 'Connected' : 'Not connected'}
+            </p>
+            {hybridQ.data.scope ? (
+              <p className="text-sm text-gray-500 mt-1">Scope: {hybridQ.data.scope}</p>
+            ) : null}
+            {hybridQ.data.message ? (
+              <p className="text-sm text-gray-500 mt-1">{hybridQ.data.message}</p>
+            ) : null}
+          </div>
+          <Badge
+            className={hybridQ.data.connected ? 'bg-green-600 hover:bg-green-600' : ''}
+            variant={hybridQ.data.connected ? 'default' : 'destructive'}
+          >
+            {hybridQ.data.connected ? 'Healthy' : 'Check PBX credentials'}
+          </Badge>
+        </div>
+      ) : null}
+
       {stats.length > 0 ? <PbxStatGrid stats={stats} /> : null}
 
       <div className="bg-white rounded-lg shadow p-6 text-sm text-gray-600">
         {showConnection && data.status?.accountId ? (
           <p>
             <span className="font-medium text-gray-900">Account:</span> {data.status.accountId}
+          </p>
+        ) : null}
+        {showConnection && hybridQ.data?.connected ? (
+          <p className="mt-2">
+            <span className="font-medium text-gray-900">PBX API:</span>{' '}
+            {hybridQ.data.apiVersion || hybridQ.data.baseUrl || 'Connected'}
           </p>
         ) : null}
         {canViewPbxDomains(permissions) && data.domain ? (

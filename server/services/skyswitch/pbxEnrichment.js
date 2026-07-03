@@ -74,10 +74,13 @@ export function deriveOnlineStatus(raw) {
     .toLowerCase()
     .trim();
 
-  if (!status) return 'unknown';
+  if (!status) {
+    const hasMac = pick(raw, 'mac_address', 'mac');
+    return hasMac ? 'offline' : 'no_device';
+  }
   if (/online|registered|active|reachable|connected/.test(status)) return 'online';
   if (/offline|unregistered|inactive|unreachable|disconnected|expired/.test(status)) return 'offline';
-  return 'unknown';
+  return 'no_device';
 }
 
 function extractFeatures(raw) {
@@ -93,7 +96,12 @@ function extractFeatures(raw) {
 
 export function normalizeSubscriber(raw) {
   if (!raw || typeof raw !== 'object') return raw;
-  const onlineStatus = deriveOnlineStatus(raw);
+  const onlineStatus =
+    raw.online_status === 'online' ||
+    raw.online_status === 'offline' ||
+    raw.online_status === 'no_device'
+      ? raw.online_status
+      : deriveOnlineStatus(raw);
   return {
     ...raw,
     user: pick(raw, 'user', 'extension', 'subscriber') || raw.user,
@@ -125,12 +133,14 @@ export function buildEndpointStats(subscribers, messagingUsers, sipAlgWarningCou
   const subs = normalizeSubscriberList(subscribers);
   const online = subs.filter((s) => s.online_status === 'online').length;
   const offline = subs.filter((s) => s.online_status === 'offline').length;
-  const unknown = subs.length - online - offline;
+  const noDevice = subs.filter((s) => s.online_status === 'no_device').length;
+  const unknown = subs.length - online - offline - noDevice;
 
   return {
     totalExtensions: subs.length,
     onlineExtensions: online,
     offlineExtensions: offline,
+    noDeviceExtensions: noDevice,
     unknownStatusExtensions: unknown,
     messagingUsers: toArray(messagingUsers).length,
     sipAlgWarnings: sipAlgWarningCount,

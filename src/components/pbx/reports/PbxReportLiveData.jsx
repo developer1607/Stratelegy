@@ -12,11 +12,14 @@ import { matchSearch } from '@/lib/listFilters';
 import { createPageUrl } from '@/utils';
 import { Button } from '@/components/ui/button';
 
-function LiveSection({ title, children, livePage, livePageLabel }) {
+function LiveSection({ title, children, livePage, livePageLabel, description }) {
   return (
     <section className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+          {description ? <p className="text-sm text-gray-500 mt-1">{description}</p> : null}
+        </div>
         {livePage ? (
           <Button variant="ghost" size="sm" asChild>
             <Link to={createPageUrl(livePage)}>
@@ -81,7 +84,7 @@ function OfflineEndpointsLive({ config, domain, search }) {
 
 function DeviceMonitoringLive({ config, domain, search }) {
   const { data, isLoading, error } = useQuery({
-    queryKey: ['pbx-endpoint-control', domain],
+    queryKey: ['pbx-endpoint-inventory', domain],
     queryFn: () => pbxApi.endpointControlOverview(domain),
     enabled: !!domain,
   });
@@ -91,11 +94,26 @@ function DeviceMonitoringLive({ config, domain, search }) {
   if (error) return <PbxError error={error} />;
 
   const rows = (data?.subscribers || []).filter((row) =>
-    matchSearch(row, search, ['user', 'name', 'subscriber_login', 'caller_id', 'site', 'department'])
+    matchSearch(row, search, [
+      'user',
+      'name',
+      'subscriber_login',
+      'caller_id',
+      'site',
+      'department',
+      'mac_address',
+      'model',
+      'registration_status',
+    ])
   );
 
   return (
-    <LiveSection title="Registered devices" livePage={config.livePage} livePageLabel={config.livePageLabel}>
+    <LiveSection
+      title="Registered devices"
+      livePage={config.livePage}
+      livePageLabel={config.livePageLabel}
+      description="Hybrid PBX + Telco endpoint inventory. Use Generate export for the official SkySwitch user_device file."
+    >
       <PbxDataTable
         columns={[
           {
@@ -105,40 +123,16 @@ function DeviceMonitoringLive({ config, domain, search }) {
           },
           { key: 'user', label: 'Ext' },
           { key: 'name', label: 'Name' },
+          { key: 'mac_address', label: 'MAC' },
+          { key: 'model', label: 'Model' },
           { key: 'transport', label: 'Transport' },
+          { key: 'registration_status', label: 'Registration' },
           { key: 'site', label: 'Site' },
           { key: 'caller_id', label: 'DID' },
+          { key: 'user_agent', label: 'User agent' },
         ]}
         rows={rows}
         emptyMessage="No devices returned for this domain."
-      />
-    </LiveSection>
-  );
-}
-
-function DomainExportLive({ config, search }) {
-  const { data = [], isLoading, error } = useQuery({
-    queryKey: ['pbx-domains'],
-    queryFn: () => pbxApi.domains(),
-  });
-
-  if (isLoading) return <PbxLoading />;
-  if (error) return <PbxError error={error} />;
-
-  const rows = data.filter((row) =>
-    matchSearch(row, search, ['domain', 'description', 'name', 'reseller'])
-  );
-
-  return (
-    <LiveSection title="Domains" livePage={config.livePage} livePageLabel={config.livePageLabel}>
-      <PbxDataTable
-        columns={[
-          { key: 'domain', label: 'Domain' },
-          { key: 'description', label: 'Description' },
-          { key: 'reseller', label: 'Reseller' },
-        ]}
-        rows={rows}
-        emptyMessage="No domains returned for this account."
       />
     </LiveSection>
   );
@@ -153,104 +147,67 @@ function E911Live({ config, domain, search }) {
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;
 
-  const rows = (data?.provisioned || []).map(formatE911Row).filter((row) =>
+  const reviewRows = (data?.domainReview?.rows || []).filter((row) =>
+    matchSearch(row, search, [
+      'extension',
+      'name',
+      'caller_id',
+      'e911_caller_id',
+      'phone_number',
+      'e911_status',
+      'location',
+    ])
+  );
+  const poolRows = (data?.emergencyPoolRows || []).filter((row) =>
+    matchSearch(row, search, ['callid', 'tag', 'phone_number', 'e911_status', 'location'])
+  );
+  const addressRows = (data?.provisioned || []).map(formatE911Row).filter((row) =>
     matchSearch(row, search, ['phone_number', 'city', 'name', 'street', 'zip_code', 'routing_status'])
   );
 
   return (
-    <LiveSection title="Provisioned E911 addresses" livePage={config.livePage} livePageLabel={config.livePageLabel}>
-      <PbxDataTable columns={E911_COLUMNS} rows={rows} emptyMessage="No provisioned E911 addresses found." />
-    </LiveSection>
-  );
-}
+    <div className="space-y-8">
+      <LiveSection
+        title="Extension E911 review"
+        livePage={config.livePage}
+        livePageLabel={config.livePageLabel}
+        description="Hybrid PBX subscriber 911 caller ID and status. Telco civic addresses are listed below when provisioned."
+      >
+        <PbxDataTable
+          columns={[
+            { key: 'extension', label: 'Ext' },
+            { key: 'name', label: 'Name' },
+            { key: 'e911_caller_id', label: 'PBX 911 CID' },
+            { key: 'phone_number', label: 'Effective DID' },
+            { key: 'e911_status', label: 'Status' },
+            { key: 'location', label: 'Location' },
+          ]}
+          rows={reviewRows}
+          emptyMessage="No extension E911 rows for this scope."
+        />
+      </LiveSection>
 
-function SipAlgLive({ config, domain, search }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['pbx-sip-alg', domain],
-    queryFn: () => pbxApi.sipAlg(domain),
-    enabled: !!domain,
-  });
+      <LiveSection title="Emergency pool (callidemgr)">
+        <PbxDataTable
+          columns={[
+            { key: 'callid', label: 'Emergency CID' },
+            { key: 'tag', label: 'Tag' },
+            { key: 'e911_status', label: 'Telco civic' },
+            { key: 'location', label: 'Location' },
+          ]}
+          rows={poolRows}
+          emptyMessage="No domain emergency pool numbers configured."
+        />
+      </LiveSection>
 
-  if (!domain) return <DomainRequired />;
-  if (isLoading) return <PbxLoading />;
-  if (error) return <PbxError error={error} />;
-
-  const rows = (data?.settings || []).filter((row) =>
-    matchSearch(row, search, ['config_name', 'config_value', 'description', 'server_name'])
-  );
-
-  return (
-    <LiveSection title="SIP ALG settings" livePage={config.livePage} livePageLabel={config.livePageLabel}>
-      <PbxDataTable
-        columns={[
-          { key: 'config_name', label: 'Setting' },
-          { key: 'config_value', label: 'Value' },
-          { key: 'description', label: 'Description' },
-          { key: 'server_name', label: 'Server' },
-        ]}
-        rows={rows}
-        emptyMessage="No SIP ALG settings for this domain."
-      />
-    </LiveSection>
-  );
-}
-
-function SipTrunkLive({ config, domain, search }) {
-  const { data = [], isLoading, error } = useQuery({
-    queryKey: ['pbx-trunks', domain],
-    queryFn: () => pbxApi.trunkGroups(domain),
-  });
-
-  if (isLoading) return <PbxLoading />;
-  if (error) return <PbxError error={error} />;
-
-  const rows = data.filter((row) => matchSearch(row, search, ['id', 'name']));
-
-  return (
-    <LiveSection title="SIP trunk groups" livePage={config.livePage} livePageLabel={config.livePageLabel}>
-      <PbxDataTable
-        columns={[
-          { key: 'id', label: 'ID' },
-          { key: 'name', label: 'Name' },
-        ]}
-        rows={rows}
-        emptyMessage="No trunk groups found."
-      />
-    </LiveSection>
-  );
-}
-
-function VoicemailLive({ config, domain, search }) {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['pbx-voicemail', domain],
-    queryFn: () => pbxApi.voicemail(domain),
-    enabled: !!domain,
-  });
-
-  if (!domain) return <DomainRequired />;
-  if (isLoading) return <PbxLoading />;
-  if (error) return <PbxError error={error} />;
-
-  const rows = [
-    ...(data?.autoAttendants || []).map((r) => ({ ...r, section: 'Auto attendant' })),
-    ...(data?.callQueues || []).map((r) => ({ ...r, section: 'Call queue' })),
-    ...(data?.allSubscribers || []).map((r) => ({ ...r, section: 'Subscriber' })),
-  ].filter((row) => matchSearch(row, search, ['user', 'name', 'email_address', 'srv_code', 'section']));
-
-  return (
-    <LiveSection title="Voicemail services" livePage={config.livePage} livePageLabel={config.livePageLabel}>
-      <PbxDataTable
-        columns={[
-          { key: 'section', label: 'Type' },
-          { key: 'user', label: 'User' },
-          { key: 'name', label: 'Name' },
-          { key: 'srv_code', label: 'Service' },
-          { key: 'email_address', label: 'Email' },
-        ]}
-        rows={rows}
-        emptyMessage="No voicemail records for this domain."
-      />
-    </LiveSection>
+      <LiveSection title="Telco provisioned civic addresses">
+        <PbxDataTable
+          columns={E911_COLUMNS}
+          rows={addressRows}
+          emptyMessage="No Telco-provisioned E911 civic addresses for this scope."
+        />
+      </LiveSection>
+    </div>
   );
 }
 
@@ -283,11 +240,7 @@ function NoLiveData({ config }) {
 const LIVE_RENDERERS = {
   offlineEndpoints: OfflineEndpointsLive,
   deviceMonitoring: DeviceMonitoringLive,
-  domainExport: DomainExportLive,
   e911: E911Live,
-  sipAlg: SipAlgLive,
-  sipTrunk: SipTrunkLive,
-  voicemail: VoicemailLive,
 };
 
 export default function PbxReportLiveData({ config }) {
@@ -296,8 +249,7 @@ export default function PbxReportLiveData({ config }) {
 
   const Renderer = LIVE_RENDERERS[config.id];
   const searchPlaceholder = useMemo(() => {
-    if (config.id === 'domainExport') return 'Search domain or reseller…';
-    if (config.id === 'e911') return 'Search phone, city, or address…';
+    if (config.id === 'e911') return 'Search ext, phone, city, or address…';
     return 'Search this report…';
   }, [config.id]);
 

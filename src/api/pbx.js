@@ -1,4 +1,6 @@
 import { request } from "@/api/client";
+import { appParams } from "@/lib/app-params";
+import { getToken } from "@/lib/auth-token";
 
 function pbxRequest(method, path, body, query) {
   const params = new URLSearchParams();
@@ -15,8 +17,35 @@ function pbxGet(path, query) {
   return pbxRequest("GET", path, undefined, query);
 }
 
+async function pbxDownload(path, query) {
+  const params = new URLSearchParams();
+  if (query) {
+    for (const [key, value] of Object.entries(query)) {
+      if (value != null && value !== "") params.set(key, String(value));
+    }
+  }
+  const qs = params.toString();
+  const headers = {
+    "X-App-Id":
+      appParams.appId || import.meta.env.VITE_APP_ID || "stratelegy-insight",
+  };
+  const token = getToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`/api/pbx${path}${qs ? `?${qs}` : ""}`, {
+    headers,
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const error = new Error(`Download failed (${res.status})`);
+    error.status = res.status;
+    throw error;
+  }
+  return res.text();
+}
+
 export const pbxApi = {
   status: () => pbxGet("/status"),
+  hybridStatus: () => pbxGet("/hybrid/status"),
   domains: () => pbxGet("/domains"),
   resellers: () => pbxGet("/resellers"),
   apiCatalog: () => pbxGet("/api-catalog"),
@@ -28,7 +57,7 @@ export const pbxApi = {
   pbxUserPhoneNumbers: (domain, user, opts) =>
     pbxGet("/messaging/aliases/pbxuser", { domain, user, ...opts }),
   offlineEndpoints: (domain) => pbxGet("/offline-endpoints", { domain }),
-  e911: (domain) => pbxGet('/e911', domain ? { domain } : undefined),
+  e911: (domain) => pbxGet("/e911", domain ? { domain } : undefined),
   e911Countries: () => pbxGet("/e911/countries"),
   e911States: () => pbxGet("/e911/states"),
   e911Detail: (phoneNumber) =>
@@ -38,7 +67,8 @@ export const pbxApi = {
     pbxRequest("PUT", `/e911/${encodeURIComponent(phoneNumber)}`, body),
   unprovisionE911: (phoneNumber) =>
     pbxRequest("DELETE", `/e911/${encodeURIComponent(phoneNumber)}`),
-  trunkGroups: (domain) => pbxGet('/trunk-groups', domain ? { domain } : undefined),
+  trunkGroups: (domain) =>
+    pbxGet("/trunk-groups", domain ? { domain } : undefined),
   sipAlg: (domain) => pbxGet("/sip-alg", { domain }),
   callRouting: (domain) => pbxGet("/call-routing", { domain }),
   getRoute: (phoneNumber) =>
@@ -89,22 +119,109 @@ export const pbxApi = {
   entitlements: (query) => pbxGet("/entitlements", query),
   storeEntitlement: (body) => pbxRequest("PUT", "/entitlements", body),
   entitlementOfferings: () => pbxGet("/entitlements/offerings"),
-  entitlementOfferOptions: (query) => pbxGet("/entitlements/offeroptions", query),
+  entitlementOfferOptions: (query) =>
+    pbxGet("/entitlements/offeroptions", query),
   entitlementOfferValue: (query) => pbxGet("/entitlements/offervalue", query),
   deleteEntitlement: (id) =>
     pbxRequest("DELETE", `/entitlements/${encodeURIComponent(id)}`),
   getOutboundCnam: (phoneNumber) =>
     pbxGet(`/cnam-outbound/${encodeURIComponent(phoneNumber)}`),
   setOutboundCnam: (phoneNumber, body) =>
-    pbxRequest("PUT", `/cnam-outbound/${encodeURIComponent(phoneNumber)}`, body),
+    pbxRequest(
+      "PUT",
+      `/cnam-outbound/${encodeURIComponent(phoneNumber)}`,
+      body,
+    ),
   removeOutboundCnam: (phoneNumber) =>
     pbxRequest("DELETE", `/cnam-outbound/${encodeURIComponent(phoneNumber)}`),
   auditActions: () => pbxGet("/audit-logs/resource-actions"),
   journals: (params) => pbxGet("/journals", params),
   journalMeta: () => pbxGet("/journals/module-type-actions"),
-  endpointControlOverview: (domain) => pbxGet("/endpoint-control/overview", { domain }),
+  cdrs: (params) => pbxGet("/cdrs", params),
+  exportCdrs: (params) => pbxDownload("/cdrs/export", params),
+  phones: (domain) => pbxGet("/phones", { domain }),
+  phoneDetail: (macAddress, domain) =>
+    pbxGet(`/phones/${encodeURIComponent(macAddress)}`, { domain }),
+  resyncPhone: (macAddress, domain) =>
+    pbxRequest(
+      "POST",
+      `/phones/${encodeURIComponent(macAddress)}/resync`,
+      undefined,
+      { domain },
+    ),
+  endpointControlOverview: (domain) =>
+    pbxGet("/endpoint-control/overview", { domain }),
+  endpointDetail: (domain, user) =>
+    pbxGet(`/endpoint-control/subscribers/${encodeURIComponent(user)}/detail`, {
+      domain,
+    }),
+  updateEndpointSubscriber: (domain, user, body) =>
+    pbxRequest(
+      "PATCH",
+      `/endpoint-control/subscribers/${encodeURIComponent(user)}`,
+      body,
+      { domain },
+    ),
+  updateSubscriberE911CallerId: (domain, user, e911_caller_id) =>
+    pbxRequest(
+      "PATCH",
+      `/endpoint-control/subscribers/${encodeURIComponent(user)}/e911-caller-id`,
+      { e911_caller_id },
+      { domain },
+    ),
+  endpointSites: (domain) => pbxGet("/endpoint-control/sites", { domain }),
+  endpointVoicemails: (domain, user) =>
+    pbxGet(
+      `/endpoint-control/subscribers/${encodeURIComponent(user)}/voicemails`,
+      { domain },
+    ),
+  endpointMonitoring: (domain, user) =>
+    pbxGet(
+      `/endpoint-control/subscribers/${encodeURIComponent(user)}/monitoring`,
+      { domain },
+    ),
+  updateEndpointMonitoring: (domain, user, enabled) =>
+    pbxRequest(
+      "PATCH",
+      `/endpoint-control/subscribers/${encodeURIComponent(user)}/monitoring`,
+      { enabled },
+      { domain },
+    ),
+  endpointGroups: (domain, user) =>
+    pbxGet(`/endpoint-control/subscribers/${encodeURIComponent(user)}/groups`, {
+      domain,
+    }),
+  updatePhoneOverrides: (macAddress, domain, overrides) =>
+    pbxRequest(
+      "PATCH",
+      `/phones/${encodeURIComponent(macAddress)}/overrides`,
+      { overrides },
+      { domain },
+    ),
   e911ReviewOverview: (domain) =>
     pbxGet("/e911/review-overview", domain ? { domain } : undefined),
-  offlineEndpointsOverview: (domain) => pbxGet("/offline-endpoints/overview", { domain }),
-  mosScores: (params) => pbxGet('/mos-scores', params),
+  e911DomainDefaults: (domain) => pbxGet("/e911/domain-defaults", { domain }),
+  updateE911DomainDefaults: (domain, body) =>
+    pbxRequest("PATCH", "/e911/domain-defaults", body, { domain }),
+  createEmergencyPoolNumber: (domain, body) =>
+    pbxRequest("POST", "/e911/emergency-pool", body, { domain }),
+  updateEmergencyPoolNumber: (domain, callid, body) =>
+    pbxRequest(
+      "PATCH",
+      `/e911/emergency-pool/${encodeURIComponent(callid)}`,
+      body,
+      { domain },
+    ),
+  deleteEmergencyPoolNumber: (domain, callid) =>
+    pbxRequest(
+      "DELETE",
+      `/e911/emergency-pool/${encodeURIComponent(callid)}`,
+      undefined,
+      { domain },
+    ),
+  subscriberE911Profile: (domain, user) =>
+    pbxGet(`/e911/subscribers/${encodeURIComponent(user)}/profile`, { domain }),
+  offlineEndpointsOverview: (domain) =>
+    pbxGet("/offline-endpoints/overview", { domain }),
+  mosScores: (params) => pbxGet("/mos-scores", params),
 };

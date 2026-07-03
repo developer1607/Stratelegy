@@ -160,10 +160,11 @@ export function getDefaultHomePage(permissions) {
   if (!permissions) return null;
   if (canAccessPage(permissions, 'Dashboard')) return 'Dashboard';
   if (canAccessPage(permissions, 'SupportDashboard')) return 'SupportDashboard';
-  if (canAccessPage(permissions, 'PBXDashboard')) return 'PBXDashboard';
+  if (canAccessPage(permissions, 'EndpointControl')) return 'EndpointControl';
+  if (canAccessPage(permissions, 'PBXDashboard')) return 'EndpointControl';
   if (hasCrmModuleAccess(permissions)) return 'Dashboard';
   if (hasSupportModuleAccess(permissions)) return 'SupportDashboard';
-  if (hasPbxModuleAccess(permissions)) return 'PBXDashboard';
+  if (hasPbxModuleAccess(permissions)) return 'EndpointControl';
   return null;
 }
 

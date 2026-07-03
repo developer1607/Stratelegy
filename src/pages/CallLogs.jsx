@@ -10,7 +10,9 @@ import PbxListToolbar from "@/components/pbx/shared/PbxListToolbar";
 import PbxFilterSelect from "@/components/pbx/shared/PbxFilterSelect";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Download } from "lucide-react";
 import {
   matchSearch,
   matchSelect,
@@ -61,6 +63,23 @@ function DateRange({ startDate, endDate, onStartChange, onEndChange }) {
       </div>
     </div>
   );
+}
+
+function formatCdrDateTime(value, endOfDay = false) {
+  if (!value) return undefined;
+  return `${value} ${endOfDay ? "23:59:59" : "00:00:00"}`;
+}
+
+function downloadTextFile(filename, content, mimeType = "text/plain;charset=utf-8") {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function AuditTab({ search, startDate, endDate }) {
@@ -271,6 +290,107 @@ function JournalTab({ search, startDate, endDate, domain, domainRestricted }) {
   );
 }
 
+function CdrTab({ search, startDate, endDate, domain, domainRestricted }) {
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [userFilter, setUserFilter] = useState("");
+  const params = {
+    start_date: formatCdrDateTime(startDate),
+    end_date: formatCdrDateTime(endDate, true),
+    domain,
+    user: userFilter || undefined,
+    page: 1,
+    per_page: 50,
+  };
+
+  const cdrQ = useQuery({
+    queryKey: ["pbx-cdrs", params.start_date, params.end_date, domain, userFilter],
+    queryFn: () => pbxApi.cdrs(params),
+    retry: false,
+    enabled: !domainRestricted || !!domain,
+  });
+
+  const rows = useMemo(() => {
+    const baseRows = cdrQ.data?.rows || [];
+    return baseRows.filter((row) => {
+      if (
+        !matchSearch(row, search, [
+          "from",
+          "from_number",
+          "to",
+          "to_number",
+          "domain",
+          "orig_sub",
+          "term_sub",
+          "cdr_id",
+        ])
+      ) {
+        return false;
+      }
+      if (!matchSelect(row.type, typeFilter)) return false;
+      return true;
+    });
+  }, [cdrQ.data, search, typeFilter]);
+
+  const typeOptions = useMemo(() => uniqueFieldValues(cdrQ.data?.rows || [], "type"), [cdrQ.data]);
+
+  const handleExport = async () => {
+    const csv = await pbxApi.exportCdrs({
+      ...params,
+      type: typeFilter === "all" ? undefined : typeFilter,
+      per_page: 250,
+    });
+    downloadTextFile(`pbx-cdrs-${startDate}-to-${endDate}.csv`, csv, "text/csv;charset=utf-8");
+  };
+
+  if (domainRestricted && !domain) {
+    return (
+      <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+        Select an assigned domain in the bar above to load PBX call detail records.
+      </p>
+    );
+  }
+
+  if (cdrQ.isLoading) return <PbxLoading />;
+  if (cdrQ.error) return <PbxError error={cdrQ.error} />;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <PbxFilterSelect
+          value={typeFilter}
+          onValueChange={setTypeFilter}
+          options={typeOptions}
+          allLabel="All call types"
+          className="w-[160px]"
+        />
+        <Input
+          value={userFilter}
+          onChange={(e) => setUserFilter(e.target.value)}
+          placeholder="Filter extension"
+          className="h-9 w-[160px] bg-white"
+        />
+        <Button variant="outline" size="sm" onClick={handleExport}>
+          <Download className="w-4 h-4 mr-2" />
+          Export CSV
+        </Button>
+      </div>
+      <PbxDataTable
+        columns={[
+          { key: "start_at", label: "Start" },
+          { key: "from", label: "From" },
+          { key: "to", label: "To" },
+          { key: "domain", label: "Domain" },
+          { key: "duration_label", label: "Duration" },
+          { key: "talk_label", label: "Talk" },
+          { key: "type", label: "Type" },
+        ]}
+        rows={rows}
+        emptyMessage="No PBX call detail records match your filters."
+      />
+    </div>
+  );
+}
+
 function LogsContent() {
   const [search, setSearch] = useState("");
   const [startDate, setStartDate] = useState(daysAgo(7));
@@ -280,8 +400,9 @@ function LogsContent() {
   const domainRestricted = isPbxDomainRestricted(permissions);
 
   return (
-    <Tabs defaultValue={domainRestricted ? "journals" : "audit"} className="space-y-4">
+    <Tabs defaultValue="cdrs" className="space-y-4">
       <TabsList>
+        <TabsTrigger value="cdrs">PBX CDRs</TabsTrigger>
         {!domainRestricted && <TabsTrigger value="audit">Audit logs</TabsTrigger>}
         <TabsTrigger value="journals">Journals</TabsTrigger>
       </TabsList>
@@ -301,11 +422,15 @@ function LogsContent() {
         />
       </PbxListToolbar>
 
-      {domainRestricted && !domain && (
-        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          Select an assigned domain in the bar above to load journal entries for that domain.
-        </p>
-      )}
+      <TabsContent value="cdrs">
+        <CdrTab
+          search={search}
+          startDate={startDate}
+          endDate={endDate}
+          domain={domain}
+          domainRestricted={domainRestricted}
+        />
+      </TabsContent>
 
       {!domainRestricted && (
         <TabsContent value="audit">

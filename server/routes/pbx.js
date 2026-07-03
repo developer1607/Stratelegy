@@ -23,6 +23,7 @@ import {
 } from '../../shared/pbxDomainAccess.js';
 import { config } from '../config.js';
 import { requireAdmin } from '../middleware/auth.js';
+import * as hybridPbx from '../services/pbx/index.js';
 
 const router = Router();
 
@@ -146,6 +147,155 @@ router.get('/status', requirePbxPermission('can_view_troubleshooting'), async (_
 });
 
 router.get(
+  '/hybrid/status',
+  requirePbxPermission('can_view_troubleshooting'),
+  async (_req, res, next) => {
+    try {
+      res.json(await hybridPbx.getPbxApiStatus());
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/cdrs',
+  requirePbxPermission('can_view_call_logs_page'),
+  async (req, res, next) => {
+    try {
+      const domain = isPbxDomainRestricted(req.permissions)
+        ? await requireDomainFromRequest(req)
+        : await domainFromRequest(req);
+      const start = req.query.start_date || new Date(Date.now() - 86400000).toISOString().slice(0, 19).replace('T', ' ');
+      const end = req.query.end_date || new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const data = await hybridPbx.listCdrs({
+        startDate: start,
+        endDate: end,
+        domain,
+        user: req.query.user,
+        type: req.query.type,
+        raw: req.query.raw,
+        qos: req.query.qos,
+        page: Number(req.query.page) || 1,
+        perPage: Number(req.query.per_page) || 50,
+      });
+      res.json(data);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/cdrs/export',
+  requirePbxPermission('can_view_call_logs_page'),
+  async (req, res, next) => {
+    try {
+      const domain = isPbxDomainRestricted(req.permissions)
+        ? await requireDomainFromRequest(req)
+        : await domainFromRequest(req);
+      const start = req.query.start_date || new Date(Date.now() - 86400000).toISOString().slice(0, 19).replace('T', ' ');
+      const end = req.query.end_date || new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const data = await hybridPbx.listCdrs({
+        startDate: start,
+        endDate: end,
+        domain,
+        user: req.query.user,
+        type: req.query.type,
+        raw: req.query.raw,
+        qos: req.query.qos,
+        page: Number(req.query.page) || 1,
+        perPage: Math.min(Number(req.query.per_page) || 250, 1000),
+      });
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="pbx-cdrs-${new Date().toISOString().slice(0, 10)}.csv"`
+      );
+      res.send(hybridPbx.cdrRowsToCsv(data.rows));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/phones',
+  requireAnyPbxPermission('can_view_endpoint_control', 'can_access_pbx'),
+  async (req, res, next) => {
+    try {
+      const domain = await domainFromRequest(req);
+      if (!domain) return res.json([]);
+      res.json(await hybridPbx.listPhones(domain));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/phones/:macAddress',
+  requireAnyPbxPermission('can_view_endpoint_control', 'can_access_pbx'),
+  async (req, res, next) => {
+    try {
+      const domain = await domainFromRequest(req);
+      if (!domain) return res.json(null);
+      res.json(await hybridPbx.getPhone(domain, req.params.macAddress));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/phones/:macAddress/resync',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  async (req, res, next) => {
+    try {
+      const domain = await domainFromRequest(req);
+      if (!domain) {
+        const err = new Error('domain is required');
+        err.status = 400;
+        err.expose = true;
+        throw err;
+      }
+      const phone = await hybridPbx.getPhone(domain, req.params.macAddress);
+      if (!phone?.primary_device) {
+        const err = new Error('No primary PBX device found for this phone');
+        err.status = 404;
+        err.expose = true;
+        throw err;
+      }
+      await hybridPbx.resyncPhone(phone.primary_device);
+      res.status(202).json({ ok: true, device: phone.primary_device });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/phones/:macAddress/overrides',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const { overrides } = req.body || {};
+      if (overrides == null) {
+        const err = new Error('overrides is required');
+        err.status = 400;
+        err.expose = true;
+        throw err;
+      }
+      const phone = await hybridPbx.updatePhone(domain, req.params.macAddress, { overrides });
+      res.json(phone);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
   '/domains',
   requireAnyPbxPermission('can_view_pbx_domains_page', 'can_access_pbx_domain_scoped'),
   async (req, res, next) => {
@@ -192,7 +342,129 @@ router.get(
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
-      res.json(await pbx.getEndpointControlOverview(domain, pbxDomainOpts(req)));
+      res.json(await hybridPbx.getEndpointInventory(domain));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/endpoint-control/subscribers/:user/detail',
+  requirePbxPermission('can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.getEndpointDetail(domain, req.params.user));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/endpoint-control/subscribers/:user',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const { email, department, notes, dial_policy, dial_plan, time_zone, site, vm_pin, e911_caller_id } = req.body || {};
+      res.json(
+        await hybridPbx.updateSubscriber(domain, req.params.user, {
+          email,
+          department,
+          notes,
+          dial_policy,
+          dial_plan,
+          time_zone,
+          site,
+          vm_pin,
+          e911_caller_id,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/endpoint-control/subscribers/:user/e911-caller-id',
+  requirePbxPermission('can_manage_e911'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const { e911_caller_id } = req.body || {};
+      res.json(
+        await hybridPbx.updateSubscriberE911CallerId(domain, req.params.user, e911_caller_id)
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/endpoint-control/sites',
+  requirePbxPermission('can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.listSites(domain));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/endpoint-control/subscribers/:user/voicemails',
+  requirePbxPermission('can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.getSubscriberVoicemail(domain, req.params.user));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/endpoint-control/subscribers/:user/monitoring',
+  requirePbxPermission('can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.getSubscriberMonitoring(domain, req.params.user));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/endpoint-control/subscribers/:user/monitoring',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(
+        await hybridPbx.setSubscriberMonitoring(domain, req.params.user, Boolean(req.body?.enabled))
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/endpoint-control/subscribers/:user/groups',
+  requirePbxPermission('can_view_endpoint_control'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.getSubscriberGroups(domain, req.params.user));
     } catch (err) {
       next(err);
     }
@@ -207,7 +479,100 @@ router.get(
       const domain = isPbxDomainRestricted(req.permissions)
         ? await requireDomainFromRequest(req)
         : await domainFromRequest(req);
-      res.json(await pbx.getE911ReviewOverview(domain, pbxDomainOpts(req)));
+      res.json(await hybridPbx.getE911ReviewOverview(domain, pbxDomainOpts(req)));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/e911/domain-defaults',
+  requirePbxPermission('can_view_e911_review'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.getDomainRecord(domain));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/e911/domain-defaults',
+  requirePbxPermission('can_manage_e911'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const { e911_caller_id, caller_id, caller_id_name } = req.body || {};
+      res.json(
+        await hybridPbx.updateDomainE911Defaults(domain, {
+          e911_caller_id,
+          caller_id,
+          caller_id_name,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/e911/emergency-pool',
+  requirePbxPermission('can_manage_e911'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const { callid, tag } = req.body || {};
+      const pool = await hybridPbx.createEmergencyPoolNumber(domain, callid, tag);
+      res.status(201).json({ pool });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/e911/emergency-pool/:callid',
+  requirePbxPermission('can_manage_e911'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const pool = await hybridPbx.updateEmergencyPoolNumber(
+        domain,
+        req.params.callid,
+        req.body?.tag
+      );
+      res.json({ pool });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/e911/emergency-pool/:callid',
+  requirePbxPermission('can_manage_e911'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const pool = await hybridPbx.deleteEmergencyPoolNumber(domain, req.params.callid);
+      res.json({ pool });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/e911/subscribers/:user/profile',
+  requirePbxPermission('can_view_e911_review'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(await hybridPbx.getSubscriberE911Profile(domain, req.params.user));
     } catch (err) {
       next(err);
     }
@@ -343,7 +708,7 @@ router.get(
     try {
       if (isPbxDomainRestricted(req.permissions)) {
         const domain = await requireDomainFromRequest(req);
-        const overview = await pbx.getE911ReviewOverview(domain, pbxDomainOpts(req));
+        const overview = await hybridPbx.getE911ReviewOverview(domain, pbxDomainOpts(req));
         res.json(overview.provisioned);
         return;
       }

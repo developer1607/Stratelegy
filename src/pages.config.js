@@ -26,13 +26,8 @@ import PBXReports from "./pages/PBXReports";
 import PBXRouteByAni from "./pages/PBXRouteByAni";
 import {
   PBXReportDeviceMonitoring,
-  PBXReportDomainExport,
   PBXReportE911,
   PBXReportOfflineEndpoints,
-  PBXReportSIPALG,
-  PBXReportSIPTrunk,
-  PBXReportVoicemail,
-  PBXReportVulnerabilityCheck,
 } from "./pages/pbx/operationalReports";
 import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
@@ -71,12 +66,7 @@ export const PAGES = {
   PBXReports,
   PBXReportOfflineEndpoints,
   PBXReportDeviceMonitoring,
-  PBXReportDomainExport,
   PBXReportE911,
-  PBXReportSIPALG,
-  PBXReportSIPTrunk,
-  PBXReportVulnerabilityCheck,
-  PBXReportVoicemail,
   PBXRouteByAni,
   Profile,
   Reports,

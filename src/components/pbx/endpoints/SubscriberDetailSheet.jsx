@@ -14,6 +14,8 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { canAccessPbxDataScope } from '@/lib/permissions';
 import { formatPbxCell } from '@/lib/pbxTable';
 import { endpointStatusBadge } from '@/lib/pbxEndpointUtils';
+import PermissionGate from '@/components/PermissionGate';
+import ResyncPhoneAction from '@/components/pbx/endpoints/ResyncPhoneAction';
 
 function DetailRow({ label, value }) {
   return (
@@ -43,22 +45,29 @@ export default function SubscriberDetailSheet({ domain, subscriber, open, onOpen
     retry: false,
   });
 
+  const phoneQ = useQuery({
+    queryKey: ['pbx-phone-detail', domain, subscriber?.mac_address],
+    queryFn: () => pbxApi.phoneDetail(subscriber.mac_address, domain),
+    enabled: open && !!domain && !!subscriber?.mac_address,
+    retry: false,
+  });
+
   if (!subscriber) return null;
 
   const status = endpointStatusBadge(subscriber.online_status);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg overflow-y-auto">
+      <SheetContent className="sm:max-w-xl overflow-y-auto">
         <SheetHeader>
           <SheetTitle className="flex items-center gap-2 flex-wrap">
             <span>
-              {subscriber.user} — {subscriber.name || 'Extension'}
+              Endpoint {subscriber.user} — {subscriber.name || 'Extension'}
             </span>
             <Badge className={status.className}>{status.label}</Badge>
           </SheetTitle>
           <SheetDescription>
-            {domain ? `Domain ${domain}` : 'Extension details'}
+            {domain ? `Endpoint details for ${domain}` : 'Endpoint details'}
           </SheetDescription>
         </SheetHeader>
 
@@ -107,6 +116,52 @@ export default function SubscriberDetailSheet({ domain, subscriber, open, onOpen
                     </li>
                   ))}
               </ul>
+            )}
+          </section>
+        )}
+
+        {subscriber.mac_address && (
+          <section className="mt-6">
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <h3 className="text-sm font-semibold text-gray-900">Provisioned phone</h3>
+              {phoneQ.data?.primary_device ? (
+                <PermissionGate pbxAction="manageEndpoints">
+                  <ResyncPhoneAction
+                    macAddress={subscriber.mac_address}
+                    domain={domain}
+                    onSuccess={() => phoneQ.refetch()}
+                  />
+                </PermissionGate>
+              ) : null}
+            </div>
+            {phoneQ.isLoading ? (
+              <div className="flex items-center text-gray-500 text-sm py-2">
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Loading phone provisioning…
+              </div>
+            ) : phoneQ.error || !phoneQ.data ? (
+              <p className="text-sm text-gray-500">No PBX phone provisioning record for this MAC address.</p>
+            ) : (
+              <div className="border rounded-lg p-3 bg-gray-50 space-y-1 text-sm">
+                <p>
+                  <span className="text-gray-500">Model:</span> {phoneQ.data.model || '—'}
+                </p>
+                <p>
+                  <span className="text-gray-500">Primary line:</span> {phoneQ.data.primary_line || '—'}
+                </p>
+                <p>
+                  <span className="text-gray-500">Device:</span> {phoneQ.data.primary_device || '—'}
+                </p>
+                <p>
+                  <span className="text-gray-500">Transport:</span> {phoneQ.data.transport || '—'}
+                </p>
+                <p>
+                  <span className="text-gray-500">User agent:</span> {phoneQ.data.user_agent || '—'}
+                </p>
+                <p>
+                  <span className="text-gray-500">Registered at:</span> {phoneQ.data.registration_time || '—'}
+                </p>
+              </div>
             )}
           </section>
         )}
