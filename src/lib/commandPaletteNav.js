@@ -3,7 +3,8 @@ import { createPageUrl } from '@/utils';
 import {
   CRM_NAV,
   SUPPORT_NAV,
-  PBX_NAV_GROUPS,
+  PBX_NAV,
+  flattenPbxNav,
   PBX_PAGES_NO_DOMAIN_BAR,
   getAdminBottomNav,
 } from '@/lib/navConfig';
@@ -35,13 +36,11 @@ export function buildCommandPaletteGroups({ canAccessPage, isAdmin }) {
   }));
   if (supportItems.length) groups.push({ label: 'Support', items: supportItems });
 
-  for (const group of PBX_NAV_GROUPS) {
-    const items = filterNavItems(group.items, canAccessPage, isAdmin).map((item) => ({
-      ...item,
-      keywords: `pbx ${group.label} ${item.name} ${item.path}`.toLowerCase(),
-    }));
-    if (items.length) groups.push({ label: `PBX · ${group.label}`, items });
-  }
+  const pbxItems = filterNavItems(flattenPbxNav(PBX_NAV), canAccessPage, isAdmin).map((item) => ({
+    ...item,
+    keywords: `pbx ${item.name} ${item.path}`.toLowerCase(),
+  }));
+  if (pbxItems.length) groups.push({ label: 'PBX', items: pbxItems });
 
   const adminItems = filterNavItems(getAdminBottomNav(), canAccessPage, isAdmin).map((item) => ({
     ...item,

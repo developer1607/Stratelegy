@@ -4,13 +4,14 @@ import { createPageUrl } from "./utils";
 import { useAuth } from "@/lib/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import PbxNavGroup from "@/components/pbx/PbxNavGroup";
+import SidebarNavSection from "@/components/layout/SidebarNavSection";
 import { PbxDomainProvider } from "@/hooks/usePbxDomain";
 import PbxDomainBar from "@/components/pbx/domain/PbxDomainBar";
 import { CRM_PAGES, SUPPORT_PAGES, PBX_PAGES, canViewPbxDomains, isPbxDomainRestricted } from "@/lib/permissions";
 import {
   CRM_NAV,
   SUPPORT_NAV,
-  PBX_NAV_GROUPS,
+  PBX_NAV,
   getAdminBottomNav,
   PBX_PAGES_NO_DOMAIN_BAR,
 } from "@/lib/navConfig";
@@ -51,12 +52,13 @@ export default function Layout({ children, currentPageName }) {
 
   const crmItems = filterMenu(CRM_NAV);
   const supportItems = filterMenu(SUPPORT_NAV);
-  const hasPbxNav = PBX_NAV_GROUPS.some((group) =>
-    group.items.some((item) => {
-      if (item.adminOnly) return isAdmin;
-      return canAccessPage(item.path);
-    }),
-  );
+  const hasPbxNav = PBX_NAV.some((item) => {
+    if (item.children?.length) {
+      return item.children.some((child) => canAccessPage(child.path));
+    }
+    if (item.adminOnly) return isAdmin;
+    return canAccessPage(item.path);
+  });
 
   const bottomMenuItems = isAdmin ? getAdminBottomNav() : [];
 
@@ -128,12 +130,10 @@ export default function Layout({ children, currentPageName }) {
 
         <nav className="flex-1 px-3 flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
           {crmItems.length > 0 && (
-            <>
-              <div className="px-4 mb-2 mt-2">
-                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">
-                  Sales
-                </span>
-              </div>
+            <SidebarNavSection
+              label="Sales"
+              isActive={CRM_PAGES.includes(currentPageName)}
+            >
               {crmItems.map((item) => (
                 <Link
                   key={item.path}
@@ -144,16 +144,14 @@ export default function Layout({ children, currentPageName }) {
                   <span className="font-medium">{item.name}</span>
                 </Link>
               ))}
-            </>
+            </SidebarNavSection>
           )}
 
           {supportItems.length > 0 && (
-            <>
-              <div className="px-4 mb-2 mt-4">
-                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">
-                  Support
-                </span>
-              </div>
+            <SidebarNavSection
+              label="Support"
+              isActive={SUPPORT_PAGES.includes(currentPageName)}
+            >
               {supportItems.map((item) => (
                 <Link
                   key={item.path}
@@ -164,28 +162,25 @@ export default function Layout({ children, currentPageName }) {
                   <span className="font-medium">{item.name}</span>
                 </Link>
               ))}
-            </>
+            </SidebarNavSection>
           )}
 
           {hasPbxNav && (
-            <>
-              <div className="px-4 mb-2 mt-4">
-                <span className="text-xs text-[#F07020] uppercase tracking-widest font-semibold">
-                  PBX
-                </span>
-              </div>
-              {PBX_NAV_GROUPS.map((group) => (
+            <SidebarNavSection
+              label="PBX"
+              isActive={PBX_PAGES.includes(currentPageName)}
+            >
+              {PBX_NAV.map((item) => (
                 <PbxNavGroup
-                  key={group.label}
-                  label={group.label}
-                  items={group.items}
+                  key={item.path || item.name}
+                  item={item}
                   canAccessPage={canAccessPage}
                   isAdmin={isAdmin}
                   currentPageName={currentPageName}
                   navLinkClass={navLinkClass}
                 />
               ))}
-            </>
+            </SidebarNavSection>
           )}
 
           {bottomMenuItems.length > 0 && (

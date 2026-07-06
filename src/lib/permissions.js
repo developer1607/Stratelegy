@@ -43,7 +43,6 @@ export const PBX_ACTION_KEYS_MAP = {
   manageRouteByAni: 'can_manage_route_by_ani',
   manageE911: 'can_manage_e911',
   manageEndpoints: 'can_manage_pbx_endpoints',
-  makeCall: 'can_make_pbx_calls',
   manageReports: 'can_manage_pbx_reports',
 };
 

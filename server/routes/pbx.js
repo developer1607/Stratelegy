@@ -126,7 +126,6 @@ router.use(
     'can_view_call_routing_page',
     'can_view_phone_numbers_page',
     'can_view_voicemail_page',
-    'can_view_make_call_page',
     'can_view_route_by_ani_page',
     'can_view_pbx_domains_page',
     'can_manage_pbx_reports',
@@ -135,7 +134,6 @@ router.use(
     'can_manage_route_by_ani',
     'can_manage_e911',
     'can_manage_pbx_endpoints',
-    'can_make_pbx_calls',
     'can_access_pbx_domain_scoped'
   )
 );
@@ -1207,14 +1205,6 @@ router.delete(
     }
   }
 );
-
-router.post('/make-call', requirePbxPermission('can_make_pbx_calls'), async (req, res, next) => {
-  try {
-    res.status(202).json(await pbx.makeCall(req.body));
-  } catch (err) {
-    next(err);
-  }
-});
 
 router.put(
   '/route-by-ani',

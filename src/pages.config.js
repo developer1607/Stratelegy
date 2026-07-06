@@ -20,7 +20,6 @@ import Opportunities from "./pages/Opportunities";
 import PBXDashboard from "./pages/PBXDashboard";
 import PBXDomains from "./pages/PBXDomains";
 import PBXPhoneNumbers from "./pages/PBXPhoneNumbers";
-import PBXMakeCall from "./pages/PBXMakeCall";
 import PBXMosScores from "./pages/PBXMosScores";
 import PBXReports from "./pages/PBXReports";
 import PBXRouteByAni from "./pages/PBXRouteByAni";
@@ -60,7 +59,6 @@ export const PAGES = {
   PBXDashboard,
   PBXDomains,
   PBXPhoneNumbers,
-  PBXMakeCall,
   PBXMosScores,
   PBXReports,
   PBXReportOfflineEndpoints,

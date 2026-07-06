@@ -11,7 +11,6 @@ import {
   UserCog,
   Briefcase,
   Phone,
-  PhoneCall,
   Route,
   Voicemail,
   Hash,
@@ -49,59 +48,36 @@ const PBX_REPORT_NAV_ICONS = {
   e911: Mail,
 };
 
-export const PBX_NAV_GROUPS = [
+/** Flat PBX sidebar — each item is permission-gated; Reports has a submenu. */
+export const PBX_NAV = [
+  { name: "Domains", icon: Globe, path: "PBXDomains" },
+  { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
+  { name: "Offline Endpoints", icon: Activity, path: "OfflineEndpoints" },
+  { name: "Extensions", icon: Hash, path: "Extensions" },
+  { name: "Call Routing", icon: Route, path: "CallRouting" },
+  { name: "Phone Numbers", icon: PhoneForwarded, path: "PBXPhoneNumbers" },
+  { name: "Route by ANI", icon: Radio, path: "PBXRouteByAni" },
+  { name: "SIP Trunks", icon: Briefcase, path: "SIPTrunks" },
+  { name: "E911 Review", icon: Mail, path: "E911Review" },
   {
-    label: "Overview",
-    items: [
-      { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
-      { name: "Domains", icon: Globe, path: "PBXDomains" },
-    ],
-  },
-  {
-    label: "Users & Endpoints",
-    items: [
-      { name: "Extensions", icon: Hash, path: "Extensions" },
-      { name: "Offline Endpoints", icon: Activity, path: "OfflineEndpoints" },
-    ],
-  },
-  {
-    label: "Routing",
-    items: [
-      { name: "Call Routing", icon: Route, path: "CallRouting" },
-      { name: "Phone Numbers", icon: PhoneForwarded, path: "PBXPhoneNumbers" },
-      { name: "Route by ANI", icon: Radio, path: "PBXRouteByAni" },
-      { name: "SIP Trunks", icon: Briefcase, path: "SIPTrunks" },
-    ],
-  },
-  {
-    label: "E911",
-    items: [{ name: "E911 Review", icon: Mail, path: "E911Review" }],
-  },
-  {
-    label: "Reports",
-    items: [
+    name: "Reports",
+    icon: BarChart3,
+    children: [
       ...PBX_OPERATIONAL_REPORT_PAGES.map((def) => ({
         name: def.title,
         icon: PBX_REPORT_NAV_ICONS[def.id] || BarChart3,
         path: def.page,
       })),
-      { name: "Report catalog", icon: BarChart3, path: "PBXReports" },
       { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
     ],
   },
-  {
-    label: "Monitoring",
-    items: [
-      { name: "Call Logs", icon: Phone, path: "CallLogs" },
-      { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
-      { name: "SIP ALG", icon: Settings, path: "SIPALG" },
-    ],
-  },
-  {
-    label: "Actions",
-    items: [{ name: "Make Call", icon: PhoneCall, path: "PBXMakeCall" }],
-  },
+  { name: "Call Logs", icon: Phone, path: "CallLogs" },
+  { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
+  { name: "SIP ALG", icon: Settings, path: "SIPALG" },
 ];
+
+/** @deprecated Use PBX_NAV — kept for callers that flatten grouped items. */
+export const PBX_NAV_GROUPS = [{ label: "PBX", items: PBX_NAV }];
 
 /** Account-wide PBX screens — no global domain selector (domain is picked on-page or not needed). */
 export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
@@ -112,7 +88,6 @@ export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "PBXMosScores",
   "CallLogs",
   "SIPTrunks",
-  "PBXMakeCall",
   ...PBX_OPERATIONAL_REPORT_PAGES.filter((def) => def.requiresDomain === false).map(
     (def) => def.page
   ),
@@ -131,4 +106,17 @@ export const ADMIN_BOTTOM_NAV = [
 /** Admin nav items visible in the current environment. */
 export function getAdminBottomNav(isProduction = import.meta.env.PROD) {
   return ADMIN_BOTTOM_NAV.filter((item) => !item.devOnly || !isProduction);
+}
+
+/** Flatten PBX nav for command palette and search. */
+export function flattenPbxNav(items = PBX_NAV) {
+  const out = [];
+  for (const item of items) {
+    if (item.children?.length) {
+      out.push(...item.children);
+    } else if (item.path) {
+      out.push(item);
+    }
+  }
+  return out;
 }

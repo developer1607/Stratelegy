@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useLayoutEffect } from 'react';
 import { api } from '@/api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent } from '@/components/ui/card';
@@ -51,6 +51,7 @@ import { hasCrmModuleAccess, hasSupportModuleAccess, hasPbxModuleAccess } from '
 import { useAuth } from '@/lib/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import PasswordRequirements from '@/components/PasswordRequirements';
+import UserRecordSearch from '@/components/settings/UserRecordSearch';
 import { formatPasswordErrors, validatePassword } from '@/lib/passwordValidation';
 import { TICKET_DEPARTMENTS, TICKET_CATEGORIES } from '@/lib/ticketConstants';
 import { parseRoutingList, toggleRoutingItem } from '@/lib/userRouting';
@@ -77,6 +78,8 @@ export default function UserManagement({ embedded = false }) {
   });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
+  const userCardRefs = useRef({});
+  const pendingSearchScrollId = useRef(null);
   const [resetPasswordByUser, setResetPasswordByUser] = useState({});
   const [roleDialogOpen, setRoleDialogOpen] = useState(false);
   const [editingRoleId, setEditingRoleId] = useState(null);
@@ -157,6 +160,30 @@ export default function UserManagement({ embedded = false }) {
       setInvitePortalRoleId(defaultPortalRoleId);
     }
   }, [defaultPortalRoleId, addForm.portalRoleId, invitePortalRoleId]);
+
+  useLayoutEffect(() => {
+    const userId = pendingSearchScrollId.current;
+    if (!userId || expandedUser !== userId) return;
+
+    const scrollToCard = () => {
+      const node = userCardRefs.current[userId];
+      if (!node) return false;
+      node.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return true;
+    };
+
+    // Wait for popover close + expanded panel layout before scrolling.
+    const timer = window.setTimeout(() => {
+      if (scrollToCard()) pendingSearchScrollId.current = null;
+    }, 120);
+
+    return () => window.clearTimeout(timer);
+  }, [expandedUser]);
+
+  const handleSearchSelectUser = (user) => {
+    pendingSearchScrollId.current = user.id;
+    setExpandedUser(user.id);
+  };
 
   const assignRoleMutation = useMutation({
     mutationFn: ({ userId, roleId }) => api.users.assignPortalRole(userId, roleId),
@@ -602,6 +629,18 @@ export default function UserManagement({ embedded = false }) {
           </CardContent>
         </Card>
 
+        <Card className="mb-6">
+          <CardContent className="py-4 space-y-2">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Find user</p>
+              <p className="text-xs text-gray-500 mt-1">
+                Search by name or email to open a user&apos;s permissions and settings.
+              </p>
+            </div>
+            <UserRecordSearch users={sortedUsers} onSelectUser={handleSearchSelectUser} />
+          </CardContent>
+        </Card>
+
         <div className="space-y-3">
           {sortedUsers.map((user) => {
             const raw = getRawRecord(user.id);
@@ -613,7 +652,14 @@ export default function UserManagement({ embedded = false }) {
             const roleSelectValue = raw?.role_id || 'none';
 
             return (
-              <Card key={user.id} className="overflow-hidden">
+              <Card
+                key={user.id}
+                ref={(node) => {
+                  if (node) userCardRefs.current[user.id] = node;
+                  else delete userCardRefs.current[user.id];
+                }}
+                className="overflow-hidden scroll-mt-6"
+              >
                 <div
                   className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => setExpandedUser(isExpanded ? null : user.id)}

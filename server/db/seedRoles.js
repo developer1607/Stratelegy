@@ -5,10 +5,8 @@ import {
   PBX_READ_KEYS,
 } from "../constants/permissionRegistry.js";
 
-/** All PBX screen/view permissions except Make Call (domain role is read-only). */
-const PBX_DOMAIN_VIEW_KEYS = PBX_READ_KEYS.filter(
-  (key) => key !== "can_view_make_call_page",
-);
+/** All PBX screen/view permissions for domain-scoped read-only role. */
+const PBX_DOMAIN_VIEW_KEYS = PBX_READ_KEYS;
 
 /** Portal roles — one per module. Admin is a separate account type (users.role = admin). */
 export const SEEDED_ROLES = [

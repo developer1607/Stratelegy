@@ -369,13 +369,6 @@ export const PERMISSION_DEFS = [
     page: 'Voicemail',
   },
   { key: 'can_view_sip_alg', label: 'SIP ALG', module: 'pbx', section: 'Screens', page: 'SIPALG' },
-  {
-    key: 'can_view_make_call_page',
-    label: 'Make call',
-    module: 'pbx',
-    section: 'Screens',
-    page: 'PBXMakeCall',
-  },
 
   {
     key: 'can_manage_pbx_reports',
@@ -397,7 +390,6 @@ export const PERMISSION_DEFS = [
   },
   { key: 'can_manage_e911', label: 'Manage E911', module: 'pbx', section: 'Actions' },
   { key: 'can_manage_pbx_endpoints', label: 'Manage hub users', module: 'pbx', section: 'Actions' },
-  { key: 'can_make_pbx_calls', label: 'Originate calls', module: 'pbx', section: 'Actions' },
 ];
 
 export const PERMISSION_KEYS = PERMISSION_DEFS.map((d) => d.key);

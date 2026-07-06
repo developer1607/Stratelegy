@@ -4,13 +4,7 @@ import { createPageUrl } from '@/utils';
 import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
 import { usePermissions } from '@/hooks/usePermissions';
 import { canViewPbxDomains } from '@/lib/permissions';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import PbxDomainSearchSelect from '@/components/pbx/domain/PbxDomainSearchSelect';
 import { Button } from '@/components/ui/button';
 import { Globe, Loader2 } from 'lucide-react';
 
@@ -54,18 +48,12 @@ export default function PbxDomainBar({ currentPageName }) {
             {domain || domains[0]?.domain}
           </span>
         ) : (
-          <Select value={domain || undefined} onValueChange={(v) => setDomain(v)}>
-            <SelectTrigger className="w-full sm:max-w-md bg-white/10 border-white/20 text-white">
-              <SelectValue placeholder="Select domain" />
-            </SelectTrigger>
-            <SelectContent>
-              {domains.map((d) => (
-                <SelectItem key={d.domain} value={d.domain}>
-                  {d.domain}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <PbxDomainSearchSelect
+            domains={domains}
+            value={domain}
+            onValueChange={setDomain}
+            disabled={!domains.length}
+          />
         )}
 
         {showDomainsLink && (
