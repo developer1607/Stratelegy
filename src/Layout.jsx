@@ -74,7 +74,7 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     if (isPermissionsLoading || !currentUser) return;
     if (!canAccessPage(currentPageName)) return;
-    if (currentPageName === "UserManagement" || currentPageName === "Profile")
+    if (currentPageName === "UserManagement" || currentPageName === "UserDetail" || currentPageName === "Profile")
       return;
 
     const isCrmPage = CRM_PAGES.includes(currentPageName);

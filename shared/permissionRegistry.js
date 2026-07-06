@@ -537,6 +537,7 @@ export function buildPagePermissionMap() {
     Profile: null,
     Settings: '__admin__',
     UserManagement: '__admin__',
+    UserDetail: '__admin__',
     SupportTicketDetail: 'can_view_tickets',
     E911Reports: 'can_view_e911_reports',
   };
