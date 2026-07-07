@@ -326,7 +326,7 @@ function EndpointContent({ domain }) {
                               ) : null}
                             </td>
                             <td className="px-3 py-2.5 whitespace-nowrap">{formatDid(row.caller_id)}</td>
-                            <td className="px-3 py-2.5">{row.notes || row.warning || ''}</td>
+                            <td className="px-3 py-2.5">{row.warning || ''}</td>
                             <td className="px-3 py-2.5 whitespace-nowrap">{row.geo_node || ''}</td>
                             <td className="px-3 py-2.5" />
                           </tr>

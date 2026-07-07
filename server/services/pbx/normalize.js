@@ -87,6 +87,39 @@ function phoneStatus(row) {
   return 'offline';
 }
 
+/** PBX MAC `server` is the reseller/territory id — not the geo node label shown in Endpoint Control. */
+export function isDisplayableGeoNode(value) {
+  if (value == null) return false;
+  const text = String(value).trim();
+  if (!text) return false;
+  if (/^\d{4,6}$/.test(text)) return false;
+  if (/^sipbx$/i.test(text)) return false;
+  return true;
+}
+
+/** e.g. nms7-las.dialtoen.com -> LAS - NMS7 */
+export function formatGeoNodeFromHostname(hostname) {
+  if (!hostname) return null;
+  const label = String(hostname).trim().toLowerCase().split('.')[0];
+  const match = label.match(/^nms(\d+)-([a-z]{3})$/i);
+  if (!match) return null;
+  const [, num, site] = match;
+  return `${site.toUpperCase()} - NMS${num}`;
+}
+
+export function resolveGeoNode({ legacy = null, phone = null, device = null, base = null } = {}) {
+  const candidates = [
+    legacy?.geo_node,
+    base?.geo_node,
+    formatGeoNodeFromHostname(phone?.hostname || phone?.raw?.hostname),
+    formatGeoNodeFromHostname(device?.hostname || device?.raw?.hostname),
+  ];
+  for (const value of candidates) {
+    if (isDisplayableGeoNode(value)) return value;
+  }
+  return null;
+}
+
 export function normalizePhoneRows(xml) {
   return nodeList(xml, 'mac').map((row) => {
     const devices = [row.device1, row.device2, row.device3, row.device4, row.device5, row.device6, row.device7, row.device8]
@@ -115,6 +148,7 @@ export function normalizePhoneRows(xml) {
       domain: row.domain || null,
       model: row.model || null,
       server: row.server || null,
+      hostname: cleanValue(row.hostname),
       territory: row.territory || null,
       transport: row.transport || null,
       notes: row.notes || null,
@@ -253,6 +287,7 @@ export function normalizeDeviceRows(xml) {
       registration_time: cleanValue(row.registration_time),
       registration_expires_time: cleanValue(row.registration_expires_time),
       subscriber_name: extension,
+      hostname: cleanValue(row.hostname),
       subscriber_domain: cleanValue(row.subscriber_domain),
       sub_fullname: cleanValue(row.sub_fullname),
       sub_login: cleanValue(row.sub_login),

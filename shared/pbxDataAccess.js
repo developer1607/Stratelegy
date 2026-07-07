@@ -21,6 +21,7 @@ export const PBX_DATA_SCOPES = {
   callLogs: ["can_view_call_logs_page"],
   voicemail: ["can_view_voicemail_page"],
   sipAlg: ["can_view_sip_alg"],
+  troubleshooting: ["can_view_troubleshooting"],
 };
 
 export function canAccessPbxDataScope(permissions, scope) {

@@ -335,6 +335,18 @@ export const SKYSWITCH_API_REGISTRY = [
     implemented: true,
   },
   {
+    portal: 'GET /api/pbx/troubleshooting/vulnerability',
+    skyswitch: 'PBX subscriber read + domain read (dial_policy, vm_pin, call_limit)',
+    scope: 'pbx',
+    implemented: true,
+  },
+  {
+    portal: 'PATCH /api/pbx/troubleshooting/vulnerability/call-limit',
+    skyswitch: 'PBX domain update (call_limit)',
+    scope: 'pbx',
+    implemented: true,
+  },
+  {
     portal: 'GET /api/pbx/endpoint-control/overview',
     skyswitch: 'GET /accounts/{id}/pbx/subscribers + messaging + sip-alg',
     scope: 'pbx|messaging',

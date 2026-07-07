@@ -330,6 +330,7 @@ function moduleForPage(pageName) {
       'EndpointControl',
       'OfflineEndpoints',
       'SIPALG',
+      'Troubleshooting',
       'E911Review',
       'E911Reports',
       'PBXReports',

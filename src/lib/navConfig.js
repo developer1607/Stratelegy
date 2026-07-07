@@ -21,6 +21,7 @@ import {
   Mail,
   LineChart,
   Cpu,
+  ShieldAlert,
 } from "lucide-react";
 import { PBX_OPERATIONAL_REPORT_PAGES } from "@shared/pbxReportPages.js";
 
@@ -74,6 +75,7 @@ export const PBX_NAV = [
   { name: "Call Logs", icon: Phone, path: "CallLogs" },
   { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
   { name: "SIP ALG", icon: Settings, path: "SIPALG" },
+  { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
 ];
 
 /** @deprecated Use PBX_NAV — kept for callers that flatten grouped items. */

@@ -235,4 +235,8 @@ export const pbxApi = {
   offlineEndpointsOverview: (domain) =>
     pbxGet("/offline-endpoints/overview", { domain }),
   mosScores: (params) => pbxGet("/mos-scores", params),
+  vulnerabilityCheck: (domain, filters = {}) =>
+    pbxGet("/troubleshooting/vulnerability", { domain, ...filters }),
+  updateVulnerabilityCallLimit: (domain, body) =>
+    pbxRequest("PATCH", "/troubleshooting/vulnerability/call-limit", body, { domain }),
 };

@@ -1,6 +1,6 @@
 import { config } from '../../config.js';
 import { getCachedPbxTokenMetadata, pbxIsConfigured } from './auth.js';
-import { pbxRequest } from './client.js';
+import { nodeList, pbxRequest } from './client.js';
 import {
   cdrRowsToCsv,
   normalizeCdrRows,
@@ -9,6 +9,7 @@ import {
   normalizePbxTokenInfo,
   normalizePhoneRows,
   formatWanLan,
+  resolveGeoNode,
 } from './normalize.js';
 import * as legacyPbx from '../skyswitch/pbx.js';
 import { buildEndpointStats, buildExtensionOfflineRows } from '../skyswitch/pbxEnrichment.js';
@@ -189,8 +190,26 @@ export async function getSubscriberProfile(domain, user) {
 }
 
 export async function listSites(domain) {
-  const data = await pbxRequestV2('GET', `domains/${encodeURIComponent(domain)}/sites`);
-  return normalizeSiteOptions(data);
+  try {
+    const data = await pbxRequestV2('GET', `domains/${encodeURIComponent(domain)}/sites`);
+    const options = normalizeSiteOptions(data);
+    if (options.length) return options;
+  } catch {
+    // v2 sites API is not available on all SkySwitch deployments
+  }
+
+  try {
+    const xml = await pbxRequest('POST', '', {
+      body: new URLSearchParams({
+        object: 'site',
+        action: 'read',
+        domain,
+      }),
+    });
+    return normalizeSiteOptions(nodeList(xml, 'site'));
+  } catch {
+    return [];
+  }
 }
 
 export async function getSubscriberVoicemail(domain, user) {
@@ -389,6 +408,9 @@ export async function updateSubscriber(domain, user, updates = {}) {
     group: 'group',
     notes: 'message',
     message: 'message',
+    site: 'site',
+    vm_pin: 'pwd',
+    pwd: 'pwd',
     e911_caller_id: 'callid_emgr',
     callid_emgr: 'callid_emgr',
     dial_policy: 'dial_policy',
@@ -405,28 +427,18 @@ export async function updateSubscriber(domain, user, updates = {}) {
   for (const [key, value] of Object.entries(updates)) {
     const apiKey = fieldMap[key];
     if (!apiKey || value == null) continue;
-    params.set(apiKey, String(value));
+    const text = String(value);
+    if ((key === 'site' || key === 'vm_pin' || key === 'pwd') && text.trim() === '') continue;
+    params.set(apiKey, text);
     hasField = true;
   }
-  const site = updates.site != null ? String(updates.site) : null;
-  const vmPin = updates.vm_pin != null ? String(updates.vm_pin) : null;
-  if (hasField) {
-    await pbxRequest('POST', '', { body: params });
-  }
-  if (site != null || vmPin != null) {
-    const body = {};
-    if (site != null) body.site = site;
-    if (vmPin != null) body['voicemail-login-pin'] = vmPin;
-    await pbxRequestV2('PUT', `domains/${encodeURIComponent(domain)}/users/${encodeURIComponent(user)}`, {
-      body,
-    });
-  }
-  if (!hasField && site == null && vmPin == null) {
+  if (!hasField) {
     const err = new Error('No valid subscriber fields to update');
     err.status = 400;
     err.expose = true;
     throw err;
   }
+  await pbxRequest('POST', '', { body: params });
   return getEndpointDetail(domain, user);
 }
 
@@ -706,7 +718,7 @@ function mergeSubscriberRecord(base, legacy = null, phone = null, device = null)
   const merged = {
     ...base,
     transport: phone?.transport || legacy?.transport || base.transport || null,
-    geo_node: legacy?.geo_node || phone?.server || base.geo_node || null,
+    geo_node: resolveGeoNode({ legacy, phone, device, base }),
     wan_ip,
     wan_lan: formatWanLan({ device, phone }) || base.wan_lan || null,
     mac_address,
@@ -717,8 +729,9 @@ function mergeSubscriberRecord(base, legacy = null, phone = null, device = null)
       device?.user_agent ||
       base.model ||
       null,
-    notes: legacy?.notes || phone?.notes || base.notes || null,
-    warning: legacy?.notes || phone?.notes || base.warning || null,
+    notes: base.notes || legacy?.notes || null,
+    warning: base.warning || null,
+    phone_notes: phone?.notes || null,
     overrides: phone?.overrides || base.overrides || null,
     user_agent: device?.user_agent || phone?.user_agent || base.user_agent || null,
     registration_time,
@@ -822,3 +835,4 @@ export async function getOfflineExtensionOverview(domain, domainOpts = {}) {
 }
 
 export { getE911ReviewOverview, updateSubscriberE911CallerId, getDomainRecord, updateDomainE911Defaults, createEmergencyPoolNumber, updateEmergencyPoolNumber, deleteEmergencyPoolNumber, getSubscriberE911Profile, listEmergencyCallerIds } from './e911.js';
+export { getVulnerabilityCheck, updateDomainCallLimit } from './vulnerability.js';

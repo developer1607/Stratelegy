@@ -32,6 +32,7 @@ import Profile from "./pages/Profile";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import SIPALG from "./pages/SIPALG";
+import Troubleshooting from "./pages/Troubleshooting";
 import SIPTrunks from "./pages/SIPTrunks";
 import SupportDashboard from "./pages/SupportDashboard";
 import SupportTicketDetail from "./pages/SupportTicketDetail";
@@ -70,6 +71,7 @@ export const PAGES = {
   Reports,
   Settings,
   SIPALG,
+  Troubleshooting,
   SIPTrunks,
   SupportDashboard,
   SupportTicketDetail,

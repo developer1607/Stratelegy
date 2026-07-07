@@ -116,6 +116,7 @@ router.use(
     'can_view_endpoint_control',
     'can_view_offline_endpoints',
     'can_view_sip_alg',
+    'can_view_troubleshooting',
     'can_view_e911_review',
     'can_view_e911_reports',
     'can_view_pbx_reports_page',
@@ -871,6 +872,48 @@ router.get('/sip-alg', requirePbxPermission('can_view_sip_alg'), async (req, res
     next(err);
   }
 });
+
+router.get(
+  '/troubleshooting/vulnerability',
+  requirePbxPermission('can_view_troubleshooting'),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const { dial_policy, highlighted, show_voicemail_pin, voicemail_enabled } = req.query;
+      res.json(
+        await hybridPbx.getVulnerabilityCheck(domain, {
+          dial_policy,
+          highlighted,
+          show_voicemail_pin,
+          voicemail_enabled,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.patch(
+  '/troubleshooting/vulnerability/call-limit',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      const callLimit = req.body?.call_limit;
+      if (callLimit == null || callLimit === '') {
+        const err = new Error('call_limit is required');
+        err.status = 400;
+        err.expose = true;
+        throw err;
+      }
+      res.json(await hybridPbx.updateDomainCallLimit(domain, callLimit));
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 router.get(
   '/call-routing',
