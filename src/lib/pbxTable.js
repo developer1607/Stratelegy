@@ -1,5 +1,7 @@
 /** Flatten SkySwitch API records into readable table rows. */
 
+import { formatCivicAddressLabel, extractCivicAddress } from '@shared/pbxE911Format.js';
+
 const MAX_DEPTH = 5;
 
 /** Keys/patterns to hide from auto-generated columns (internal/noisy API fields). */
@@ -199,7 +201,7 @@ export function normalizePbxList(data) {
 
 /** Format E911 endpoint for display. */
 export function formatE911Row(item) {
-  const civic = item?.location?.address?.civic_address || {};
+  const civic = extractCivicAddress(item);
   const los = item?.location?.level_of_service || {};
   const street = [civic.street_number, civic.street_name].filter(Boolean).join(' ');
 
@@ -211,6 +213,7 @@ export function formatE911Row(item) {
     state: civic.state,
     zip_code: civic.zip_code,
     country: civic.country,
+    location: formatCivicAddressLabel(civic),
     delivery: item?.location?.delivery,
     msag_status: los.msag_status,
     routing_status: los.routing_status,

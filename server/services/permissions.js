@@ -323,7 +323,7 @@ function moduleForPage(pageName) {
   if (
     pageName.startsWith('PBX') ||
     [
-      'Extensions',
+      'Entitlements',
       'CallLogs',
       'CallRouting',
       'Voicemail',

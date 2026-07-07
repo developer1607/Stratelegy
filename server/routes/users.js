@@ -48,6 +48,8 @@ router.post('/', requireAdmin, async (req, res, next) => {
       permissions,
       portal_role_id,
       portalRoleId,
+      pbx_domains,
+      pbxDomains,
     } = req.body || {};
     const user = await createUser({
       email,
@@ -57,6 +59,7 @@ router.post('/', requireAdmin, async (req, res, next) => {
       grantCrmAccess: Boolean(grant_crm_access),
       permissions,
       portalRoleId: portal_role_id ?? portalRoleId,
+      pbxDomains: pbx_domains ?? pbxDomains,
       createdByUserId: req.user.id,
     });
     await auditLog(req, 'user_created', {

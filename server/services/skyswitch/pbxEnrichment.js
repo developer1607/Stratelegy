@@ -1,4 +1,5 @@
 import { toArray } from './client.js';
+import { formatCivicAddressLabel, extractCivicAddress } from '../../../shared/pbxE911Format.js';
 
 function pick(obj, ...keys) {
   if (!obj || typeof obj !== 'object') return null;
@@ -198,14 +199,14 @@ export function buildE911DomainPhoneRows(phoneNumbers, e911Endpoints) {
     const phone11 = toE911Phone11(raw);
     const lookupKey = normalizePhoneKey(phone11 || raw);
     const e911 = lookupKey ? e911ByPhone.get(lookupKey) : null;
-    const civic = e911?.location?.address?.civic_address || {};
+    const civic = extractCivicAddress(e911);
     const los = e911?.location?.level_of_service || {};
 
     return {
       phone_number: phone11 || raw,
       e911_status: e911 ? 'Provisioned' : 'Not provisioned',
       routing_status: los.routing_status || '—',
-      location: civic.city ? [civic.city, civic.state].filter(Boolean).join(', ') : '—',
+      location: formatCivicAddressLabel(civic) || '—',
       name: civic.name || '—',
       msag_status: los.msag_status || '—',
     };
@@ -219,13 +220,11 @@ export function buildE911DomainReview(subscribers, e911Endpoints, domain) {
     const callerKey = normalizePhoneKey(sub.caller_id);
     const e911 = callerKey ? e911ByPhone.get(callerKey) : null;
     const dialableCallerId = callerKey ? sub.caller_id : null;
-    const civic = e911?.location?.address?.civic_address || {};
+    const civic = extractCivicAddress(e911);
     const los = e911?.location?.level_of_service || {};
-    const locationLabel = civic.city
-      ? [civic.city, civic.state].filter(Boolean).join(', ')
-      : e911
-        ? 'Provisioned'
-        : 'E911 disabled';
+    const locationLabel =
+      formatCivicAddressLabel(civic) ||
+      (e911 ? 'Provisioned' : 'E911 disabled');
 
     return {
       extension: sub.user,

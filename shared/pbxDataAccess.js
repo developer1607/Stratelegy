@@ -6,7 +6,7 @@ export const PBX_DATA_SCOPES = {
   connection: ["can_view_pbx_dashboard"],
   domains: ["can_view_pbx_domains_page"],
   dashboard: ["can_view_pbx_dashboard"],
-  extensions: ["can_view_extensions_page"],
+  extensions: ["can_view_extensions_page", "can_view_endpoint_control"],
   endpointControl: ["can_view_endpoint_control"],
   offlineEndpoints: ["can_view_offline_endpoints"],
   callRouting: ["can_view_call_routing_page"],

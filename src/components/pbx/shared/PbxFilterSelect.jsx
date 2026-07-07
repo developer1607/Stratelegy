@@ -13,19 +13,21 @@ export default function PbxFilterSelect({
   onValueChange,
   options = [],
   allLabel = 'All',
+  hideAll = false,
   className = 'w-[140px]',
 }) {
   const normalized = options.map((opt) =>
     typeof opt === 'string' ? { value: opt, label: opt } : opt
   );
+  const selectValue = hideAll ? value : value || 'all';
 
   return (
-    <Select value={value || 'all'} onValueChange={onValueChange}>
+    <Select value={selectValue} onValueChange={onValueChange}>
       <SelectTrigger className={`h-9 bg-white text-sm ${className}`}>
         <SelectValue placeholder={label || allLabel} />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="all">{allLabel}</SelectItem>
+        {!hideAll ? <SelectItem value="all">{allLabel}</SelectItem> : null}
         {normalized.map((opt) => (
           <SelectItem key={opt.value} value={opt.value}>
             {opt.label}

@@ -120,6 +120,45 @@ export function resolveGeoNode({ legacy = null, phone = null, device = null, bas
   return null;
 }
 
+const WARNING_HINT = /sip\s*alg|alg\s*detect|warning|unregistered|fail|error|mismatch|invalid/i;
+
+function identityTokens({ base = null, legacy = null } = {}) {
+  const tokens = new Set();
+  for (const value of [
+    base?.user,
+    base?.subscriber_login,
+    base?.name,
+    legacy?.user,
+    legacy?.subscriber_login,
+    legacy?.name,
+  ]) {
+    const text = cleanValue(value);
+    if (text) tokens.add(text.toLowerCase());
+  }
+  return tokens;
+}
+
+/** Endpoint Control warning — never use subscriber `message` (often login/username). */
+export function resolveEndpointWarning({ base = null, legacy = null, phone = null } = {}) {
+  const identities = identityTokens({ base, legacy });
+  const candidates = [
+    legacy?.warning,
+    base?.raw?.warning,
+    phone?.raw?.warning,
+    phone?.overrides,
+  ];
+
+  for (const value of candidates) {
+    const text = cleanValue(value);
+    if (!text) continue;
+    const lower = text.toLowerCase();
+    if (identities.has(lower)) continue;
+    if ([...identities].some((token) => token && lower === token)) continue;
+    if (WARNING_HINT.test(text)) return text;
+  }
+  return null;
+}
+
 export function normalizePhoneRows(xml) {
   return nodeList(xml, 'mac').map((row) => {
     const devices = [row.device1, row.device2, row.device3, row.device4, row.device5, row.device6, row.device7, row.device8]
@@ -261,7 +300,7 @@ export function normalizePbxSubscriberRows(xml) {
       no_answer_timeout: cleanValue(row.no_answer_timeout),
       last_update: cleanValue(row.last_update),
       features,
-      warning: cleanValue(row.message) || null,
+      warning: null,
       online_status: null,
       raw: row,
       phone_match_key: phoneMatchSuffix(callerId),

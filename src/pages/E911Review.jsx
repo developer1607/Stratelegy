@@ -17,6 +17,7 @@ import PermissionGate from '@/components/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatE911Row, E911_COLUMNS } from '@/lib/pbxTable';
+import { formatCivicAddressLabel } from '@shared/pbxE911Format.js';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
 
 /** SkySwitch E911 routes expect an 11-digit US number (leading 1). */
@@ -45,7 +46,8 @@ function dialableE911Phone(row, phoneSource = 'phone_number') {
 }
 
 function compactLocationLabel(row) {
-  return [row.location, row.city, row.state, row.zip_code].filter(Boolean).join(' ');
+  if (row.location && row.location !== '—') return row.location;
+  return formatCivicAddressLabel(row) || '—';
 }
 
 export default function E911Review() {

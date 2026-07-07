@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { query, queryOne, execute } from '../db/query.js';
 import { toIsoDate } from '../db/helpers.js';
 import { config } from '../config.js';
-import { updateUserPermissions, applyPortalRoleOnUserCreate } from './permissions.js';
+import { updateUserPermissions, applyPortalRoleOnUserCreate, setUserPbxDomains } from './permissions.js';
 import { getSeededRoleId } from '../db/seedRoles.js';
 import { sendPortalInviteEmail, sendPortalWelcomeEmail } from './email/notifications.js';
 import { assertPasswordValid } from '../utils/passwordValidation.js';
@@ -202,6 +202,7 @@ export async function createUser({
   grantCrmAccess = false,
   permissions,
   portalRoleId,
+  pbxDomains,
   createdByUserId,
 }) {
   const normalized = email?.trim()?.toLowerCase();
@@ -265,6 +266,15 @@ export async function createUser({
         });
       }
     }
+  }
+
+  if (validRole !== 'admin' && Array.isArray(pbxDomains)) {
+    await setUserPbxDomains({
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.full_name,
+      domains: pbxDomains,
+    });
   }
 
   try {

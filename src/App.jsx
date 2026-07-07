@@ -5,6 +5,7 @@ import NavigationTracker from "@/lib/NavigationTracker";
 import { pagesConfig } from "./pages.config";
 import {
   BrowserRouter as Router,
+  Navigate,
   Route,
   Routes,
   useLocation,
@@ -76,6 +77,7 @@ const AuthenticatedApp = () => {
             </ProtectedPage>
           }
         />
+        <Route path="/Extensions" element={<Navigate to="/EndpointControl" replace />} />
         {Object.entries(Pages).map(([path, Page]) => (
           <Route
             key={path}

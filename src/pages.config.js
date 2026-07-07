@@ -12,7 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import E911Reports from "./pages/E911Reports";
 import E911Review from "./pages/E911Review";
 import EndpointControl from "./pages/EndpointControl";
-import Extensions from "./pages/Extensions";
+import Entitlements from "./pages/Entitlements";
 import KnowledgeBase from "./pages/KnowledgeBase";
 import Leads from "./pages/Leads";
 import OfflineEndpoints from "./pages/OfflineEndpoints";
@@ -53,7 +53,7 @@ export const PAGES = {
   E911Reports,
   E911Review,
   EndpointControl,
-  Extensions,
+  Entitlements,
   KnowledgeBase,
   Leads,
   OfflineEndpoints,

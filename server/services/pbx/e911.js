@@ -4,7 +4,13 @@ import * as legacyPbx from '../skyswitch/pbx.js';
 import {
   indexE911ByPhone,
   toE911Phone11,
+  dedupeE911ByPhone,
 } from '../skyswitch/pbxEnrichment.js';
+import {
+  formatCivicAddressLabel,
+  extractCivicAddress,
+  civicHasStreet,
+} from '../../../shared/pbxE911Format.js';
 
 function digitsOnly(value) {
   return String(value ?? '').replace(/\D/g, '');
@@ -90,7 +96,7 @@ function buildPbxDomainPhoneRows(dids, provisioned, emergencyPool) {
   return dids.map((did) => {
     const key = normalizePhoneKey(did);
     const e911 = key ? e911ByPhone.get(key) : null;
-    const civic = e911?.location?.address?.civic_address || {};
+    const civic = extractCivicAddress(e911);
     const los = e911?.location?.level_of_service || {};
     return {
       phone_number: did,
@@ -100,7 +106,7 @@ function buildPbxDomainPhoneRows(dids, provisioned, emergencyPool) {
           ? 'Domain 911 pool'
           : 'Not provisioned',
       routing_status: los.routing_status || '—',
-      location: civic.city ? [civic.city, civic.state].filter(Boolean).join(', ') : '—',
+      location: formatCivicAddressLabel(civic) || '—',
       name: civic.name || '—',
       msag_status: los.msag_status || '—',
     };
@@ -272,12 +278,66 @@ async function loadSubscriberV2Profiles(domain, subscribers) {
   return map;
 }
 
+/** List E911 rows often omit street fields — hydrate from per-DID detail API. */
+async function enrichE911EndpointsWithDetails(endpoints) {
+  const list = dedupeE911ByPhone(endpoints);
+  if (!config.skyswitch.enabled || !list.length) return list;
+
+  const keysNeedingDetail = new Set();
+  for (const item of list) {
+    if (!civicHasStreet(item)) {
+      const key = normalizePhoneKey(item.phone_number);
+      if (key) keysNeedingDetail.add(key);
+    }
+  }
+  if (!keysNeedingDetail.size) return list;
+
+  const detailByKey = new Map();
+  await Promise.all(
+    [...keysNeedingDetail].map(async (key) => {
+      const phone11 = toE911Phone11(key);
+      if (!phone11) return;
+      try {
+        const detail = await legacyPbx.getE911ForPhone(phone11);
+        if (detail) detailByKey.set(key, detail);
+      } catch {
+        // Detail unavailable for this DID.
+      }
+    })
+  );
+
+  return list.map((item) => {
+    const key = normalizePhoneKey(item.phone_number);
+    const detail = key ? detailByKey.get(key) : null;
+    if (!detail) return item;
+
+    const mergedCivic = {
+      ...extractCivicAddress(item),
+      ...extractCivicAddress(detail),
+    };
+    return {
+      ...item,
+      ...detail,
+      phone_number: item.phone_number || detail.phone_number,
+      location: {
+        ...(item.location || {}),
+        ...(detail.location || {}),
+        address: {
+          ...(item.location?.address || {}),
+          ...(detail.location?.address || {}),
+          civic_address: mergedCivic,
+        },
+      },
+    };
+  });
+}
+
 function buildEmergencyPoolRows(pool, provisioned) {
   const e911ByPhone = indexE911ByPhone(provisioned);
   return pool.map((row) => {
     const key = normalizePhoneKey(row.callid);
     const e911 = key ? e911ByPhone.get(key) : null;
-    const civic = e911?.location?.address?.civic_address || {};
+    const civic = extractCivicAddress(e911);
     const los = e911?.location?.level_of_service || {};
     return {
       callid: row.callid,
@@ -285,7 +345,7 @@ function buildEmergencyPoolRows(pool, provisioned) {
       tag: row.tag || '',
       domain: row.domain,
       e911_status: e911 ? 'Provisioned' : 'Not provisioned',
-      location: civic.city ? [civic.city, civic.state].filter(Boolean).join(', ') : '—',
+      location: formatCivicAddressLabel(civic) || '—',
       routing_status: los.routing_status || '—',
     };
   });
@@ -301,18 +361,22 @@ function buildDomainReviewRows(subscribers, provisioned, emergencyPool, v2Profil
     const callerKey = normalizePhoneKey(sub.caller_id);
     let e911 = emgrKey ? e911ByPhone.get(emgrKey) : null;
     if (!e911 && callerKey) e911 = e911ByPhone.get(callerKey);
+    const effectiveKey = normalizePhoneKey(
+      e911?.phone_number || sub.e911_caller_id || sub.caller_id
+    );
+    if (!e911 && effectiveKey) e911 = e911ByPhone.get(effectiveKey) || null;
 
-    const civic = e911?.location?.address?.civic_address || {};
+    const civic = extractCivicAddress(e911);
     const los = e911?.location?.level_of_service || {};
     const resolved = resolveE911Status(sub, e911ByPhone, emergencyPool);
 
-    const locationLabel = civic.city
-      ? [civic.city, civic.state].filter(Boolean).join(', ')
-      : resolved.status === '911 CID configured'
+    const locationLabel =
+      formatCivicAddressLabel(civic) ||
+      (resolved.status === '911 CID configured'
         ? 'PBX 911 caller ID'
         : resolved.status === 'Domain 911 pool'
           ? 'Domain emergency pool'
-          : '—';
+          : '—');
 
     return {
       extension: sub.user,
@@ -336,6 +400,10 @@ function buildDomainReviewRows(subscribers, provisioned, emergencyPool, v2Profil
             : 'Unknown'),
       online_status: sub.online_status,
       location: locationLabel,
+      city: civic.city || null,
+      state: civic.state || null,
+      zip_code: civic.zip_code || null,
+      country: civic.country || null,
       notes: sub.notes || '—',
       scope: sub.scope,
     };
@@ -378,15 +446,20 @@ export async function getE911ReviewOverview(domain, domainOpts = {}) {
       : Promise.resolve(null),
   ]);
 
-  const provisioned = legacy?.provisioned || [];
+  const provisionedRaw = legacy?.provisioned || [];
+  const provisioned = await enrichE911EndpointsWithDetails(provisionedRaw);
   const v2Profiles = await loadSubscriberV2Profiles(domain, inventory.subscribers);
   const rows = buildDomainReviewRows(inventory.subscribers, provisioned, emergencyPool, v2Profiles);
   const wanGroups = buildWanGroups(rows);
   const emergencyPoolRows = buildEmergencyPoolRows(emergencyPool, provisioned);
 
-  const domainPhones = legacy?.domainPhones?.length
-    ? legacy.domainPhones
-    : buildPbxDomainPhoneRows(dialplanDids, provisioned, emergencyPool);
+  const domainPhones = buildPbxDomainPhoneRows(
+    dialplanDids.length
+      ? dialplanDids
+      : (legacy?.domainPhones || []).map((row) => row.phone_number).filter(Boolean),
+    provisioned,
+    emergencyPool
+  );
 
   let v2AddressesSupported = false;
   if (inventory.subscribers[0]) {

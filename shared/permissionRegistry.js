@@ -279,10 +279,10 @@ export const PERMISSION_DEFS = [
   },
   {
     key: 'can_view_extensions_page',
-    label: 'Extensions',
+    label: 'Entitlements',
     module: 'pbx',
     section: 'Screens',
-    page: 'Extensions',
+    page: 'Entitlements',
   },
   {
     key: 'can_view_endpoint_control',

@@ -10,6 +10,7 @@ import {
   normalizePhoneRows,
   formatWanLan,
   resolveGeoNode,
+  resolveEndpointWarning,
 } from './normalize.js';
 import * as legacyPbx from '../skyswitch/pbx.js';
 import { buildEndpointStats, buildExtensionOfflineRows } from '../skyswitch/pbxEnrichment.js';
@@ -730,7 +731,7 @@ function mergeSubscriberRecord(base, legacy = null, phone = null, device = null)
       base.model ||
       null,
     notes: base.notes || legacy?.notes || null,
-    warning: base.warning || null,
+    warning: resolveEndpointWarning({ base, legacy, phone }) || legacy?.warning || null,
     phone_notes: phone?.notes || null,
     overrides: phone?.overrides || base.overrides || null,
     user_agent: device?.user_agent || phone?.user_agent || base.user_agent || null,
@@ -748,6 +749,35 @@ function mergeSubscriberRecord(base, legacy = null, phone = null, device = null)
   };
   merged.features = [...new Set([...(base.features || []), ...(legacy?.features || [])])];
   return merged;
+}
+
+function extensionFromPhone(phone) {
+  if (!phone) return null;
+  return phone.phone_ext || phone.primary_line || phone.lines?.[0] || null;
+}
+
+function buildPhoneOnlySubscriberRow(phone, domain) {
+  const extension = extensionFromPhone(phone);
+  const userLabel = extension || phone.mac;
+  const base = {
+    id: `mac:${phone.mac}`,
+    user: userLabel,
+    domain,
+    name: phone.model || phone.user_agent || userLabel,
+    subscriber_login: null,
+    caller_id: phone.primary_line || null,
+    scope: null,
+    site: null,
+    department: null,
+    srv_code: phone.model || null,
+    features: [],
+    notes: phone.notes || null,
+    warning: null,
+    online_status: null,
+    is_phone_inventory: true,
+    raw: phone.raw || phone,
+  };
+  return mergeSubscriberRecord(base, null, phone, null);
 }
 
 export async function getEndpointInventory(domain) {
@@ -783,23 +813,36 @@ export async function getEndpointInventory(domain) {
     indexDeviceByExtension(deviceByExt, device);
   }
 
+  const usedPhoneMacs = new Set();
   const subscribers = pbxSubscribers.map((row) => {
     const extKey = String(row.user || '').toLowerCase();
     const didKey = row.phone_match_key || row.e911_match_key || null;
     const legacy = legacyByExt.get(extKey) || null;
     const phone = phoneByExt.get(extKey) || (didKey ? phoneByDid.get(didKey) : null) || null;
     const device = deviceByExt.get(extKey) || null;
+    if (phone?.mac) usedPhoneMacs.add(String(phone.mac).toLowerCase());
     return mergeSubscriberRecord(row, legacy, phone, device);
   });
 
+  const phoneOnlyRows = phones
+    .filter(
+      (phone) =>
+        phone.online_status === 'online' &&
+        phone.mac &&
+        !usedPhoneMacs.has(String(phone.mac).toLowerCase())
+    )
+    .map((phone) => buildPhoneOnlySubscriberRow(phone, domain));
+
+  const allSubscribers = [...subscribers, ...phoneOnlyRows];
+
   return {
     domain,
-    subscribers,
+    subscribers: allSubscribers,
     messagingUsers: legacyOverview.messagingUsers || [],
     phones,
     devices,
     stats: buildEndpointStats(
-      subscribers,
+      allSubscribers,
       legacyOverview.messagingUsers || [],
       legacyOverview.sipAlgWarningCount || 0
     ),

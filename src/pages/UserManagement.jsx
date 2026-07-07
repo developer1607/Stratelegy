@@ -49,6 +49,7 @@ import PasswordRequirements from '@/components/PasswordRequirements';
 import UserRecordSearch from '@/components/settings/UserRecordSearch';
 import { formatPasswordErrors, validatePassword } from '@/lib/passwordValidation';
 import { createUserDetailUrl } from '@/lib/userManagementUrls';
+import { domainsMatch } from '@shared/pbxDomainAccess.js';
 
 export default function UserManagement({ embedded = false }) {
   const navigate = useNavigate();
@@ -69,6 +70,8 @@ export default function UserManagement({ embedded = false }) {
     confirmPassword: '',
     systemRole: 'user',
     portalRoleId: '',
+    pbxDomainAccess: 'all',
+    pbxDomains: [],
   });
   const [adding, setAdding] = useState(false);
   const [addError, setAddError] = useState('');
@@ -87,6 +90,8 @@ export default function UserManagement({ embedded = false }) {
     permissionGroups,
     systemModuleRoles,
     rolesById,
+    pbxDomainCatalog,
+    togglePbxDomain,
     isLoading,
     loadError,
     getRawRecord,
@@ -104,6 +109,32 @@ export default function UserManagement({ embedded = false }) {
   }, [users]);
 
   const defaultPortalRoleId = systemModuleRoles[0]?.id || '';
+  const pbxRoleId = portalRoles.find((role) => role.slug === 'pbx')?.id || '';
+  const pbxDomainRoleId = portalRoles.find((role) => role.slug === 'pbx_domain')?.id || '';
+
+  const selectedAddRole = addForm.portalRoleId ? rolesById[addForm.portalRoleId] : null;
+  const showPbxDomainAccess =
+    addForm.systemRole === 'user' &&
+    (selectedAddRole?.slug === 'pbx' || selectedAddRole?.slug === 'pbx_domain');
+
+  const resolveCreateRoleAndDomains = () => {
+    if (!showPbxDomainAccess) {
+      return {
+        portalRoleId: addForm.portalRoleId || undefined,
+        pbxDomains: null,
+      };
+    }
+    if (addForm.pbxDomainAccess === 'all') {
+      return {
+        portalRoleId: pbxRoleId || addForm.portalRoleId,
+        pbxDomains: [],
+      };
+    }
+    return {
+      portalRoleId: pbxDomainRoleId || addForm.portalRoleId,
+      pbxDomains: addForm.pbxDomains,
+    };
+  };
 
   useEffect(() => {
     if (defaultPortalRoleId && !addForm.portalRoleId) {
@@ -220,6 +251,8 @@ export default function UserManagement({ embedded = false }) {
       confirmPassword: '',
       systemRole: 'user',
       portalRoleId: defaultPortalRoleId,
+      pbxDomainAccess: 'all',
+      pbxDomains: [],
     });
     setAddError('');
   };
@@ -240,14 +273,24 @@ export default function UserManagement({ embedded = false }) {
       setAddError('Passwords do not match');
       return;
     }
+    if (
+      showPbxDomainAccess &&
+      addForm.pbxDomainAccess === 'specific' &&
+      addForm.pbxDomains.length === 0
+    ) {
+      setAddError('Select at least one PBX domain, or choose All domains.');
+      return;
+    }
     setAdding(true);
     try {
+      const { portalRoleId, pbxDomains } = resolveCreateRoleAndDomains();
       const { user } = await api.users.createUser({
         email: email.trim(),
         password,
         full_name: full_name.trim() || undefined,
         role: systemRole,
         portal_role_id: systemRole === 'user' ? portalRoleId : undefined,
+        pbx_domains: pbxDomains,
       });
       resetAddForm();
       setAddOpen(false);
@@ -559,7 +602,20 @@ export default function UserManagement({ embedded = false }) {
                 <Label>Portal role</Label>
                 <Select
                   value={addForm.portalRoleId}
-                  onValueChange={(portalRoleId) => setAddForm((f) => ({ ...f, portalRoleId }))}
+                  onValueChange={(portalRoleId) => {
+                    const role = rolesById[portalRoleId];
+                    setAddForm((f) => ({
+                      ...f,
+                      portalRoleId,
+                      pbxDomainAccess:
+                        role?.slug === 'pbx_domain'
+                          ? 'specific'
+                          : role?.slug === 'pbx'
+                            ? 'all'
+                            : f.pbxDomainAccess,
+                      pbxDomains: role?.slug === 'pbx' ? [] : f.pbxDomains,
+                    }));
+                  }}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder="Select role" />
@@ -572,6 +628,83 @@ export default function UserManagement({ embedded = false }) {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+            {showPbxDomainAccess && (
+              <div className="rounded-lg border bg-gray-50 p-3 space-y-3">
+                <div>
+                  <Label>PBX domain access</Label>
+                  <p className="text-xs text-gray-500 mt-1">
+                    All domains uses full PBX access. Specific domains limits the user to selected
+                    SkySwitch domains.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pbx-domain-access"
+                      checked={addForm.pbxDomainAccess === 'all'}
+                      onChange={() =>
+                        setAddForm((f) => ({
+                          ...f,
+                          pbxDomainAccess: 'all',
+                          pbxDomains: [],
+                          portalRoleId: pbxRoleId || f.portalRoleId,
+                        }))
+                      }
+                    />
+                    All domains
+                  </label>
+                  <label className="inline-flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="pbx-domain-access"
+                      checked={addForm.pbxDomainAccess === 'specific'}
+                      onChange={() =>
+                        setAddForm((f) => ({
+                          ...f,
+                          pbxDomainAccess: 'specific',
+                          portalRoleId: pbxDomainRoleId || f.portalRoleId,
+                        }))
+                      }
+                    />
+                    Specific domains
+                  </label>
+                </div>
+                {addForm.pbxDomainAccess === 'specific' ? (
+                  pbxDomainCatalog.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      No domains loaded. Check SkySwitch connection or assign domains after creation.
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      {pbxDomainCatalog.map((entry) => {
+                        const name = entry.domain || entry;
+                        const selected = addForm.pbxDomains.some((d) => domainsMatch(d, name));
+                        return (
+                          <button
+                            key={name}
+                            type="button"
+                            className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                              selected
+                                ? 'bg-purple-100 border-purple-300 text-purple-900'
+                                : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-100'
+                            }`}
+                            onClick={() =>
+                              setAddForm((f) => ({
+                                ...f,
+                                pbxDomains: togglePbxDomain(f.pbxDomains, name),
+                              }))
+                            }
+                          >
+                            {name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : null}
               </div>
             )}
             {addError && <p className="text-sm text-red-600">{addError}</p>}

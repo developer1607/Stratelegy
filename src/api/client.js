@@ -286,6 +286,7 @@ export const api = {
       grant_crm_access,
       permissions,
       portal_role_id,
+      pbx_domains,
     }) =>
       request("POST", "/api/users", {
         email,
@@ -295,6 +296,7 @@ export const api = {
         grant_crm_access,
         permissions,
         portal_role_id,
+        pbx_domains,
       }),
     inviteUser: (email, role, portal_role_id) =>
       request("POST", "/api/users/invite", { email, role, portal_role_id }),
