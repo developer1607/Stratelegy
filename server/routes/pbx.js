@@ -660,16 +660,21 @@ router.get(
   requirePbxPermission('can_view_mos_scores_page'),
   async (req, res, next) => {
     try {
-      const identifier = await journalIdentifierFromRequest(req);
+      const domain = isPbxDomainRestricted(req.permissions)
+        ? await requireDomainFromRequest(req)
+        : await domainFromRequest(req);
+      if (!domain) {
+        const err = new Error('Select a domain to load MOS scores');
+        err.status = 400;
+        throw err;
+      }
       res.json(
-        await pbx.getMosScores({
+        await hybridPbx.getMosScores({
           startDate: req.query.start_date,
           endDate: req.query.end_date,
+          domain,
           page: Number(req.query.page) || 1,
-          perPage: Number(req.query.per_page) || 50,
-          module: req.query.module,
-          type: req.query.type,
-          identifier,
+          perPage: Number(req.query.per_page) || 100,
         })
       );
     } catch (err) {

@@ -31,10 +31,57 @@ export function normalizePbxTokenInfo(status) {
   };
 }
 
+function pickCdrQosScore(row) {
+  if (!row || typeof row !== 'object') return null;
+  const candidates = [
+    row.mos,
+    row.qos,
+    row.mos_lq,
+    row.mos_cq,
+    row.orig_mos,
+    row.term_mos,
+    row.a_mos,
+    row.b_mos,
+    row.qos_mos,
+    row.mean_opinion_score,
+    row?.qos_stats?.mos,
+    row?.rtcp?.mos,
+    row?.raw?.mos,
+    row?.raw?.qos,
+  ];
+  for (const value of candidates) {
+    if (value != null && typeof value === 'object') {
+      const nested = pickCdrQosScore(value);
+      if (nested != null) return nested;
+      continue;
+    }
+    const num = Number(value);
+    if (Number.isFinite(num) && num > 0) return Math.round(num * 10) / 10;
+  }
+  return null;
+}
+
+function formatDurationMmSs(totalSeconds) {
+  const sec = Number(totalSeconds);
+  if (!Number.isFinite(sec) || sec < 0) return null;
+  const mins = Math.floor(sec / 60);
+  const rem = Math.floor(sec % 60);
+  return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
+}
+
 export function normalizeCdrRows(xml) {
   return nodeList(xml, 'cdr').map((row) => {
     const duration = numeric(row.duration);
     const talkTime = numeric(row.time_talking);
+    const qos = pickCdrQosScore(row);
+    const qosOrig = pickCdrQosScore({
+      mos: row.orig_mos || row.a_mos || row.mos_lq,
+      qos: row.orig_qos,
+    });
+    const qosTerm = pickCdrQosScore({
+      mos: row.term_mos || row.b_mos || row.mos_cq,
+      qos: row.term_qos,
+    });
     return {
       id: row.cdr_id || `${row.orig_sub || 'unknown'}-${row.time_start || Math.random()}`,
       cdr_id: row.cdr_id || null,
@@ -42,9 +89,11 @@ export function normalizeCdrRows(xml) {
       type: row.type || null,
       direction: row.orig_sub && row.term_sub && row.orig_sub !== row.term_sub ? 'external' : 'internal',
       from: row.orig_from_name || row.orig_sub || row.orig_from_uri || null,
+      from_name: row.orig_from_name || null,
       from_number: row.orig_from_uri || row.orig_sub || null,
       to: row.term_to_name || row.term_sub || row.term_to_uri || row.orig_to_user || null,
       to_number: row.term_to_uri || row.orig_req_uri || null,
+      dialed: row.orig_to_user || row.orig_req_user || row.term_to_uri || null,
       by_sub: row.by_sub || null,
       orig_sub: row.orig_sub || null,
       term_sub: row.term_sub || null,
@@ -54,7 +103,11 @@ export function normalizeCdrRows(xml) {
       duration_seconds: duration,
       talk_seconds: talkTime,
       duration_label: duration == null ? '—' : `${duration}s`,
+      duration_mmss: formatDurationMmSs(duration) || formatDurationMmSs(talkTime),
       talk_label: talkTime == null ? '—' : `${talkTime}s`,
+      qos,
+      qos_orig: qosOrig,
+      qos_term: qosTerm,
       expected_trace: row.expected_trace || null,
       raw: row,
     };
@@ -82,8 +135,110 @@ export function cdrRowsToCsv(rows) {
   return lines.join('\n');
 }
 
+/**
+ * Parse NetSapiens/SkySwitch registration datetimes.
+ * Absolute times (unix seconds/ms or "YYYY-MM-DD HH:mm:ss") only — not TTL `expires`
+ * (which is seconds between re-registers, typically 30–180).
+ * @see apiDocumentationPBX.md device.expires vs mac.registration_expires_time
+ */
+export function parseRegistrationTimestamp(value) {
+  if (value == null || value === '') return null;
+  if (value instanceof Date) {
+    const ms = value.getTime();
+    return Number.isFinite(ms) ? ms : null;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || value <= 0) return null;
+    // Tiny values are TTL seconds (device.expires), not epoch timestamps.
+    if (value < 1e9) return null;
+    return value < 1e12 ? value * 1000 : value;
+  }
+  const text = String(value).trim();
+  if (!text || /^n\/?a$/i.test(text)) return null;
+  if (/^\d+(\.\d+)?$/.test(text)) {
+    const num = Number(text);
+    if (!Number.isFinite(num) || num <= 0 || num < 1e9) return null;
+    return num < 1e12 ? num * 1000 : num;
+  }
+  // NetSapiens/SkySwitch often emit naive datetimes: "2018-06-29 15:27:16"
+  // Treat timezone-less values as UTC so status doesn't depend on server local TZ.
+  if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(text)) {
+    const iso = `${text.replace(' ', 'T')}${text.length === 16 ? ':00' : ''}Z`;
+    const utcMs = Date.parse(iso);
+    return Number.isFinite(utcMs) ? utcMs : null;
+  }
+  const ms = Date.parse(text);
+  return Number.isFinite(ms) ? ms : null;
+}
+
+function hasLiveSipBinding(value) {
+  if (value == null) return false;
+  const text = String(value).trim();
+  if (!text) return false;
+  if (/^n\/?a$/i.test(text)) return false;
+  if (/^null$/i.test(text)) return false;
+  return true;
+}
+
+/**
+ * Whether a device/phone looks currently registered.
+ *
+ * NetSapiens guidance (device-sip-registration-state):
+ * - "registered" when the device is within the valid registration time window
+ * - expires datetime should be in the future for actively registered devices
+ * Legacy PBX fields (DeviceLegacy / mac read): received_from, contact,
+ * registration_time, registration_expires_time; separate `expires` is TTL seconds.
+ *
+ * Precedence used by Insight (matches NetSapiens window semantics):
+ * 1. Absolute registration_expires_time present → Online only if still future (+ grace).
+ *    Past expiry is Offline even if received_from/contact linger (last-known binding).
+ * 2. No absolute expiry → Online if contact/received_from present (legacy live signal)
+ * 3. Else registration_time within TTL `expires` or a short recent window
+ */
+export function isRegistrationCurrentlyActive({
+  contact = null,
+  received_from = null,
+  registration_time = null,
+  registration_expires_time = null,
+  expires_ttl_seconds = null,
+} = {}) {
+  const hasBinding =
+    hasLiveSipBinding(contact) || hasLiveSipBinding(received_from);
+  const now = Date.now();
+  // NetSapiens notes a system-wide grace period beyond the requested window.
+  const GRACE_MS = 90_000;
+
+  const expiresMs = parseRegistrationTimestamp(registration_expires_time);
+  if (expiresMs != null) {
+    return expiresMs + GRACE_MS > now;
+  }
+
+  if (hasBinding) return true;
+
+  const registeredMs = parseRegistrationTimestamp(registration_time);
+  if (registeredMs == null) return false;
+
+  const ttlSec = Number(expires_ttl_seconds);
+  if (Number.isFinite(ttlSec) && ttlSec > 0 && ttlSec < 1e6) {
+    return registeredMs + ttlSec * 1000 + GRACE_MS > now;
+  }
+
+  // No absolute expiry and no live binding: only trust a recent registration_time.
+  const RECENT_WITHOUT_EXPIRES_MS = 2 * 60 * 60 * 1000;
+  return registeredMs + RECENT_WITHOUT_EXPIRES_MS + GRACE_MS > now;
+}
+
 function phoneStatus(row) {
-  if (row?.contact || row?.registration_time || row?.registration_expires_time) return 'online';
+  if (
+    isRegistrationCurrentlyActive({
+      contact: row?.contact,
+      registration_time: row?.registration_time,
+      registration_expires_time: row?.registration_expires_time,
+      expires_ttl_seconds: row?.expires,
+    })
+  ) {
+    return 'online';
+  }
   return 'offline';
 }
 
@@ -200,6 +355,7 @@ export function normalizePhoneRows(xml) {
       user_agent: row.user_agent || null,
       registration_time: row.registration_time || null,
       registration_expires_time: row.registration_expires_time || null,
+      expires: numeric(row.expires),
       resync: row.resync || null,
       presence: row.presence || null,
       sidecar: row.sidecar || null,
@@ -310,7 +466,17 @@ export function normalizePbxSubscriberRows(xml) {
 }
 
 function deviceOnlineStatus(row) {
-  if (row?.registration_time || row?.received_from) return 'online';
+  if (
+    isRegistrationCurrentlyActive({
+      contact: row?.contact,
+      received_from: row?.received_from,
+      registration_time: row?.registration_time,
+      registration_expires_time: row?.registration_expires_time,
+      expires_ttl_seconds: row?.expires,
+    })
+  ) {
+    return 'online';
+  }
   return 'offline';
 }
 
@@ -323,8 +489,10 @@ export function normalizeDeviceRows(xml) {
       device: cleanValue(row.device),
       user_agent: cleanValue(row.user_agent),
       received_from: cleanValue(row.received_from),
+      contact: cleanValue(row.contact),
       registration_time: cleanValue(row.registration_time),
       registration_expires_time: cleanValue(row.registration_expires_time),
+      expires: numeric(row.expires),
       subscriber_name: extension,
       hostname: cleanValue(row.hostname),
       subscriber_domain: cleanValue(row.subscriber_domain),
@@ -332,7 +500,13 @@ export function normalizeDeviceRows(xml) {
       sub_login: cleanValue(row.sub_login),
       mode: cleanValue(row.mode),
       call_processing_rule: cleanValue(row.call_processing_rule),
-      online_status: deviceOnlineStatus(row),
+      online_status: deviceOnlineStatus({
+        received_from: cleanValue(row.received_from),
+        contact: cleanValue(row.contact),
+        registration_time: cleanValue(row.registration_time),
+        registration_expires_time: cleanValue(row.registration_expires_time),
+        expires: numeric(row.expires),
+      }),
       raw: row,
     };
   });

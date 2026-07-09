@@ -44,7 +44,15 @@ function OfflineContent({ domain }) {
 
   const extensionRows = useMemo(() => {
     return (data?.extensionOffline || []).filter((row) =>
-      matchSearch(row, search, ['extension', 'name', 'email', 'caller_id', 'site', 'notes'])
+      matchSearch(row, search, [
+        'extension',
+        'name',
+        'email',
+        'caller_id',
+        'site',
+        'notes',
+        'mac_address',
+      ])
     );
   }, [data?.extensionOffline, search]);
 
@@ -52,7 +60,11 @@ function OfflineContent({ domain }) {
     () => [
       { key: 'mac_address', label: 'MAC address' },
       { key: 'phone_number', label: 'Phone number' },
-      { key: 'deliver_offline', label: 'Deliver offline' },
+      {
+        key: 'deliver_offline',
+        label: 'Offline delivery routing',
+        render: (row) => (row.deliver_offline ? 'On' : 'Off'),
+      },
       {
         key: 'actions',
         label: 'Actions',
@@ -99,10 +111,15 @@ function OfflineContent({ domain }) {
           <TabsTrigger value="extensions">
             Extensions offline ({extensionRows.length})
           </TabsTrigger>
-          <TabsTrigger value="fax">Fax ATAs ({offlineAtaRows.length} offline)</TabsTrigger>
+          <TabsTrigger value="fax">
+            Fax ATAs ({offlineAtaRows.length} offline delivery)
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="extensions" className="space-y-4 mt-4">
+          <p className="text-sm text-gray-500">
+            Unregistered extensions that still have a provisioned phone/MAC for this domain.
+          </p>
           <PbxDataTable
             columns={[
               {
@@ -122,6 +139,7 @@ function OfflineContent({ domain }) {
                         site: row.site,
                         department: row.department,
                         notes: row.notes,
+                        mac_address: row.mac_address,
                         online_status: row.online_status || 'offline',
                         downtime: row.downtime,
                       })
@@ -138,10 +156,20 @@ function OfflineContent({ domain }) {
                 label: 'Status',
                 render: (row) => <EndpointStatusCell row={{ online_status: row.online_status }} />,
               },
+              { key: 'mac_address', label: 'MAC' },
               { key: 'email_report_status', label: 'Email report' },
               { key: 'filtered', label: 'Filtered' },
               { key: 'notes', label: 'Notes' },
-              { key: 'downtime', label: 'Downtime' },
+              {
+                key: 'downtime',
+                label: 'Downtime',
+                render: (row) =>
+                  row.downtime && row.downtime !== '—' ? (
+                    <span className="text-red-600 font-medium">{row.downtime}</span>
+                  ) : (
+                    '—'
+                  ),
+              },
             ]}
             rows={extensionRows}
             emptyMessage="No unregistered extensions with provisioned phones for this domain."
@@ -149,21 +177,27 @@ function OfflineContent({ domain }) {
         </TabsContent>
 
         <TabsContent value="fax" className="space-y-6 mt-4">
+          <p className="text-sm text-gray-500">
+            Fax ATA “offline delivery” is a routing flag (deliver when ATA is unreachable), not live
+            device registration status.
+          </p>
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               className={`px-3 py-1.5 rounded-lg border text-sm ${showOfflineOnly ? 'bg-[#F07020] text-white border-[#F07020]' : 'bg-white text-gray-700'}`}
               onClick={() => setShowOfflineOnly((v) => !v)}
             >
-              {showOfflineOnly ? 'Showing offline ATAs only' : 'Show all ATAs'}
+              {showOfflineOnly ? 'Showing offline-delivery ATAs only' : 'Show all ATAs'}
             </button>
           </div>
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 mb-3">Offline fax ATAs</h2>
+            <h2 className="text-lg font-semibold text-gray-900 mb-3">
+              Offline-delivery fax ATAs
+            </h2>
             <PbxDataTable
               columns={ataColumns}
               rows={offlineAtaRows}
-              emptyMessage="No offline fax ATAs match your filters."
+              emptyMessage="No offline-delivery fax ATAs match your filters."
             />
           </section>
           {!showOfflineOnly && (

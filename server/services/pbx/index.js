@@ -11,6 +11,7 @@ import {
   formatWanLan,
   resolveGeoNode,
   resolveEndpointWarning,
+  isRegistrationCurrentlyActive,
 } from './normalize.js';
 import * as legacyPbx from '../skyswitch/pbx.js';
 import { buildEndpointStats, buildExtensionOfflineRows } from '../skyswitch/pbxEnrichment.js';
@@ -157,6 +158,89 @@ export async function listCdrs({
     rowCount: rows.length,
     hasMore: rows.length === (Number(perPage) || 50),
     rows,
+  };
+}
+
+/** MOS/QOS scores from domain CDRs (cdr2 with qos=yes), not journals. */
+export async function getMosScores({
+  startDate,
+  endDate,
+  domain,
+  page = 1,
+  perPage = 100,
+} = {}) {
+  if (!domain) {
+    const err = new Error('domain is required for MOS scores');
+    err.status = 400;
+    throw err;
+  }
+  const end = endDate || new Date().toISOString().slice(0, 10);
+  const start = startDate || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const data = await listCdrs({
+    startDate: start,
+    endDate: end,
+    domain,
+    raw: 'yes',
+    qos: 'yes',
+    page,
+    perPage,
+  });
+  const cdrRows = data.rows || [];
+  const rows = cdrRows
+    .map((row) => {
+      const qos = row.qos ?? row.qos_orig ?? row.qos_term;
+      return {
+        id: row.id || row.cdr_id,
+        date: row.start_at || row.answer_at,
+        from_name: row.from_name || row.from || null,
+        from: row.from_number || row.from || null,
+        dialed: row.dialed || row.to_number || null,
+        to: row.to || row.term_sub || null,
+        qos,
+        qos_orig: row.qos_orig ?? qos,
+        qos_term: row.qos_term ?? qos,
+        duration: row.duration_mmss || row.duration_label || null,
+        duration_seconds: row.duration_seconds,
+        module: 'cdr',
+        type: row.type,
+        action: row.direction,
+      };
+    })
+    .filter((row) => row.qos != null || row.qos_orig != null || row.qos_term != null);
+
+  // If QoS fields weren't present in this page, still return CDR rows so the UI can show activity
+  // and operators can widen the date range / confirm qos flags.
+  const displayRows =
+    rows.length > 0
+      ? rows
+      : cdrRows.map((row) => ({
+          id: row.id || row.cdr_id,
+          date: row.start_at || row.answer_at,
+          from_name: row.from_name || row.from || null,
+          from: row.from_number || row.from || null,
+          dialed: row.dialed || row.to_number || null,
+          to: row.to || row.term_sub || null,
+          qos: null,
+          qos_orig: null,
+          qos_term: null,
+          duration: row.duration_mmss || row.duration_label || null,
+          duration_seconds: row.duration_seconds,
+          module: 'cdr',
+          type: row.type,
+          action: row.direction,
+        }));
+
+  return {
+    startDate: start,
+    endDate: end,
+    domain,
+    rows: displayRows,
+    total: displayRows.length,
+    rawCount: cdrRows.length,
+    qosCount: rows.length,
+    page: data.page,
+    perPage: data.perPage,
+    source: 'cdr',
   };
 }
 
@@ -681,16 +765,27 @@ function resolveOnlineStatus({
   device = null,
   phone = null,
   registration_time = null,
+  registration_expires_time = null,
   mac_address = null,
-  wan_ip = null,
   contact = null,
   received_from = null,
+  expires_ttl_seconds = null,
 } = {}) {
-  if (registration_time || contact || received_from || wan_ip) {
-    return { online_status: 'online', registration_status: 'Registered' };
-  }
+  const active = isRegistrationCurrentlyActive({
+    contact: contact || device?.contact || phone?.contact || null,
+    received_from: received_from || device?.received_from || null,
+    registration_time:
+      registration_time || device?.registration_time || phone?.registration_time || null,
+    registration_expires_time:
+      registration_expires_time ||
+      device?.registration_expires_time ||
+      phone?.registration_expires_time ||
+      null,
+    expires_ttl_seconds:
+      expires_ttl_seconds ?? device?.expires ?? phone?.expires ?? null,
+  });
 
-  if (device?.online_status === 'online' || phone?.online_status === 'online') {
+  if (active) {
     return { online_status: 'online', registration_status: 'Registered' };
   }
 
@@ -704,16 +799,26 @@ function resolveOnlineStatus({
 function mergeSubscriberRecord(base, legacy = null, phone = null, device = null) {
   const registration_time =
     device?.registration_time || phone?.registration_time || legacy?.registration_time || base.registration_time || null;
+  const registration_expires_time =
+    device?.registration_expires_time ||
+    phone?.registration_expires_time ||
+    legacy?.registration_expires_time ||
+    base.registration_expires_time ||
+    null;
   const mac_address = phone?.mac || legacy?.mac_address || base.mac_address || null;
   const wan_ip = device?.received_from || legacy?.wan_ip || base.wan_ip || null;
+  const contact = phone?.contact || device?.contact || legacy?.contact || null;
+  const received_from = device?.received_from || null;
+  const expires_ttl_seconds = device?.expires ?? phone?.expires ?? legacy?.expires ?? null;
   const { online_status, registration_status } = resolveOnlineStatus({
     device,
     phone,
     registration_time,
+    registration_expires_time,
     mac_address,
-    wan_ip,
-    contact: phone?.contact || null,
-    received_from: device?.received_from || null,
+    contact,
+    received_from,
+    expires_ttl_seconds,
   });
 
   const merged = {
@@ -736,6 +841,7 @@ function mergeSubscriberRecord(base, legacy = null, phone = null, device = null)
     overrides: phone?.overrides || base.overrides || null,
     user_agent: device?.user_agent || phone?.user_agent || base.user_agent || null,
     registration_time,
+    registration_expires_time,
     vm_pin: base.vm_pin || null,
     dial_policy: base.dial_policy || null,
     dial_plan: base.dial_plan || null,

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default function AccountKPICard({
   title,
@@ -8,7 +8,7 @@ export default function AccountKPICard({
   trend = undefined,
   trendValue = undefined,
   Icon: _Icon = undefined,
-  color = 'blue',
+  color = "blue",
   chartData = undefined,
 }) {
   return (
@@ -18,9 +18,9 @@ export default function AccountKPICard({
           <span className="text-xs text-gray-600">{title}</span>
           {trend && (
             <div
-              className={`flex items-center gap-1 text-xs ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+              className={`flex items-center gap-1 text-xs ${trend === "up" ? "text-green-600" : "text-red-600"}`}
             >
-              {trend === 'up' ? (
+              {trend === "up" ? (
                 <TrendingUp className="w-3 h-3" />
               ) : (
                 <TrendingDown className="w-3 h-3" />
@@ -37,15 +37,15 @@ export default function AccountKPICard({
                 <div
                   key={i}
                   className={`flex-1 rounded-sm ${
-                    color === 'blue'
-                      ? 'bg-blue-400'
-                      : color === 'green'
-                        ? 'bg-green-400'
-                        : color === 'cyan'
-                          ? 'bg-cyan-400'
-                          : color === 'red'
-                            ? 'bg-red-400'
-                            : 'bg-purple-400'
+                    color === "blue"
+                      ? "bg-blue-400"
+                      : color === "green"
+                        ? "bg-green-400"
+                        : color === "cyan"
+                          ? "bg-cyan-400"
+                          : color === "red"
+                            ? "bg-red-400"
+                            : "bg-purple-400"
                   }`}
                   style={{ height: `${height}%` }}
                 />

@@ -5,6 +5,7 @@ import PbxShell, { PbxError, PbxLoading, PbxStatGrid } from '@/components/pbx/Pb
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import CreateEndpointDialog from '@/components/pbx/endpoints/CreateEndpointDialog';
+import BulkEndpointActions from '@/components/pbx/endpoints/BulkEndpointActions';
 import SubscriberExpandPanel from '@/components/pbx/endpoints/SubscriberExpandPanel';
 import { EndpointStatusCell } from '@/components/pbx/endpoints/EndpointCells';
 import PermissionGate from '@/components/PermissionGate';
@@ -72,12 +73,19 @@ function EndpointContent({ domain }) {
     enabled: !!domain,
   });
 
-  const refresh = () =>
+  const refresh = () => {
     queryClient.invalidateQueries({ queryKey: ['pbx-endpoint-control', domain] });
+    queryClient.invalidateQueries({ queryKey: ['pbx-phone-inventory', domain] });
+  };
 
   const subscribers = data?.subscribers || [];
   const phones = phonesQ.data || [];
   const stats = data?.stats;
+
+  const selectedSubscriberRows = useMemo(
+    () => subscribers.filter((row) => selectedRows.includes(String(row.user || row.id))),
+    [subscribers, selectedRows]
+  );
 
   const serviceOptions = useMemo(() => uniqueFieldValues(subscribers, 'srv_code'), [subscribers]);
   const phoneModelOptions = useMemo(() => uniqueFieldValues(phones, 'model'), [phones]);
@@ -265,8 +273,24 @@ function EndpointContent({ domain }) {
                     <Checkbox checked={allVisibleSelected} onCheckedChange={toggleAllVisible} />
                   </th>
                   <th className="px-2 py-2.5 text-left w-10">
-                    <Settings className="h-4 w-4 text-gray-600" aria-hidden />
-                    <span className="sr-only">Settings</span>
+                    <PermissionGate
+                      pbxAction="manageEndpoints"
+                      fallback={
+                        <>
+                          <Settings className="h-4 w-4 text-gray-400" aria-hidden />
+                          <span className="sr-only">Actions</span>
+                        </>
+                      }
+                    >
+                      <BulkEndpointActions
+                        domain={domain}
+                        selectedRows={selectedSubscriberRows}
+                        onSuccess={() => {
+                          setSelectedRows([]);
+                          refresh();
+                        }}
+                      />
+                    </PermissionGate>
                   </th>
                   <th className="px-3 py-2.5 text-left font-semibold">Status</th>
                   <th className="px-3 py-2.5 text-left font-semibold">Extension</th>

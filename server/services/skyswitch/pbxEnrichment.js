@@ -277,9 +277,41 @@ export function buildE911DomainReview(subscribers, e911Endpoints, domain) {
   };
 }
 
+function formatRegistrationDowntime(sub) {
+  if (sub.downtime && sub.downtime !== '—') return sub.downtime;
+  const expiredMs = (() => {
+    const raw = sub.registration_expires_time;
+    if (raw == null || raw === '') return null;
+    if (typeof raw === 'number') return raw < 1e12 ? raw * 1000 : raw;
+    const text = String(raw).trim();
+    if (/^\d+(\.\d+)?$/.test(text)) {
+      const num = Number(text);
+      return num < 1e12 ? num * 1000 : num;
+    }
+    const parsed = Date.parse(text);
+    return Number.isFinite(parsed) ? parsed : null;
+  })();
+  if (expiredMs == null || expiredMs > Date.now()) return sub.downtime || '—';
+  const totalSec = Math.max(0, Math.floor((Date.now() - expiredMs) / 1000));
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  const parts = [];
+  if (days) parts.push(`${days}d`);
+  if (hours || days) parts.push(`${hours}h`);
+  if (mins || hours || days) parts.push(`${mins}m`);
+  parts.push(`${secs}s`);
+  return parts.join(' ');
+}
+
 export function buildExtensionOfflineRows(subscribers) {
   return normalizeSubscriberList(subscribers)
-    .filter((sub) => sub.online_status === 'offline' || sub.is_offline)
+    .filter((sub) => {
+      if (!(sub.online_status === 'offline' || sub.is_offline)) return false;
+      // Match SkySwitch-style offline list: unregistered with a provisioned phone/MAC.
+      return Boolean(sub.mac_address || sub.mac || sub.model);
+    })
     .map((sub) => ({
       extension: sub.user,
       name: sub.name,
@@ -287,7 +319,8 @@ export function buildExtensionOfflineRows(subscribers) {
       site: sub.site,
       department: sub.department,
       caller_id: sub.caller_id,
-      downtime: sub.downtime || '—',
+      mac_address: sub.mac_address || sub.mac || null,
+      downtime: formatRegistrationDowntime(sub),
       notes: sub.notes || '—',
       filtered: sub.filtered ?? '—',
       email_report_status: sub.email_report_status ?? '—',

@@ -277,7 +277,8 @@ export const api = {
   },
 
   users: {
-    directory: () => request("GET", "/api/users/directory").then((r) => r.users || []),
+    directory: () =>
+      request("GET", "/api/users/directory").then((r) => r.users || []),
     createUser: ({
       email,
       password,

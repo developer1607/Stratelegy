@@ -3,32 +3,45 @@ import { useQuery } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
 import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
-import { usePbxDomain } from '@/components/pbx/domain/PbxDomainContext';
-import { isPbxDomainRestricted } from '@/lib/permissions';
-import { usePermissions } from '@/hooks/usePermissions';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { daysAgo, todayInput } from '@/lib/listFilters';
+
+function QosBadge({ value }) {
+  if (value == null || value === '') return '—';
+  return (
+    <span className="inline-flex px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium">
+      {value}
+    </span>
+  );
+}
+
+function formatMosDate(value) {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleString(undefined, {
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
 
 export default function PBXMosScores() {
   return (
     <PbxShell
       title="MOS Scores"
-      description="Call quality entries from activity journals"
-      requiresDomain={false}
+      description="Call quality (MOS/QOS) from domain CDRs"
     >
-      <MosContent />
+      {({ domain }) => <MosContent domain={domain} />}
     </PbxShell>
   );
 }
 
-function MosContent() {
+function MosContent({ domain }) {
   const [search, setSearch] = useState('');
   const [startDate, setStartDate] = useState(daysAgo(7));
   const [endDate, setEndDate] = useState(todayInput());
-  const { domain } = usePbxDomain();
-  const { permissions } = usePermissions();
-  const domainRestricted = isPbxDomainRestricted(permissions);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['pbx-mos-scores', startDate, endDate, domain],
@@ -38,10 +51,9 @@ function MosContent() {
         end_date: endDate,
         per_page: 100,
         domain,
-        identifier: domain,
       }),
     retry: false,
-    enabled: !domainRestricted || !!domain,
+    enabled: !!domain,
   });
 
   const rows = useMemo(() => {
@@ -49,20 +61,13 @@ function MosContent() {
     const q = search.trim().toLowerCase();
     if (!q) return list;
     return list.filter((row) =>
-      [row.from, row.to, row.dialed, row.module, row.type, row.action, row.qos]
-        .filter(Boolean)
+      [row.from_name, row.from, row.to, row.dialed, row.qos, row.qos_orig, row.qos_term]
+        .filter((part) => part != null && part !== '')
         .some((part) => String(part).toLowerCase().includes(q))
     );
   }, [data?.rows, search]);
 
-  if (domainRestricted && !domain) {
-    return (
-      <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-        Select an assigned domain in the bar above to load MOS scores for that domain.
-      </p>
-    );
-  }
-
+  if (!domain) return <PbxLoading />;
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;
 
@@ -97,34 +102,45 @@ function MosContent() {
 
       {data?.rawCount != null && (
         <p className="text-sm text-gray-500">
-          Showing {rows.length} MOS/QOS-related entries from {data.rawCount} journal records (
-          {data.startDate} – {data.endDate}).
+          Showing {rows.length} call{rows.length === 1 ? '' : 's'}
+          {data.qosCount != null ? ` (${data.qosCount} with QOS/MOS)` : ''} from {data.rawCount}{' '}
+          CDR records ({data.startDate} – {data.endDate}).
         </p>
       )}
 
       <PbxDataTable
         columns={[
-          { key: 'date', label: 'Date' },
+          {
+            key: 'from_name',
+            label: 'From Name',
+            render: (row) => row.from_name || row.from || '—',
+          },
+          {
+            key: 'date',
+            label: 'Date',
+            render: (row) => formatMosDate(row.date),
+          },
           { key: 'from', label: 'From' },
           {
-            key: 'qos',
+            key: 'qos_orig',
             label: 'QOS',
-            render: (row) =>
-              row.qos != null ? (
-                <span className="inline-flex px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium">
-                  {row.qos}
-                </span>
-              ) : (
-                '—'
-              ),
+            render: (row) => <QosBadge value={row.qos_orig ?? row.qos} />,
           },
           { key: 'dialed', label: 'Dialed' },
           { key: 'to', label: 'To' },
-          { key: 'duration', label: 'Duration' },
-          { key: 'module', label: 'Module' },
+          {
+            key: 'qos_term',
+            label: 'QOS',
+            render: (row) => <QosBadge value={row.qos_term ?? row.qos} />,
+          },
+          {
+            key: 'duration',
+            label: 'Duration',
+            render: (row) => row.duration || '—',
+          },
         ]}
         rows={rows}
-        emptyMessage="No MOS/QOS journal entries in this date range. Try widening dates or confirm log scope is enabled."
+        emptyMessage="No CDR rows in this date range for the selected domain. Try widening dates or confirm call logging/QOS is enabled."
       />
     </div>
   );

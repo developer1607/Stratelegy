@@ -366,7 +366,7 @@ export const SKYSWITCH_API_REGISTRY = [
   },
   {
     portal: 'GET /api/pbx/mos-scores',
-    skyswitch: 'GET /accounts/{id}/journals (filtered)',
+    skyswitch: 'POST / (object=cdr2&action=read&raw=yes&qos=yes)',
     scope: 'log',
     implemented: true,
   },

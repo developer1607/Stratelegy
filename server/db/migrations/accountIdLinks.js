@@ -1,18 +1,18 @@
-import { query, execute } from '../query.js';
-import { addColumnIfMissing } from '../schemaHelpers.js';
+import { query, execute } from "../query.js";
+import { addColumnIfMissing } from "../schemaHelpers.js";
 
-const ACCOUNT_ID_COL = '`account_id` VARCHAR(36) NULL';
+const ACCOUNT_ID_COL = "`account_id` VARCHAR(36) NULL";
 
 const TABLES = [
-  { table: 'contacts', nameCol: 'company' },
-  { table: 'leads', nameCol: 'company' },
-  { table: 'opportunities', nameCol: 'account_name' },
+  { table: "contacts", nameCol: "company" },
+  { table: "leads", nameCol: "company" },
+  { table: "opportunities", nameCol: "account_name" },
 ];
 
 /** Add account_id FK columns and backfill from legacy name-based links. */
 export async function migrateAccountIdLinks() {
   for (const { table } of TABLES) {
-    await addColumnIfMissing(table, 'account_id', ACCOUNT_ID_COL);
+    await addColumnIfMissing(table, "account_id", ACCOUNT_ID_COL);
     try {
       await execute(
         `CREATE INDEX \`idx_${table}_account_id\` ON \`${table}\` (\`account_id\`)`,

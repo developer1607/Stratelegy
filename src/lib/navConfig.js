@@ -87,7 +87,6 @@ export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "E911Reports",
   "PBXReportE911",
   "PBXReports",
-  "PBXMosScores",
   "CallLogs",
   "SIPTrunks",
   ...PBX_OPERATIONAL_REPORT_PAGES.filter((def) => def.requiresDomain === false).map(
