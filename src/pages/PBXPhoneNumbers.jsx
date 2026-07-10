@@ -39,14 +39,24 @@ function PhoneNumbersContent({ domain }) {
   });
 
   const rows = useMemo(() => {
-    const list = (Array.isArray(data) ? data : []).map((item) => {
+    const list = (Array.isArray(data) ? data : data?.data || []).map((item) => {
       if (typeof item === 'string') return { phone_number: item };
+      if (!item || typeof item !== 'object' || Array.isArray(item)) return null;
+      const phone = item.phone_number || item.number || item.did || null;
+      if (!phone) return null;
       return {
-        phone_number: item.phone_number || item.number || item.did || JSON.stringify(item),
-        description: item.description || item.notes || item.type,
-        status: item.status || item.routing_status,
+        phone_number: phone,
+        description:
+          item.description ||
+          item.notes ||
+          [item.type, item.origin, item.rate_center, item.state].filter(Boolean).join(' · ') ||
+          '—',
+        status:
+          item.status ||
+          item.routing_status ||
+          (item.on_network == null ? null : item.on_network ? 'On network' : 'Off network'),
       };
-    });
+    }).filter(Boolean);
 
     const statusOptions = uniqueFieldValues(list, 'status');
 

@@ -117,9 +117,13 @@ export async function listPbxPhoneNumbers(domain) {
 
 export async function listInventoryPhoneNumbers() {
   const data = await skyswitchRequest('GET', accountPath('/phone-numbers'), {
-    query: { limit: 500 },
+    query: { per_page: 500, page: 1 },
   });
-  return toArray(data);
+  // SkySwitch inventory: { pagination: { count, per_page, page }, data: [...] }
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.data)) return data.data;
+  // Avoid Object.values(pagination+data) which yields [meta, rows[]] and breaks the UI.
+  return [];
 }
 
 export async function listE911Endpoints() {

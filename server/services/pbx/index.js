@@ -741,23 +741,44 @@ function phoneDigits(value) {
   return digits.length >= 10 ? digits.slice(-10) : digits || null;
 }
 
+/**
+ * Normalize an extension / device-line key.
+ * `sip:100b@domain` / `<sip:100b@ip:port>` → `100b` (device line), not owner subscriber.
+ */
 function extensionKey(value) {
   if (value == null || value === '') return '';
-  const text = String(value).trim().toLowerCase();
-  const at = text.indexOf('@');
-  return at > 0 ? text.slice(0, at) : text;
+  let text = String(value).trim().toLowerCase();
+  if (!text || text === 'n/a') return '';
+  const sipMatch = text.match(/sip:([^@;>\s]+)/i);
+  if (sipMatch) {
+    text = sipMatch[1];
+  } else {
+    const at = text.indexOf('@');
+    if (at > 0) text = text.slice(0, at);
+  }
+  const tilde = text.indexOf('~');
+  if (tilde > 0) text = text.slice(0, tilde);
+  return text;
+}
+
+/**
+ * Device line identity from AOR/device — NOT subscriber_name (owner).
+ * Bug: sip:100b@domain has subscriber_name "100", so indexing by owner made
+ * extension 100 inherit 100b's live registration (false Online).
+ */
+function deviceLineKey(device) {
+  if (!device) return '';
+  for (const value of [device.aor, device.device, device.contact]) {
+    const key = extensionKey(value);
+    if (key) return key;
+  }
+  return '';
 }
 
 function indexDeviceByExtension(deviceByExt, device) {
-  const keys = [
-    device.subscriber_name,
-    device.sub_login,
-    device.aor,
-    device.aor ? String(device.aor).split('@')[0] : null,
-  ];
-  for (const key of keys) {
-    const ext = extensionKey(key);
-    if (ext && !deviceByExt.has(ext)) deviceByExt.set(ext, device);
+  const lineKey = deviceLineKey(device);
+  if (lineKey && !deviceByExt.has(lineKey)) {
+    deviceByExt.set(lineKey, device);
   }
 }
 
@@ -862,7 +883,7 @@ function extensionFromPhone(phone) {
   return phone.phone_ext || phone.primary_line || phone.lines?.[0] || null;
 }
 
-function buildPhoneOnlySubscriberRow(phone, domain) {
+function buildPhoneOnlySubscriberRow(phone, domain, device = null) {
   const extension = extensionFromPhone(phone);
   const userLabel = extension || phone.mac;
   const base = {
@@ -883,7 +904,7 @@ function buildPhoneOnlySubscriberRow(phone, domain) {
     is_phone_inventory: true,
     raw: phone.raw || phone,
   };
-  return mergeSubscriberRecord(base, null, phone, null);
+  return mergeSubscriberRecord(base, null, phone, device);
 }
 
 export async function getEndpointInventory(domain) {
@@ -937,7 +958,11 @@ export async function getEndpointInventory(domain) {
         phone.mac &&
         !usedPhoneMacs.has(String(phone.mac).toLowerCase())
     )
-    .map((phone) => buildPhoneOnlySubscriberRow(phone, domain));
+    .map((phone) => {
+      const ext = extensionFromPhone(phone);
+      const device = ext ? deviceByExt.get(String(ext).toLowerCase()) || null : null;
+      return buildPhoneOnlySubscriberRow(phone, domain, device);
+    });
 
   const allSubscribers = [...subscribers, ...phoneOnlyRows];
 
