@@ -9,8 +9,14 @@ import { daysAgo, todayInput } from '@/lib/listFilters';
 
 function QosBadge({ value }) {
   if (value == null || value === '') return '—';
+  const num = Number(value);
+  const poor = Number.isFinite(num) && num < 3.5;
   return (
-    <span className="inline-flex px-2 py-0.5 rounded bg-green-100 text-green-800 text-xs font-medium">
+    <span
+      className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+        poor ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+      }`}
+    >
       {value}
     </span>
   );

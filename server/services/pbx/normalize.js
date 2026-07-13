@@ -31,8 +31,46 @@ export function normalizePbxTokenInfo(status) {
   };
 }
 
+/**
+ * SkySwitch/NQS CDR qos blobs use MOS × 10 (e.g. a_mos_min_mult10=45 → 4.5).
+ * @see apiDocumentationPBX.md cdr2 read with raw=yes&qos=yes → qos_orig / qos_term objects
+ */
+function mosFromMult10(...values) {
+  const scores = [];
+  for (const value of values) {
+    if (value == null || value === '') continue;
+    const num = Number(value);
+    if (!Number.isFinite(num)) continue;
+    // Values like 45 mean 4.5; already-scaled 1–5 also accepted.
+    const mos = num > 5 ? num / 10 : num;
+    if (mos >= 0 && mos <= 5) scores.push(Math.round(mos * 10) / 10);
+  }
+  if (!scores.length) return null;
+  // Prefer worst-leg score so poor quality is visible in the list.
+  return Math.min(...scores);
+}
+
 function pickCdrQosScore(row) {
-  if (!row || typeof row !== 'object') return null;
+  if (row == null || row === '') return null;
+  if (typeof row !== 'object') {
+    const num = Number(row);
+    if (!Number.isFinite(num)) return null;
+    if (num > 5 && num <= 50) return Math.round((num / 10) * 10) / 10;
+    if (num >= 0 && num <= 5) return Math.round(num * 10) / 10;
+    return null;
+  }
+
+  // Nested NQS objects on qos_orig / qos_term (most common live shape).
+  const fromMult10 = mosFromMult10(
+    row.a_mos_min_mult10,
+    row.b_mos_min_mult10,
+    row.a_mos_mult10,
+    row.b_mos_mult10,
+    row.mos_min_mult10,
+    row.mos_mult10
+  );
+  if (fromMult10 != null) return fromMult10;
+
   const candidates = [
     row.mos,
     row.qos,
@@ -48,15 +86,18 @@ function pickCdrQosScore(row) {
     row?.rtcp?.mos,
     row?.raw?.mos,
     row?.raw?.qos,
+    row.qos_orig,
+    row.qos_term,
   ];
   for (const value of candidates) {
-    if (value != null && typeof value === 'object') {
+    if (value == null || value === '') continue;
+    if (typeof value === 'object') {
       const nested = pickCdrQosScore(value);
       if (nested != null) return nested;
       continue;
     }
-    const num = Number(value);
-    if (Number.isFinite(num) && num > 0) return Math.round(num * 10) / 10;
+    const nested = pickCdrQosScore(value);
+    if (nested != null) return nested;
   }
   return null;
 }
@@ -73,15 +114,15 @@ export function normalizeCdrRows(xml) {
   return nodeList(xml, 'cdr').map((row) => {
     const duration = numeric(row.duration);
     const talkTime = numeric(row.time_talking);
-    const qos = pickCdrQosScore(row);
-    const qosOrig = pickCdrQosScore({
+    const qosOrig = pickCdrQosScore(row.qos_orig) ?? pickCdrQosScore({
       mos: row.orig_mos || row.a_mos || row.mos_lq,
       qos: row.orig_qos,
     });
-    const qosTerm = pickCdrQosScore({
+    const qosTerm = pickCdrQosScore(row.qos_term) ?? pickCdrQosScore({
       mos: row.term_mos || row.b_mos || row.mos_cq,
       qos: row.term_qos,
     });
+    const qos = qosOrig ?? qosTerm ?? pickCdrQosScore(row);
     return {
       id: row.cdr_id || `${row.orig_sub || 'unknown'}-${row.time_start || Math.random()}`,
       cdr_id: row.cdr_id || null,
