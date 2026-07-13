@@ -10,7 +10,7 @@ import { runSeeds } from "./seed/index.js";
  * Database bootstrap (runs on every server start):
  *  1. schema/     — CREATE TABLE IF NOT EXISTS (platform, CRM entities, roles)
  *  2. schemaSync  — ADD COLUMN for registry/permission drift on existing DBs
- *  3. seed/       — config rows, portal roles, admin, optional demo users
+ *  3. seed/       — config rows, portal roles, bootstrap admin
  *  4. migrations/ — one-time legacy upgrades (entity_records, permission flags, cleanup)
  */
 export async function initDatabase() {

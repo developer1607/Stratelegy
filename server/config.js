@@ -35,9 +35,6 @@ export const config = {
   isProduction: process.env.NODE_ENV === 'production',
   /** Set TRUST_PROXY=1 when the app sits behind a reverse proxy (nginx, load balancer). */
   trustProxy: process.env.TRUST_PROXY === '1' || process.env.TRUST_PROXY === 'true',
-  /** Dev-only demo accounts — blocked in production regardless of env value. */
-  seedDemoUsers: process.env.SEED_DEMO_USERS === 'true' && process.env.NODE_ENV !== 'production',
-  demoUserPassword: process.env.DEMO_USER_PASSWORD || 'Demo123!',
   mysql: {
     host: process.env.MYSQL_HOST || 'localhost',
     port: Number(process.env.MYSQL_PORT) || 3306,
