@@ -384,6 +384,42 @@ router.get(
 );
 
 router.post(
+  '/endpoint-control/devices/resync',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.status(202).json(
+        await hybridPbx.resyncEndpointDevice(domain, req.body?.device)
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/endpoint-control/devices',
+  requirePbxPermission('can_manage_pbx_endpoints'),
+  blockPbxDomainScopedWrite,
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(
+        await hybridPbx.deleteEndpointDevice(
+          domain,
+          req.body?.device,
+          req.body?.owner
+        )
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
   '/endpoint-control/subscribers',
   requirePbxPermission('can_manage_pbx_endpoints'),
   blockPbxDomainScopedWrite,

@@ -736,6 +736,62 @@ export async function resyncPhone(device) {
   });
 }
 
+function requireDomainDevice(domain, device) {
+  const raw = String(device || '').trim();
+  if (!raw) {
+    const err = new Error('Device is required');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+  const normalized = raw.toLowerCase().startsWith('sip:')
+    ? raw
+    : `sip:${raw}@${domain}`;
+  if (!normalized.toLowerCase().endsWith(`@${String(domain).toLowerCase()}`)) {
+    const err = new Error('Device does not belong to the selected domain');
+    err.status = 400;
+    err.expose = true;
+    throw err;
+  }
+  return normalized;
+}
+
+export async function resyncEndpointDevice(domain, device) {
+  const normalizedDevice = requireDomainDevice(domain, device);
+  await resyncPhone(normalizedDevice);
+  return { domain, device: normalizedDevice, resync_requested: true };
+}
+
+export async function deleteEndpointDevice(domain, device, owner) {
+  const normalizedDevice = requireDomainDevice(domain, device);
+  const ownerUser = requireExtension(owner);
+  const ownerDevices = await listDevices(domain, ownerUser);
+  const normalizedKey = normalizedDevice.toLowerCase();
+  const belongsToOwner = ownerDevices.some((row) => {
+    const rowOwner = String(row.subscriber_name || '').trim().toLowerCase();
+    const deviceKeys = [row.aor, row.device]
+      .filter(Boolean)
+      .map((value) => requireDomainDevice(domain, value).toLowerCase());
+    return rowOwner === ownerUser.toLowerCase() && deviceKeys.includes(normalizedKey);
+  });
+  if (!belongsToOwner) {
+    const err = new Error('Device line was not found for this subscriber');
+    err.status = 404;
+    err.expose = true;
+    throw err;
+  }
+  await pbxRequest('POST', '', {
+    body: new URLSearchParams({
+      object: 'device',
+      action: 'delete',
+      uid: `${ownerUser}@${domain}`,
+      device: normalizedDevice,
+      aor: normalizedDevice,
+    }),
+  });
+  return { domain, device: normalizedDevice, owner: ownerUser, deleted: true };
+}
+
 function phoneDigits(value) {
   const digits = String(value ?? '').replace(/\D/g, '');
   return digits.length >= 10 ? digits.slice(-10) : digits || null;
@@ -883,6 +939,120 @@ function extensionFromPhone(phone) {
   return phone.phone_ext || phone.primary_line || phone.lines?.[0] || null;
 }
 
+function displayExtensionKey(value) {
+  if (value == null || value === '') return '';
+  let text = String(value).trim();
+  if (!text || text.toLowerCase() === 'n/a') return '';
+  const sipMatch = text.match(/sip:([^@;>\s]+)/i);
+  if (sipMatch) {
+    text = sipMatch[1];
+  } else {
+    const at = text.indexOf('@');
+    if (at > 0) text = text.slice(0, at);
+  }
+  const tilde = text.indexOf('~');
+  if (tilde > 0) text = text.slice(0, tilde);
+  return text;
+}
+
+function preferredPhone(phones = []) {
+  return (
+    phones.find((phone) => phone.online_status === 'online') ||
+    phones.find((phone) => phone.mac) ||
+    phones[0] ||
+    null
+  );
+}
+
+function buildSubscriberDeviceLines(pbxSubscribers, phones, devices) {
+  const subscriberKeys = new Set(
+    pbxSubscribers.map((row) => String(row.user || '').trim().toLowerCase()).filter(Boolean)
+  );
+  const phonesByLine = new Map();
+  for (const phone of phones) {
+    const lineKeys = new Set(
+      [phone.phone_ext, phone.primary_line, ...(phone.lines || [])]
+        .map((value) => extensionKey(value))
+        .filter(Boolean)
+    );
+    for (const lineKey of lineKeys) {
+      const matches = phonesByLine.get(lineKey) || [];
+      matches.push(phone);
+      phonesByLine.set(lineKey, matches);
+    }
+  }
+
+  const ownerForLine = (lineKey) => {
+    if (!/^[a-z]$/i.test(lineKey.slice(-1))) return '';
+    const ownerKey = lineKey.slice(0, -1);
+    return subscriberKeys.has(ownerKey) ? ownerKey : '';
+  };
+
+  const linesByOwner = new Map();
+  const addLine = (ownerKey, lineKey, source) => {
+    if (!ownerKey || !lineKey || lineKey === ownerKey) return;
+    const ownerLines = linesByOwner.get(ownerKey) || new Map();
+    const current = ownerLines.get(lineKey) || { device: null, phone: null };
+    ownerLines.set(lineKey, { ...current, ...source });
+    linesByOwner.set(ownerKey, ownerLines);
+  };
+
+  for (const device of devices) {
+    const lineKey = deviceLineKey(device);
+    const ownerKey = String(device.subscriber_name || '').trim().toLowerCase();
+    if (subscriberKeys.has(ownerKey) && ownerForLine(lineKey) === ownerKey) {
+      addLine(ownerKey, lineKey, { device });
+    }
+  }
+
+  for (const [lineKey, matchingPhones] of phonesByLine) {
+    const ownerKey = ownerForLine(lineKey);
+    if (ownerKey) addLine(ownerKey, lineKey, { phone: preferredPhone(matchingPhones) });
+  }
+
+  return new Map(
+    [...linesByOwner].map(([ownerKey, ownerLines]) => [
+      ownerKey,
+      [...ownerLines]
+        .map(([lineKey, sources]) => {
+          const device = sources.device;
+          const phone = sources.phone || preferredPhone(phonesByLine.get(lineKey));
+          const { online_status, registration_status } = resolveOnlineStatus({ device, phone });
+          const phoneLine = [phone?.phone_ext, phone?.primary_line, ...(phone?.lines || [])]
+            .map((value) => displayExtensionKey(value))
+            .find((value) => value.toLowerCase() === lineKey);
+          return {
+            id: `${ownerKey}:${lineKey}`,
+            owner_user: ownerKey,
+            line: phoneLine || displayExtensionKey(device?.aor || device?.device) || lineKey,
+            aor: device?.aor || device?.device || phone?.primary_device || null,
+            primary_device: phone?.primary_device || device?.device || device?.aor || null,
+            model: phone?.user_agent || phone?.model || device?.user_agent || null,
+            user_agent: device?.user_agent || phone?.user_agent || null,
+            mac_address: phone?.mac || null,
+            transport: phone?.transport || null,
+            overrides: phone?.overrides || null,
+            wan_ip: device?.received_from || null,
+            registration_time:
+              device?.registration_time || phone?.registration_time || null,
+            registration_expires_time:
+              device?.registration_expires_time ||
+              phone?.registration_expires_time ||
+              null,
+            online_status,
+            registration_status,
+          };
+        })
+        .sort((a, b) =>
+          String(a.line).localeCompare(String(b.line), undefined, {
+            numeric: true,
+            sensitivity: 'base',
+          })
+        ),
+    ])
+  );
+}
+
 function buildPhoneOnlySubscriberRow(phone, domain, device = null) {
   const extension = extensionFromPhone(phone);
   const userLabel = extension || phone.mac;
@@ -939,6 +1109,11 @@ export async function getEndpointInventory(domain) {
   for (const device of devices) {
     indexDeviceByExtension(deviceByExt, device);
   }
+  const deviceLinesBySubscriber = buildSubscriberDeviceLines(
+    pbxSubscribers,
+    phones,
+    devices
+  );
 
   const usedPhoneMacs = new Set();
   const subscribers = pbxSubscribers.map((row) => {
@@ -948,7 +1123,14 @@ export async function getEndpointInventory(domain) {
     const phone = phoneByExt.get(extKey) || (didKey ? phoneByDid.get(didKey) : null) || null;
     const device = deviceByExt.get(extKey) || null;
     if (phone?.mac) usedPhoneMacs.add(String(phone.mac).toLowerCase());
-    return mergeSubscriberRecord(row, legacy, phone, device);
+    const deviceLines = deviceLinesBySubscriber.get(extKey) || [];
+    for (const line of deviceLines) {
+      if (line.mac_address) usedPhoneMacs.add(String(line.mac_address).toLowerCase());
+    }
+    return {
+      ...mergeSubscriberRecord(row, legacy, phone, device),
+      deviceLines,
+    };
   });
 
   const phoneOnlyRows = phones

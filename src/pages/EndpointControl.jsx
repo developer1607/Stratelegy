@@ -265,8 +265,8 @@ function EndpointContent({ domain }) {
 
       <div className="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
         {sortedRows.length ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+          <div className="app-scrollbar overflow-x-scroll">
+            <table className="min-w-[1120px] w-full text-sm">
               <thead className="bg-[#f2f2f2] border-b">
                 <tr className="text-[11px] uppercase tracking-wide text-gray-600">
                   <th className="px-3 py-2.5 text-left w-10">

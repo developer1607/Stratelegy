@@ -1,23 +1,23 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function CalendarFilters({ filters, onFilterChange }) {
   const eventTypes = [
-    { value: 'appointment', label: 'Appointments' },
-    { value: 'call', label: 'Calls' },
-    { value: 'meeting', label: 'Meetings' },
-    { value: 'task', label: 'Tasks' },
-    { value: 'reminder', label: 'Reminders' },
-    { value: 'demo', label: 'Demos' },
+    { value: "appointment", label: "Appointments" },
+    { value: "call", label: "Calls" },
+    { value: "meeting", label: "Meetings" },
+    { value: "task", label: "Tasks" },
+    { value: "reminder", label: "Reminders" },
+    { value: "demo", label: "Demos" },
   ];
 
   const dateRanges = [
-    { value: 'today', label: 'Today' },
-    { value: 'tomorrow', label: 'Tomorrow' },
-    { value: 'thisWeek', label: 'This Week' },
-    { value: 'nextWeek', label: 'Next Week' },
+    { value: "today", label: "Today" },
+    { value: "tomorrow", label: "Tomorrow" },
+    { value: "thisWeek", label: "This Week" },
+    { value: "nextWeek", label: "Next Week" },
   ];
 
   return (
@@ -27,7 +27,7 @@ export default function CalendarFilters({ filters, onFilterChange }) {
           <span>Filters</span>
           <button
             className="text-xs text-blue-600 hover:text-blue-700 font-normal"
-            onClick={() => onFilterChange('reset')}
+            onClick={() => onFilterChange("reset")}
           >
             Clear All
           </button>
@@ -45,8 +45,10 @@ export default function CalendarFilters({ filters, onFilterChange }) {
                   onCheckedChange={(checked) => {
                     const newTypes = checked
                       ? [...(filters.eventTypes || []), type.value]
-                      : (filters.eventTypes || []).filter((t) => t !== type.value);
-                    onFilterChange('eventTypes', newTypes);
+                      : (filters.eventTypes || []).filter(
+                          (t) => t !== type.value,
+                        );
+                    onFilterChange("eventTypes", newTypes);
                   }}
                 />
                 <label htmlFor={type.value} className="text-sm cursor-pointer">
@@ -66,7 +68,7 @@ export default function CalendarFilters({ filters, onFilterChange }) {
                   id={range.value}
                   checked={filters.dateRange === range.value}
                   onCheckedChange={(checked) => {
-                    onFilterChange('dateRange', checked ? range.value : null);
+                    onFilterChange("dateRange", checked ? range.value : null);
                   }}
                 />
                 <label htmlFor={range.value} className="text-sm cursor-pointer">

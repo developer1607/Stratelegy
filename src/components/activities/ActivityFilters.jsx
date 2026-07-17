@@ -1,16 +1,16 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { RotateCcw } from 'lucide-react';
+} from "@/components/ui/select";
+import { RotateCcw } from "lucide-react";
 
 export default function ActivityFilters({
   filters,
@@ -22,7 +22,7 @@ export default function ActivityFilters({
   const types =
     activityTypes.length > 0
       ? activityTypes
-      : ['Call', 'Email', 'Meeting', 'WhatsApp', 'Note'];
+      : ["Call", "Email", "Meeting", "WhatsApp", "Note"];
 
   return (
     <Card>
@@ -39,7 +39,9 @@ export default function ActivityFilters({
       </CardHeader>
       <CardContent className="space-y-4">
         <div>
-          <Label className="text-sm font-semibold mb-3 block">Activity type</Label>
+          <Label className="text-sm font-semibold mb-3 block">
+            Activity type
+          </Label>
           <div className="space-y-2">
             {types.map((type) => (
               <div key={type} className="flex items-center space-x-2">
@@ -50,10 +52,13 @@ export default function ActivityFilters({
                     const newTypes = checked
                       ? [...(filters.types || []), type]
                       : (filters.types || []).filter((t) => t !== type);
-                    onFilterChange('types', newTypes);
+                    onFilterChange("types", newTypes);
                   }}
                 />
-                <label htmlFor={`activity-type-${type}`} className="text-sm cursor-pointer">
+                <label
+                  htmlFor={`activity-type-${type}`}
+                  className="text-sm cursor-pointer"
+                >
                   {type}
                 </label>
               </div>
@@ -63,14 +68,19 @@ export default function ActivityFilters({
 
         <div>
           <Label className="text-sm font-semibold mb-2 block">Owner</Label>
-          <Select value={filters.owner} onValueChange={(value) => onFilterChange('owner', value)}>
+          <Select
+            value={filters.owner}
+            onValueChange={(value) => onFilterChange("owner", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="All owners" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All owners</SelectItem>
               {owners.map((owner) => (
-                <SelectItem key={owner} value={owner}>{owner}</SelectItem>
+                <SelectItem key={owner} value={owner}>
+                  {owner}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -78,7 +88,10 @@ export default function ActivityFilters({
 
         <div>
           <Label className="text-sm font-semibold mb-2 block">Date range</Label>
-          <Select value={filters.status} onValueChange={(value) => onFilterChange('status', value)}>
+          <Select
+            value={filters.status}
+            onValueChange={(value) => onFilterChange("status", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Date range" />
             </SelectTrigger>

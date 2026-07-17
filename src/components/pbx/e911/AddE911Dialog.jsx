@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -9,13 +9,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import E911ProvisionSheet from '@/components/pbx/e911/E911ProvisionSheet';
+} from "@/components/ui/dialog";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import E911ProvisionSheet from "@/components/pbx/e911/E911ProvisionSheet";
 
 export default function AddE911Dialog({ onSuccess }) {
   const [open, setOpen] = useState(false);
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState("");
   const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
@@ -60,10 +60,10 @@ export default function AddE911Dialog({ onSuccess }) {
         open={sheetOpen}
         onOpenChange={(v) => {
           setSheetOpen(v);
-          if (!v) setPhone('');
+          if (!v) setPhone("");
         }}
         onSuccess={() => {
-          setPhone('');
+          setPhone("");
           onSuccess?.();
         }}
       />

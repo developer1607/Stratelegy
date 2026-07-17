@@ -1,13 +1,16 @@
-import React from 'react';
+import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
-const selectContentProps = { position: 'popper', className: 'max-h-[min(16rem,50dvh)]' };
+const selectContentProps = {
+  position: "popper",
+  className: "max-h-[min(16rem,50dvh)]",
+};
 
 /** Select backed by Settings config item names (Contact sources, Lead stages, etc.). */
 export default function ConfigNameSelect({
@@ -15,12 +18,16 @@ export default function ConfigNameSelect({
   value,
   onValueChange,
   options = [],
-  placeholder = 'Select',
+  placeholder = "Select",
   disabled = false,
-  className = '',
+  className = "",
 }) {
   return (
-    <Select value={value || undefined} onValueChange={onValueChange} disabled={disabled}>
+    <Select
+      value={value || undefined}
+      onValueChange={onValueChange}
+      disabled={disabled}
+    >
       <SelectTrigger id={id} className={className}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

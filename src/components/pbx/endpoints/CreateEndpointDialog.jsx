@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import React, { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -12,52 +12,52 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import PbxFormSelect from '@/components/pbx/shared/PbxFormSelect';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import PbxFormSelect from "@/components/pbx/shared/PbxFormSelect";
+import { toast } from "sonner";
 
 const DEFAULT_FORM = {
-  user: '',
-  first_name: '',
-  last_name: '',
-  email: '',
-  scope: 'Basic User',
-  srv_code: 'system-user',
-  dial_policy: 'US and Canada',
-  site: '',
+  user: "",
+  first_name: "",
+  last_name: "",
+  email: "",
+  scope: "Basic User",
+  srv_code: "system-user",
+  dial_policy: "US and Canada",
+  site: "",
   provision_phone: false,
-  mac: '',
-  model: 'generic',
-  transport: 'UDP',
+  mac: "",
+  model: "generic",
+  transport: "UDP",
   provision_messaging: false,
-  device_user: '',
+  device_user: "",
 };
 
 const SCOPE_OPTIONS = [
-  { value: 'Basic User', label: 'Basic User' },
-  { value: 'No Portal', label: 'No Portal' },
-  { value: 'Office Manager', label: 'Office Manager' },
-  { value: 'Call Center Supervisor', label: 'Call Center Supervisor' },
+  { value: "Basic User", label: "Basic User" },
+  { value: "No Portal", label: "No Portal" },
+  { value: "Office Manager", label: "Office Manager" },
+  { value: "Call Center Supervisor", label: "Call Center Supervisor" },
 ];
 
 const SERVICE_OPTIONS = [
-  { value: 'system-user', label: 'User (system-user)' },
-  { value: 'system-aa', label: 'Auto attendant (system-aa)' },
-  { value: 'system-queue', label: 'Call queue (system-queue)' },
+  { value: "system-user", label: "User (system-user)" },
+  { value: "system-aa", label: "Auto attendant (system-aa)" },
+  { value: "system-queue", label: "Call queue (system-queue)" },
 ];
 
 const TRANSPORT_OPTIONS = [
-  { value: 'UDP', label: 'UDP' },
-  { value: 'TCP', label: 'TCP' },
-  { value: 'TLS', label: 'TLS' },
+  { value: "UDP", label: "UDP" },
+  { value: "TCP", label: "TCP" },
+  { value: "TLS", label: "TLS" },
 ];
 
 export default function CreateEndpointDialog({
   domain,
   onSuccess,
-  trigger = 'headerIcon',
-  variant = 'endpoint',
+  trigger = "headerIcon",
+  variant = "endpoint",
 }) {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ ...DEFAULT_FORM });
@@ -66,10 +66,10 @@ export default function CreateEndpointDialog({
     if (open) setForm({ ...DEFAULT_FORM });
   }, [open]);
 
-  const isExtension = variant === 'extension';
-  const addLabel = isExtension ? 'Add extension' : 'Add endpoint';
-  const dialogTitle = isExtension ? 'Add extension' : 'Add endpoint';
-  const submitLabel = isExtension ? 'Create extension' : 'Create endpoint';
+  const isExtension = variant === "extension";
+  const addLabel = isExtension ? "Add extension" : "Add endpoint";
+  const dialogTitle = isExtension ? "Add extension" : "Add endpoint";
+  const submitLabel = isExtension ? "Create extension" : "Create endpoint";
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -86,18 +86,20 @@ export default function CreateEndpointDialog({
         model: form.provision_phone ? form.model : undefined,
         transport: form.provision_phone ? form.transport : undefined,
         provision_messaging: form.provision_messaging,
-        device_user: form.provision_messaging ? form.device_user.trim() : undefined,
+        device_user: form.provision_messaging
+          ? form.device_user.trim()
+          : undefined,
         messaging_name:
           form.provision_messaging && (form.first_name || form.last_name)
             ? `${form.first_name} ${form.last_name}`.trim()
             : undefined,
       }),
     onSuccess: () => {
-      toast.success(isExtension ? 'Extension created' : 'Endpoint created');
+      toast.success(isExtension ? "Extension created" : "Endpoint created");
       setOpen(false);
       onSuccess?.();
     },
-    onError: (err) => toast.error(err.message || 'Failed to create endpoint'),
+    onError: (err) => toast.error(err.message || "Failed to create endpoint"),
   });
 
   const canSubmit =
@@ -107,7 +109,7 @@ export default function CreateEndpointDialog({
     (!form.provision_messaging || form.device_user.trim());
 
   const triggerNode =
-    trigger === 'toolbar' ? (
+    trigger === "toolbar" ? (
       <Button size="sm">
         <Plus className="h-4 w-4 mr-1.5" />
         {addLabel}
@@ -136,8 +138,9 @@ export default function CreateEndpointDialog({
           <DialogHeader>
             <DialogTitle>{dialogTitle}</DialogTitle>
             <DialogDescription>
-              Creates a PBX subscriber on the selected domain. Optionally provision a MAC/phone and
-              messaging hub user when those APIs apply.
+              Creates a PBX subscriber on the selected domain. Optionally
+              provision a MAC/phone and messaging hub user when those APIs
+              apply.
             </DialogDescription>
           </DialogHeader>
 
@@ -158,13 +161,17 @@ export default function CreateEndpointDialog({
               <PbxFormField
                 label="First name"
                 value={form.first_name}
-                onChange={(e) => setForm({ ...form, first_name: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, first_name: e.target.value })
+                }
                 required
               />
               <PbxFormField
                 label="Last name"
                 value={form.last_name}
-                onChange={(e) => setForm({ ...form, last_name: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, last_name: e.target.value })
+                }
               />
               <PbxFormSelect
                 label="User scope"
@@ -181,7 +188,9 @@ export default function CreateEndpointDialog({
               <PbxFormField
                 label="Dial policy"
                 value={form.dial_policy}
-                onChange={(e) => setForm({ ...form, dial_policy: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, dial_policy: e.target.value })
+                }
               />
               <PbxFormField
                 label="Site"
@@ -212,12 +221,16 @@ export default function CreateEndpointDialog({
                   <PbxFormField
                     label="Model"
                     value={form.model}
-                    onChange={(e) => setForm({ ...form, model: e.target.value })}
+                    onChange={(e) =>
+                      setForm({ ...form, model: e.target.value })
+                    }
                   />
                   <PbxFormSelect
                     label="Transport"
                     value={form.transport}
-                    onValueChange={(value) => setForm({ ...form, transport: value })}
+                    onValueChange={(value) =>
+                      setForm({ ...form, transport: value })
+                    }
                     options={TRANSPORT_OPTIONS}
                   />
                 </div>
@@ -238,7 +251,9 @@ export default function CreateEndpointDialog({
                 <PbxFormField
                   label="Device user"
                   value={form.device_user}
-                  onChange={(e) => setForm({ ...form, device_user: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, device_user: e.target.value })
+                  }
                   placeholder="1000m"
                   required
                 />
@@ -248,7 +263,7 @@ export default function CreateEndpointDialog({
 
           <DialogFooter>
             <Button type="submit" disabled={!canSubmit || mutation.isPending}>
-              {mutation.isPending ? 'Creating…' : submitLabel}
+              {mutation.isPending ? "Creating…" : submitLabel}
             </Button>
           </DialogFooter>
         </form>

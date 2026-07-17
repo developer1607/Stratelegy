@@ -1,25 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Scan, Upload, Loader2 } from 'lucide-react';
-import { api } from '@/api/client';
-import { showError } from '@/lib/toast';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Scan, Upload, Loader2 } from "lucide-react";
+import { api } from "@/api/client";
+import { showError } from "@/lib/toast";
 import {
   formDialogContent,
   formDialogHeader,
   formDialogBody,
   formDialogForm,
   formDialogFooter,
-} from '@/lib/formDialog';
+} from "@/lib/formDialog";
 
-export default function BusinessCardScanner({ open, onOpenChange, onContactExtracted }) {
+export default function BusinessCardScanner({
+  open,
+  onOpenChange,
+  onContactExtracted,
+}) {
   const [isScanning, setIsScanning] = useState(false);
   const [file, setFile] = useState(null);
 
@@ -32,7 +36,7 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
 
   const handleScan = async () => {
     if (!file) {
-      showError(null, 'Please select an image to scan.');
+      showError(null, "Please select an image to scan.");
       return;
     }
 
@@ -43,27 +47,27 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
       const result = await api.integrations.Core.ExtractDataFromUploadedFile({
         file_url,
         json_schema: {
-          type: 'object',
+          type: "object",
           properties: {
-            name: { type: 'string' },
-            email: { type: 'string' },
-            phone: { type: 'string' },
-            company: { type: 'string' },
-            position: { type: 'string' },
+            name: { type: "string" },
+            email: { type: "string" },
+            phone: { type: "string" },
+            company: { type: "string" },
+            position: { type: "string" },
           },
         },
       });
 
-      if (result.status === 'success' && result.output) {
+      if (result.status === "success" && result.output) {
         onContactExtracted(result.output);
         onOpenChange(false);
         setFile(null);
       } else {
-        showError(null, 'Card not readable. Enter details manually.');
+        showError(null, "Card not readable. Enter details manually.");
       }
     } catch (error) {
-      console.error('Error scanning business card:', error);
-      showError(null, 'Scan failed.');
+      console.error("Error scanning business card:", error);
+      showError(null, "Scan failed.");
     } finally {
       setIsScanning(false);
     }
@@ -71,7 +75,7 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={formDialogContent('sm')}>
+      <DialogContent className={formDialogContent("sm")}>
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Scan Business Card</DialogTitle>
         </DialogHeader>
@@ -89,13 +93,19 @@ export default function BusinessCardScanner({ open, onOpenChange, onContactExtra
                 className="mx-auto max-w-full sm:max-w-xs"
               />
               {file && (
-                <p className="mt-2 truncate text-sm text-green-600">Selected: {file.name}</p>
+                <p className="mt-2 truncate text-sm text-green-600">
+                  Selected: {file.name}
+                </p>
               )}
             </div>
           </div>
 
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button onClick={handleScan} disabled={!file || isScanning}>

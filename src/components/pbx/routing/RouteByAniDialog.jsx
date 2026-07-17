@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Plus } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -11,11 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import PbxDeleteDialog from '@/components/pbx/shared/PbxDeleteDialog';
-import { mapRouteByAniToForm } from '@/components/pbx/shared/pbxFormMappers';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import PbxDeleteDialog from "@/components/pbx/shared/PbxDeleteDialog";
+import { mapRouteByAniToForm } from "@/components/pbx/shared/pbxFormMappers";
+import { toast } from "sonner";
 
 export default function RouteByAniDialog({
   domain,
@@ -31,7 +31,9 @@ export default function RouteByAniDialog({
   const setOpen = controlledOnOpenChange ?? setInternalOpen;
   const isEdit = Boolean(initialData?.ani);
 
-  const [form, setForm] = useState(() => mapRouteByAniToForm(initialData, domain));
+  const [form, setForm] = useState(() =>
+    mapRouteByAniToForm(initialData, domain),
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -39,29 +41,35 @@ export default function RouteByAniDialog({
   }, [open, initialData, domain]);
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ['pbx-route-by-ani'] });
+    queryClient.invalidateQueries({ queryKey: ["pbx-route-by-ani"] });
     onSuccess?.();
   };
 
   const provisionMutation = useMutation({
     mutationFn: () => pbxApi.provisionRouteByAni(form),
     onSuccess: () => {
-      toast.success(isEdit ? 'Route-by-ANI updated' : 'Route-by-ANI provisioned');
+      toast.success(
+        isEdit ? "Route-by-ANI updated" : "Route-by-ANI provisioned",
+      );
       setOpen(false);
       invalidate();
     },
-    onError: (err) => toast.error(err.message || 'Failed to save'),
+    onError: (err) => toast.error(err.message || "Failed to save"),
   });
 
   const deleteMutation = useMutation({
     mutationFn: () =>
-      pbxApi.deleteRouteByAni({ domain: form.domain, ani: form.ani, dnis: form.dnis }),
+      pbxApi.deleteRouteByAni({
+        domain: form.domain,
+        ani: form.ani,
+        dnis: form.dnis,
+      }),
     onSuccess: () => {
-      toast.success('Route-by-ANI removed');
+      toast.success("Route-by-ANI removed");
       setOpen(false);
       invalidate();
     },
-    onError: (err) => toast.error(err.message || 'Failed to delete'),
+    onError: (err) => toast.error(err.message || "Failed to delete"),
   });
 
   const formBody = (
@@ -72,11 +80,13 @@ export default function RouteByAniDialog({
       }}
     >
       <DialogHeader>
-        <DialogTitle>{isEdit ? 'Edit route by ANI' : 'Add route by ANI'}</DialogTitle>
+        <DialogTitle>
+          {isEdit ? "Edit route by ANI" : "Add route by ANI"}
+        </DialogTitle>
         <DialogDescription>
           {isEdit
-            ? 'Current ANI routing rule. Update destination or application as needed.'
-            : 'Provision a new ANI-based routing rule.'}
+            ? "Current ANI routing rule. Update destination or application as needed."
+            : "Provision a new ANI-based routing rule."}
         </DialogDescription>
       </DialogHeader>
       <div className="grid sm:grid-cols-2 gap-3 py-4">
@@ -116,7 +126,7 @@ export default function RouteByAniDialog({
           <PbxDeleteDialog
             triggerLabel="Delete rule"
             title="Delete route-by-ANI?"
-            description={`Remove the rule for ANI ${form.ani || '—'} on ${form.domain || 'this domain'}.`}
+            description={`Remove the rule for ANI ${form.ani || "—"} on ${form.domain || "this domain"}.`}
             confirmLabel="Delete"
             loading={deleteMutation.isPending}
             onConfirm={() => deleteMutation.mutateAsync()}
@@ -125,7 +135,11 @@ export default function RouteByAniDialog({
           <span />
         )}
         <Button type="submit" disabled={provisionMutation.isPending}>
-          {provisionMutation.isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Save rule'}
+          {provisionMutation.isPending
+            ? "Saving…"
+            : isEdit
+              ? "Save changes"
+              : "Save rule"}
         </Button>
       </DialogFooter>
     </form>

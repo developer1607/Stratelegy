@@ -1,23 +1,27 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import PasswordRequirements from '@/components/PasswordRequirements';
-import { useAuth } from '@/lib/AuthContext';
-import { usePermissions } from '@/hooks/usePermissions';
-import { hasCrmModuleAccess, hasSupportModuleAccess, hasPbxModuleAccess } from '@/lib/permissions';
-import { TICKET_DEPARTMENTS, TICKET_CATEGORIES } from '@/lib/ticketConstants';
-import { parseRoutingList, toggleRoutingItem } from '@/lib/userRouting';
-import { parsePbxDomains, domainsMatch } from '@shared/pbxDomainAccess.js';
-import { usePortalUserAdmin } from '@/hooks/usePortalUserAdmin';
+} from "@/components/ui/select";
+import PasswordRequirements from "@/components/PasswordRequirements";
+import { useAuth } from "@/lib/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
+import {
+  hasCrmModuleAccess,
+  hasSupportModuleAccess,
+  hasPbxModuleAccess,
+} from "@/lib/permissions";
+import { TICKET_DEPARTMENTS, TICKET_CATEGORIES } from "@/lib/ticketConstants";
+import { parseRoutingList, toggleRoutingItem } from "@/lib/userRouting";
+import { parsePbxDomains, domainsMatch } from "@shared/pbxDomainAccess.js";
+import { usePortalUserAdmin } from "@/hooks/usePortalUserAdmin";
 import {
   Shield,
   KeyRound,
@@ -26,7 +30,7 @@ import {
   HeadphonesIcon,
   Phone,
   Trash2,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function UserEditPanel({ user, onDeleted }) {
   const { user: currentUser } = useAuth();
@@ -59,13 +63,18 @@ export default function UserEditPanel({ user, onDeleted }) {
 
   const raw = getRawRecord(user.id);
   const perms = { ...getEffectivePermissions(user.id), isAdmin: false };
-  const isUserAdmin = user.role === 'admin';
+  const isUserAdmin = user.role === "admin";
   const assignedRole = raw?.role_id ? admin.rolesById[raw.role_id] : null;
-  const roleSelectValue = raw?.role_id || 'none';
+  const roleSelectValue = raw?.role_id || "none";
 
   const handleDelete = () => {
     const label = user.full_name || user.email;
-    if (!window.confirm(`Delete user "${label}"? They will lose access immediately.`)) return;
+    if (
+      !window.confirm(
+        `Delete user "${label}"? They will lose access immediately.`,
+      )
+    )
+      return;
     deleteUserMutation.mutate(user.id, { onSuccess: () => onDeleted?.() });
   };
 
@@ -75,7 +84,9 @@ export default function UserEditPanel({ user, onDeleted }) {
         <div className="p-4 rounded-lg border bg-white space-y-3">
           <div className="flex items-center gap-2">
             <KeyRound className="w-4 h-4 text-primary" />
-            <span className="font-medium text-sm text-gray-900">Reset password</span>
+            <span className="font-medium text-sm text-gray-900">
+              Reset password
+            </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -84,7 +95,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                 type="password"
                 autoComplete="new-password"
                 value={getResetPasswordForm(user.id).password}
-                onChange={(e) => setResetPasswordField(user.id, 'password', e.target.value)}
+                onChange={(e) =>
+                  setResetPasswordField(user.id, "password", e.target.value)
+                }
                 placeholder="Strong password required"
                 className="mt-1"
               />
@@ -95,11 +108,17 @@ export default function UserEditPanel({ user, onDeleted }) {
                 type="password"
                 autoComplete="new-password"
                 value={getResetPasswordForm(user.id).confirmPassword}
-                onChange={(e) => setResetPasswordField(user.id, 'confirmPassword', e.target.value)}
+                onChange={(e) =>
+                  setResetPasswordField(
+                    user.id,
+                    "confirmPassword",
+                    e.target.value,
+                  )
+                }
                 placeholder="Re-enter password"
                 className="mt-1"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handleResetPassword(user);
                   }
@@ -107,18 +126,27 @@ export default function UserEditPanel({ user, onDeleted }) {
               />
             </div>
           </div>
-          <PasswordRequirements password={getResetPasswordForm(user.id).password} />
+          <PasswordRequirements
+            password={getResetPasswordForm(user.id).password}
+          />
           {getResetPasswordForm(user.id).error && (
-            <p className="text-sm text-red-600">{getResetPasswordForm(user.id).error}</p>
+            <p className="text-sm text-red-600">
+              {getResetPasswordForm(user.id).error}
+            </p>
           )}
           <Button
             type="button"
             variant="outline"
             size="sm"
-            disabled={resetPasswordMutation.isPending || !getResetPasswordForm(user.id).password}
+            disabled={
+              resetPasswordMutation.isPending ||
+              !getResetPasswordForm(user.id).password
+            }
             onClick={() => handleResetPassword(user)}
           >
-            {resetPasswordMutation.isPending ? 'Updating...' : 'Update password'}
+            {resetPasswordMutation.isPending
+              ? "Updating..."
+              : "Update password"}
           </Button>
         </div>
       )}
@@ -130,13 +158,16 @@ export default function UserEditPanel({ user, onDeleted }) {
             <span className="font-medium text-sm text-gray-900">Email MFA</span>
           </div>
           <p className="text-xs text-gray-600">
-            Sign-in codes are sent to the user&apos;s account email only — not SMS or phone. Users
-            can also enable MFA on their profile unless you require it.
+            Sign-in codes are sent to the user&apos;s account email only — not
+            SMS or phone. Users can also enable MFA on their profile unless you
+            require it.
           </p>
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label className="text-sm">Enabled</Label>
-              <p className="text-xs text-gray-500">User must enter an email code when signing in</p>
+              <p className="text-xs text-gray-500">
+                User must enter an email code when signing in
+              </p>
             </div>
             <Switch
               checked={Boolean(user.mfa_email_enabled)}
@@ -153,13 +184,19 @@ export default function UserEditPanel({ user, onDeleted }) {
           <div className="flex items-center justify-between gap-4">
             <div>
               <Label className="text-sm">Required (admin lock)</Label>
-              <p className="text-xs text-gray-500">User cannot disable MFA on their profile</p>
+              <p className="text-xs text-gray-500">
+                User cannot disable MFA on their profile
+              </p>
             </div>
             <Switch
               checked={Boolean(user.mfa_email_forced)}
               disabled={updateMfaMutation.isPending || !user.mfa_email_enabled}
               onCheckedChange={(forced) =>
-                updateMfaMutation.mutate({ userId: user.id, enabled: true, forced })
+                updateMfaMutation.mutate({
+                  userId: user.id,
+                  enabled: true,
+                  forced,
+                })
               }
             />
           </div>
@@ -168,18 +205,20 @@ export default function UserEditPanel({ user, onDeleted }) {
 
       {isUserAdmin ? (
         <p className="text-sm text-gray-600 p-4 rounded-lg border bg-white">
-          Administrator accounts have full access to all modules. Portal roles and permission toggles
-          do not apply.
+          Administrator accounts have full access to all modules. Portal roles
+          and permission toggles do not apply.
         </p>
       ) : (
         <>
           <div className="flex flex-col sm:flex-row sm:items-end gap-3 p-4 rounded-lg border bg-white">
             <div className="flex-1">
-              <Label className="text-xs uppercase tracking-wide text-gray-500">Portal role</Label>
+              <Label className="text-xs uppercase tracking-wide text-gray-500">
+                Portal role
+              </Label>
               <Select
                 value={roleSelectValue}
                 onValueChange={(roleId) => {
-                  if (roleId !== 'none') handleRoleChange(user, roleId);
+                  if (roleId !== "none") handleRoleChange(user, roleId);
                 }}
               >
                 <SelectTrigger className="mt-1">
@@ -212,10 +251,12 @@ export default function UserEditPanel({ user, onDeleted }) {
           {hasSupportModuleAccess(perms) && (
             <div className="p-4 rounded-lg border bg-white space-y-3">
               <div>
-                <p className="text-sm font-medium text-gray-900">Ticket routing</p>
+                <p className="text-sm font-medium text-gray-900">
+                  Ticket routing
+                </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Optional filters for auto-assign and assignee lists. Leave empty to handle any
-                  ticket.
+                  Optional filters for auto-assign and assignee lists. Leave
+                  empty to handle any ticket.
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -223,25 +264,27 @@ export default function UserEditPanel({ user, onDeleted }) {
                   <Label className="text-xs text-gray-500">Departments</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {TICKET_DEPARTMENTS.map((dept) => {
-                      const selected = parseRoutingList(user.departments).includes(dept.value);
+                      const selected = parseRoutingList(
+                        user.departments,
+                      ).includes(dept.value);
                       return (
                         <button
                           key={dept.value}
                           type="button"
                           className={`px-2 py-1 rounded text-xs border ${
                             selected
-                              ? 'bg-green-100 border-green-300 text-green-800'
-                              : 'bg-gray-50 border-gray-200 text-gray-600'
+                              ? "bg-green-100 border-green-300 text-green-800"
+                              : "bg-gray-50 border-gray-200 text-gray-600"
                           }`}
                           onClick={() => {
                             const next = toggleRoutingItem(
                               parseRoutingList(user.departments),
-                              dept.value
+                              dept.value,
                             );
                             supportRoutingMutation.mutate({
                               userId: user.id,
-                              departments: next.join(','),
-                              categories: user.categories || '',
+                              departments: next.join(","),
+                              categories: user.categories || "",
                             });
                           }}
                         >
@@ -255,25 +298,27 @@ export default function UserEditPanel({ user, onDeleted }) {
                   <Label className="text-xs text-gray-500">Categories</Label>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {TICKET_CATEGORIES.map((cat) => {
-                      const selected = parseRoutingList(user.categories).includes(cat.value);
+                      const selected = parseRoutingList(
+                        user.categories,
+                      ).includes(cat.value);
                       return (
                         <button
                           key={cat.value}
                           type="button"
                           className={`px-2 py-1 rounded text-xs border ${
                             selected
-                              ? 'bg-blue-100 border-blue-300 text-blue-800'
-                              : 'bg-gray-50 border-gray-200 text-gray-600'
+                              ? "bg-blue-100 border-blue-300 text-blue-800"
+                              : "bg-gray-50 border-gray-200 text-gray-600"
                           }`}
                           onClick={() => {
                             const next = toggleRoutingItem(
                               parseRoutingList(user.categories),
-                              cat.value
+                              cat.value,
                             );
                             supportRoutingMutation.mutate({
                               userId: user.id,
-                              departments: user.departments || '',
-                              categories: next.join(','),
+                              departments: user.departments || "",
+                              categories: next.join(","),
                             });
                           }}
                         >
@@ -287,26 +332,28 @@ export default function UserEditPanel({ user, onDeleted }) {
             </div>
           )}
 
-          {(assignedRole?.slug === 'pbx_domain' || perms.can_access_pbx_domain_scoped) && (
+          {(assignedRole?.slug === "pbx_domain" ||
+            perms.can_access_pbx_domain_scoped) && (
             <div className="p-4 rounded-lg border bg-white space-y-3">
               <div>
                 <p className="text-sm font-medium text-gray-900">PBX domains</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Assign one or more SkySwitch domains this user can access. They will only see data
-                  for selected domains across PBX screens.
+                  Assign one or more SkySwitch domains this user can access.
+                  They will only see data for selected domains across PBX
+                  screens.
                 </p>
               </div>
               {pbxDomainCatalog.length === 0 ? (
                 <p className="text-sm text-gray-500">
-                  No domains loaded. Check SkySwitch connection or assign domains after PBX is
-                  configured.
+                  No domains loaded. Check SkySwitch connection or assign
+                  domains after PBX is configured.
                 </p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {pbxDomainCatalog.map((entry) => {
                     const name = entry.domain || entry;
-                    const selected = parsePbxDomains(raw?.pbx_domains).some((d) =>
-                      domainsMatch(d, name)
+                    const selected = parsePbxDomains(raw?.pbx_domains).some(
+                      (d) => domainsMatch(d, name),
                     );
                     return (
                       <button
@@ -314,13 +361,16 @@ export default function UserEditPanel({ user, onDeleted }) {
                         type="button"
                         className={`px-3 py-1.5 rounded-full text-xs border transition-colors ${
                           selected
-                            ? 'bg-purple-100 border-purple-300 text-purple-900'
-                            : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+                            ? "bg-purple-100 border-purple-300 text-purple-900"
+                            : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
                         }`}
                         disabled={pbxDomainsMutation.isPending}
                         onClick={() => {
                           const next = togglePbxDomain(raw?.pbx_domains, name);
-                          pbxDomainsMutation.mutate({ userId: user.id, domains: next });
+                          pbxDomainsMutation.mutate({
+                            userId: user.id,
+                            domains: next,
+                          });
                         }}
                       >
                         {name}
@@ -331,8 +381,8 @@ export default function UserEditPanel({ user, onDeleted }) {
               )}
               {parsePbxDomains(raw?.pbx_domains).length === 0 && (
                 <p className="text-xs text-amber-700">
-                  Select at least one domain — this user cannot access PBX data until a domain is
-                  assigned.
+                  Select at least one domain — this user cannot access PBX data
+                  until a domain is assigned.
                 </p>
               )}
             </div>
@@ -340,19 +390,23 @@ export default function UserEditPanel({ user, onDeleted }) {
 
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
             {permissionGroups.map((group) => {
-              const hasFullModuleAccess = group.masterKey ? Boolean(perms[group.masterKey]) : false;
+              const hasFullModuleAccess = group.masterKey
+                ? Boolean(perms[group.masterKey])
+                : false;
               return (
                 <div key={group.id} className="rounded-lg border p-4 bg-white">
                   <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      {group.icon === 'crm' ? (
+                      {group.icon === "crm" ? (
                         <Briefcase className="w-4 h-4 text-blue-600" />
-                      ) : group.icon === 'pbx' ? (
+                      ) : group.icon === "pbx" ? (
                         <Phone className="w-4 h-4 text-purple-600" />
                       ) : (
                         <HeadphonesIcon className="w-4 h-4 text-green-600" />
                       )}
-                      <span className="font-semibold text-sm text-gray-800">{group.label}</span>
+                      <span className="font-semibold text-sm text-gray-800">
+                        {group.label}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       {group.screenKeys?.length ? (
@@ -363,7 +417,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                             size="sm"
                             className="h-7 text-xs"
                             disabled={updatePermissionMutation.isPending}
-                            onClick={() => handleBatchToggle(user, group.screenKeys, true)}
+                            onClick={() =>
+                              handleBatchToggle(user, group.screenKeys, true)
+                            }
                           >
                             All screens
                           </Button>
@@ -373,7 +429,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                             size="sm"
                             className="h-7 text-xs"
                             disabled={updatePermissionMutation.isPending}
-                            onClick={() => handleBatchToggle(user, group.screenKeys, false)}
+                            onClick={() =>
+                              handleBatchToggle(user, group.screenKeys, false)
+                            }
                           >
                             No screens
                           </Button>
@@ -387,7 +445,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                             size="sm"
                             className="h-7 text-xs"
                             disabled={updatePermissionMutation.isPending}
-                            onClick={() => handleBatchToggle(user, group.actionKeys, true)}
+                            onClick={() =>
+                              handleBatchToggle(user, group.actionKeys, true)
+                            }
                           >
                             All actions
                           </Button>
@@ -397,7 +457,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                             size="sm"
                             className="h-7 text-xs"
                             disabled={updatePermissionMutation.isPending}
-                            onClick={() => handleBatchToggle(user, group.actionKeys, false)}
+                            onClick={() =>
+                              handleBatchToggle(user, group.actionKeys, false)
+                            }
                           >
                             No actions
                           </Button>
@@ -407,7 +469,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                         <Switch
                           checked={Boolean(perms[group.masterKey])}
                           disabled={updatePermissionMutation.isPending}
-                          onCheckedChange={(val) => handleMasterToggle(user, group, val)}
+                          onCheckedChange={(val) =>
+                            handleMasterToggle(user, group, val)
+                          }
                         />
                       ) : null}
                     </div>
@@ -415,8 +479,8 @@ export default function UserEditPanel({ user, onDeleted }) {
                   {group.masterKey ? (
                     <p className="text-[11px] text-gray-500 mb-3 leading-snug">
                       {hasFullModuleAccess
-                        ? 'Full module access is on — all screens and actions below are enabled.'
-                        : 'Turn on full access for everything, or pick individual screens and actions below.'}
+                        ? "Full module access is on — all screens and actions below are enabled."
+                        : "Turn on full access for everything, or pick individual screens and actions below."}
                     </p>
                   ) : null}
                   <div className="space-y-4 pl-1 max-h-[420px] overflow-y-auto pr-1">
@@ -437,7 +501,9 @@ export default function UserEditPanel({ user, onDeleted }) {
                               <Switch
                                 checked={Boolean(perms[perm.key])}
                                 disabled={updatePermissionMutation.isPending}
-                                onCheckedChange={(val) => handleToggle(user, perm.key, val)}
+                                onCheckedChange={(val) =>
+                                  handleToggle(user, perm.key, val)
+                                }
                               />
                             </div>
                           ))}
@@ -456,11 +522,13 @@ export default function UserEditPanel({ user, onDeleted }) {
         <div className="p-4 rounded-lg border border-red-200 bg-red-50/50 space-y-3">
           <div className="flex items-center gap-2">
             <Trash2 className="w-4 h-4 text-red-600" />
-            <span className="font-medium text-sm text-gray-900">Delete user</span>
+            <span className="font-medium text-sm text-gray-900">
+              Delete user
+            </span>
           </div>
           <p className="text-sm text-gray-600">
-            Permanently remove {user.full_name || user.email} from the portal. This cannot be
-            undone.
+            Permanently remove {user.full_name || user.email} from the portal.
+            This cannot be undone.
           </p>
           <Button
             type="button"
@@ -469,7 +537,7 @@ export default function UserEditPanel({ user, onDeleted }) {
             disabled={deleteUserMutation.isPending}
             onClick={handleDelete}
           >
-            {deleteUserMutation.isPending ? 'Deleting...' : 'Delete user'}
+            {deleteUserMutation.isPending ? "Deleting..." : "Delete user"}
           </Button>
         </div>
       )}

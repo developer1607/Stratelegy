@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -8,18 +8,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 export default function PbxDeleteDialog({
-  triggerLabel = 'Delete',
+  triggerLabel = "Delete",
   title,
   description,
-  confirmLabel = 'Confirm',
+  confirmLabel = "Confirm",
   onConfirm,
   loading = false,
-  triggerVariant = 'destructive',
-  triggerSize = 'sm',
+  triggerVariant = "destructive",
+  triggerSize = "sm",
 }) {
   const [open, setOpen] = React.useState(false);
 
@@ -47,8 +47,12 @@ export default function PbxDeleteDialog({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-          <Button onClick={handleConfirm} disabled={loading} variant="destructive">
-            {loading ? 'Working…' : confirmLabel}
+          <Button
+            onClick={handleConfirm}
+            disabled={loading}
+            variant="destructive"
+          >
+            {loading ? "Working…" : confirmLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

@@ -1,20 +1,24 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { pbxApi } from '@/api/pbx';
-import PbxShell, { PbxError, PbxLoading } from '@/components/pbx/PbxShell';
-import PbxCompletedExports from '@/components/pbx/reports/PbxCompletedExports';
-import PbxReportExportActions from '@/components/pbx/reports/PbxReportExportActions';
-import PbxReportLiveData from '@/components/pbx/reports/PbxReportLiveData';
-import { flattenReportTypes } from '@/lib/reportTypes';
-import { resolveReportTypesForPage, exportMatchForPage } from '@shared/pbxReportPages.js';
-import { usePermissions } from '@/hooks/usePermissions';
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { pbxApi } from "@/api/pbx";
+import PbxShell, { PbxError, PbxLoading } from "@/components/pbx/PbxShell";
+import PbxCompletedExports from "@/components/pbx/reports/PbxCompletedExports";
+import PbxReportExportActions from "@/components/pbx/reports/PbxReportExportActions";
+import PbxReportLiveData from "@/components/pbx/reports/PbxReportLiveData";
+import { flattenReportTypes } from "@/lib/reportTypes";
+import {
+  resolveReportTypesForPage,
+  exportMatchForPage,
+} from "@shared/pbxReportPages.js";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function OperationalReportPage({ config }) {
-  const { isPbxDomainRestricted, isLoading: permissionsLoading } = usePermissions();
+  const { isPbxDomainRestricted, isLoading: permissionsLoading } =
+    usePermissions();
   const canUseAccountReports = !isPbxDomainRestricted;
 
   const reportsQuery = useQuery({
-    queryKey: ['pbx-report-types'],
+    queryKey: ["pbx-report-types"],
     queryFn: () => pbxApi.reportTypes(),
     enabled: canUseAccountReports && !permissionsLoading,
   });
@@ -28,7 +32,11 @@ export default function OperationalReportPage({ config }) {
 
   if (permissionsLoading) {
     return (
-      <PbxShell title={config.title} description={config.description} requiresDomain={requiresDomain}>
+      <PbxShell
+        title={config.title}
+        description={config.description}
+        requiresDomain={requiresDomain}
+      >
         <PbxLoading />
       </PbxShell>
     );
@@ -36,10 +44,14 @@ export default function OperationalReportPage({ config }) {
 
   if (!canUseAccountReports) {
     return (
-      <PbxShell title={config.title} description={config.description} requiresDomain={requiresDomain}>
+      <PbxShell
+        title={config.title}
+        description={config.description}
+        requiresDomain={requiresDomain}
+      >
         <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-          Account-wide report exports are not available for domain-scoped users. Live data below uses
-          your assigned domain when selected above.
+          Account-wide report exports are not available for domain-scoped users.
+          Live data below uses your assigned domain when selected above.
         </p>
         <div className="mt-6">
           <PbxReportLiveData config={config} />
@@ -63,7 +75,11 @@ export default function OperationalReportPage({ config }) {
 
   if (reportsQuery.error) {
     return (
-      <PbxShell title={config.title} description={config.description} requiresDomain={requiresDomain}>
+      <PbxShell
+        title={config.title}
+        description={config.description}
+        requiresDomain={requiresDomain}
+      >
         <PbxError error={reportsQuery.error} />
       </PbxShell>
     );

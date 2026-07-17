@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetContent,
@@ -12,41 +12,42 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import PbxDeleteDialog from '@/components/pbx/shared/PbxDeleteDialog';
-import { toast } from 'sonner';
+} from "@/components/ui/sheet";
+import PbxDeleteDialog from "@/components/pbx/shared/PbxDeleteDialog";
+import { toast } from "sonner";
 
 export default function CnamOutboundSheet({ phoneNumber, open, onOpenChange }) {
-  const [callingName, setCallingName] = useState('');
+  const [callingName, setCallingName] = useState("");
 
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['pbx-cnam-outbound', phoneNumber],
+    queryKey: ["pbx-cnam-outbound", phoneNumber],
     queryFn: () => pbxApi.getOutboundCnam(phoneNumber),
     enabled: open && !!phoneNumber,
   });
 
   useEffect(() => {
     if (!open) return;
-    setCallingName(data?.neustar || data?.cidname || '');
+    setCallingName(data?.neustar || data?.cidname || "");
   }, [open, data]);
 
   const saveMutation = useMutation({
-    mutationFn: () => pbxApi.setOutboundCnam(phoneNumber, { calling_name: callingName.trim() }),
+    mutationFn: () =>
+      pbxApi.setOutboundCnam(phoneNumber, { calling_name: callingName.trim() }),
     onSuccess: () => {
-      toast.success('CNAM saved');
+      toast.success("CNAM saved");
       refetch();
     },
-    onError: (err) => toast.error(err.message || 'CNAM save failed'),
+    onError: (err) => toast.error(err.message || "CNAM save failed"),
   });
 
   const removeMutation = useMutation({
     mutationFn: () => pbxApi.removeOutboundCnam(phoneNumber),
     onSuccess: () => {
-      toast.success('CNAM removed');
-      setCallingName('');
+      toast.success("CNAM removed");
+      setCallingName("");
       refetch();
     },
-    onError: (err) => toast.error(err.message || 'CNAM remove failed'),
+    onError: (err) => toast.error(err.message || "CNAM remove failed"),
   });
 
   return (
@@ -54,7 +55,9 @@ export default function CnamOutboundSheet({ phoneNumber, open, onOpenChange }) {
       <SheetContent className="sm:max-w-md overflow-y-auto">
         <SheetHeader>
           <SheetTitle>Outbound CNAM</SheetTitle>
-          <SheetDescription>Caller ID name delivery for {phoneNumber}</SheetDescription>
+          <SheetDescription>
+            Caller ID name delivery for {phoneNumber}
+          </SheetDescription>
         </SheetHeader>
 
         {isLoading ? (
@@ -112,7 +115,7 @@ export default function CnamOutboundSheet({ phoneNumber, open, onOpenChange }) {
             onClick={() => saveMutation.mutate()}
             disabled={saveMutation.isPending || !callingName.trim()}
           >
-            {saveMutation.isPending ? 'Saving…' : 'Save CNAM'}
+            {saveMutation.isPending ? "Saving…" : "Save CNAM"}
           </Button>
         </SheetFooter>
       </SheetContent>

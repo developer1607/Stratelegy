@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trash2, Edit2, Save, X } from "lucide-react";
 
 export default function ConfigListManager({
   title,
@@ -13,8 +13,8 @@ export default function ConfigListManager({
   isLoading: _isLoading = false,
 }) {
   const [editingId, setEditingId] = useState(null);
-  const [editValue, setEditValue] = useState('');
-  const [newValue, setNewValue] = useState('');
+  const [editValue, setEditValue] = useState("");
+  const [newValue, setNewValue] = useState("");
 
   const handleStartEdit = (item) => {
     setEditingId(item.id);
@@ -25,14 +25,14 @@ export default function ConfigListManager({
     if (editValue.trim()) {
       await onUpdate(editingId, { name: editValue.trim() });
       setEditingId(null);
-      setEditValue('');
+      setEditValue("");
     }
   };
 
   const handleAdd = async () => {
     if (newValue.trim()) {
       await onAdd({ name: newValue.trim(), order: items.length });
-      setNewValue('');
+      setNewValue("");
     }
   };
 
@@ -54,19 +54,27 @@ export default function ConfigListManager({
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}
                     className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && handleSaveEdit()}
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveEdit()}
                   />
                   <Button size="icon" variant="ghost" onClick={handleSaveEdit}>
                     <Save className="w-4 h-4" />
                   </Button>
-                  <Button size="icon" variant="ghost" onClick={() => setEditingId(null)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => setEditingId(null)}
+                  >
                     <X className="w-4 h-4" />
                   </Button>
                 </>
               ) : (
                 <>
                   <span className="flex-1">{item.name}</span>
-                  <Button size="icon" variant="ghost" onClick={() => handleStartEdit(item)}>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleStartEdit(item)}
+                  >
                     <Edit2 className="w-4 h-4" />
                   </Button>
                   <Button
@@ -82,7 +90,9 @@ export default function ConfigListManager({
             </div>
           ))}
           {items.length === 0 && (
-            <p className="text-sm text-gray-500 text-center py-4">No items yet</p>
+            <p className="text-sm text-gray-500 text-center py-4">
+              No items yet
+            </p>
           )}
         </div>
         <div className="flex gap-2">
@@ -90,7 +100,7 @@ export default function ConfigListManager({
             placeholder={`Add new ${title.toLowerCase().slice(0, -1)}`}
             value={newValue}
             onChange={(e) => setNewValue(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            onKeyDown={(e) => e.key === "Enter" && handleAdd()}
           />
           <Button onClick={handleAdd} disabled={!newValue.trim()}>
             <Plus className="w-4 h-4" />

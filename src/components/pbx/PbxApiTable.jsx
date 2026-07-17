@@ -1,21 +1,25 @@
-import React, { useMemo, useState } from 'react';
-import { PbxDataTable } from '@/components/pbx/PbxShell';
-import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
-import { matchSearch } from '@/lib/listFilters';
-import { columnsFromRecords, formatPbxCell, preparePbxRows } from '@/lib/pbxTable';
+import React, { useMemo, useState } from "react";
+import { PbxDataTable } from "@/components/pbx/PbxShell";
+import PbxListToolbar from "@/components/pbx/shared/PbxListToolbar";
+import { matchSearch } from "@/lib/listFilters";
+import {
+  columnsFromRecords,
+  formatPbxCell,
+  preparePbxRows,
+} from "@/lib/pbxTable";
 
 export default function PbxApiTable({
   rows,
   columns: fixedColumns,
-  emptyMessage = 'No records returned.',
+  emptyMessage = "No records returned.",
   maxCols = 16,
   exclude = [],
   searchable = true,
-  searchPlaceholder = 'Filter…',
+  searchPlaceholder = "Filter…",
   toolbar,
   showCount = true,
 }) {
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
 
   const flatRows = useMemo(() => {
     if (!rows?.length) return [];
@@ -32,7 +36,9 @@ export default function PbxApiTable({
   const columns = useMemo(() => {
     if (fixedColumns) {
       return fixedColumns.map((col) =>
-        col.render ? col : { ...col, render: (row) => formatPbxCell(row[col.key]) }
+        col.render
+          ? col
+          : { ...col, render: (row) => formatPbxCell(row[col.key]) },
       );
     }
     return columnsFromRecords(flatRows, { maxCols, exclude });
@@ -58,7 +64,11 @@ export default function PbxApiTable({
             : `${filteredRows.length} of ${flatRows.length} record(s)`}
         </p>
       )}
-      <PbxDataTable columns={columns} rows={filteredRows} emptyMessage={emptyMessage} />
+      <PbxDataTable
+        columns={columns}
+        rows={filteredRows}
+        emptyMessage={emptyMessage}
+      />
     </div>
   );
 }

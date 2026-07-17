@@ -139,9 +139,15 @@ export const pbxApi = {
   cdrs: (params) => pbxGet("/cdrs", params),
   exportCdrs: (params) => pbxDownload("/cdrs/export", params),
   phones: (domain) => pbxGet("/phones", { domain }),
-  createPhone: (domain, body) => pbxRequest("POST", "/phones", body, { domain }),
+  createPhone: (domain, body) =>
+    pbxRequest("POST", "/phones", body, { domain }),
   deletePhone: (macAddress, domain) =>
-    pbxRequest("DELETE", `/phones/${encodeURIComponent(macAddress)}`, undefined, { domain }),
+    pbxRequest(
+      "DELETE",
+      `/phones/${encodeURIComponent(macAddress)}`,
+      undefined,
+      { domain },
+    ),
   phoneDetail: (macAddress, domain) =>
     pbxGet(`/phones/${encodeURIComponent(macAddress)}`, { domain }),
   resyncPhone: (macAddress, domain) =>
@@ -153,6 +159,20 @@ export const pbxApi = {
     ),
   endpointControlOverview: (domain) =>
     pbxGet("/endpoint-control/overview", { domain }),
+  resyncEndpointDevice: (domain, device) =>
+    pbxRequest(
+      "POST",
+      "/endpoint-control/devices/resync",
+      { device },
+      { domain },
+    ),
+  deleteEndpointDevice: (domain, device, owner) =>
+    pbxRequest(
+      "DELETE",
+      "/endpoint-control/devices",
+      { device, owner },
+      { domain },
+    ),
   createEndpoint: (domain, body) =>
     pbxRequest("POST", "/endpoint-control/subscribers", body, { domain }),
   deleteEndpoint: (domain, user, opts = {}) =>
@@ -238,5 +258,7 @@ export const pbxApi = {
   vulnerabilityCheck: (domain, filters = {}) =>
     pbxGet("/troubleshooting/vulnerability", { domain, ...filters }),
   updateVulnerabilityCallLimit: (domain, body) =>
-    pbxRequest("PATCH", "/troubleshooting/vulnerability/call-limit", body, { domain }),
+    pbxRequest("PATCH", "/troubleshooting/vulnerability/call-limit", body, {
+      domain,
+    }),
 };

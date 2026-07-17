@@ -33,8 +33,7 @@ export function PbxDomainProvider({ children, currentPageName }) {
     isPbxPage && (canViewPbxDomains(permissions) || isDomainRestricted);
   const syncDomainToUrl =
     isPbxPage &&
-    (!PBX_PAGES_NO_DOMAIN_BAR.has(currentPageName) ||
-      isDomainRestricted);
+    (!PBX_PAGES_NO_DOMAIN_BAR.has(currentPageName) || isDomainRestricted);
 
   const urlDomain = searchParams.get("domain") || "";
   const [domain, setDomainState] = useState(

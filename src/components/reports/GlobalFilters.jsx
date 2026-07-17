@@ -1,15 +1,15 @@
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Download, FileText, RotateCcw, Calendar, User } from 'lucide-react';
-import PermissionGate from '@/components/PermissionGate';
+} from "@/components/ui/select";
+import { Download, FileText, RotateCcw, Calendar, User } from "lucide-react";
+import PermissionGate from "@/components/PermissionGate";
 
 export default function GlobalFilters({
   filters,
@@ -26,7 +26,7 @@ export default function GlobalFilters({
             <Calendar className="w-4 h-4 text-gray-500" />
             <Select
               value={filters.dateRange}
-              onValueChange={(value) => onFilterChange('dateRange', value)}
+              onValueChange={(value) => onFilterChange("dateRange", value)}
             >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Date: This Quarter" />
@@ -44,7 +44,10 @@ export default function GlobalFilters({
 
           <div className="flex items-center gap-2">
             <User className="w-4 h-4 text-gray-500" />
-            <Select value={filters.owner} onValueChange={(value) => onFilterChange('owner', value)}>
+            <Select
+              value={filters.owner}
+              onValueChange={(value) => onFilterChange("owner", value)}
+            >
               <SelectTrigger className="w-44">
                 <SelectValue placeholder="Owner: All" />
               </SelectTrigger>
@@ -59,7 +62,10 @@ export default function GlobalFilters({
             </Select>
           </div>
 
-          <Select value={filters.stage} onValueChange={(value) => onFilterChange('stage', value)}>
+          <Select
+            value={filters.stage}
+            onValueChange={(value) => onFilterChange("stage", value)}
+          >
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Stage: All" />
             </SelectTrigger>
@@ -74,7 +80,10 @@ export default function GlobalFilters({
             </SelectContent>
           </Select>
 
-          <Select value={filters.status} onValueChange={(value) => onFilterChange('status', value)}>
+          <Select
+            value={filters.status}
+            onValueChange={(value) => onFilterChange("status", value)}
+          >
             <SelectTrigger className="w-44">
               <SelectValue placeholder="Status: All" />
             </SelectTrigger>
@@ -86,7 +95,11 @@ export default function GlobalFilters({
             </SelectContent>
           </Select>
 
-          <Button variant="outline" size="sm" onClick={() => onFilterChange('reset')}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onFilterChange("reset")}
+          >
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
           </Button>

@@ -128,13 +128,11 @@ app.get("/api/health", async (_req, res) => {
       timestamp: new Date().toISOString(),
     });
   } catch {
-    res
-      .status(503)
-      .json({
-        status: "degraded",
-        database: "unavailable",
-        timestamp: new Date().toISOString(),
-      });
+    res.status(503).json({
+      status: "degraded",
+      database: "unavailable",
+      timestamp: new Date().toISOString(),
+    });
   }
 });
 

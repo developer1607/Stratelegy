@@ -1,9 +1,9 @@
-import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
-import { queryOne, execute } from '../db/query.js';
-import { sendTemplateEmail } from './email/mailer.js';
-import { isEmailOperational } from './email/mailer.js';
+import bcrypt from "bcryptjs";
+import crypto from "crypto";
+import { v4 as uuidv4 } from "uuid";
+import { queryOne, execute } from "../db/query.js";
+import { sendTemplateEmail } from "./email/mailer.js";
+import { isEmailOperational } from "./email/mailer.js";
 
 export const MFA_CODE_TTL_MS = 10 * 60 * 1000;
 export const MFA_MAX_VERIFY_ATTEMPTS = 5;
@@ -15,13 +15,17 @@ function generateCode() {
 }
 
 export function maskEmail(email) {
-  const normalized = String(email || '').trim().toLowerCase();
-  const at = normalized.indexOf('@');
-  if (at < 1) return '***';
+  const normalized = String(email || "")
+    .trim()
+    .toLowerCase();
+  const at = normalized.indexOf("@");
+  if (at < 1) return "***";
   const local = normalized.slice(0, at);
   const domain = normalized.slice(at + 1);
   const maskedLocal =
-    local.length <= 2 ? `${local[0] || '*'}***` : `${local[0]}***${local[local.length - 1]}`;
+    local.length <= 2
+      ? `${local[0] || "*"}***`
+      : `${local[0]}***${local[local.length - 1]}`;
   return `${maskedLocal}@${domain}`;
 }
 
@@ -32,7 +36,7 @@ export function userRequiresMfaEmail(row) {
 async function sendMfaCodeEmail(to, code) {
   return sendTemplateEmail({
     to,
-    templateId: 'mfa_email_code',
+    templateId: "mfa_email_code",
     data: { code },
   });
 }
@@ -42,26 +46,30 @@ async function sendMfaCodeEmail(to, code) {
  * @param {'login' | 'enable'} purpose
  * @param {{ resend?: boolean }} [options]
  */
-export async function createMfaEmailChallenge(userId, purpose = 'login', { resend = false } = {}) {
+export async function createMfaEmailChallenge(
+  userId,
+  purpose = "login",
+  { resend = false } = {},
+) {
   const user = await queryOne(
-    'SELECT id, email, is_active, mfa_email_enabled, mfa_email_forced FROM users WHERE id = ?',
-    [userId]
+    "SELECT id, email, is_active, mfa_email_enabled, mfa_email_forced FROM users WHERE id = ?",
+    [userId],
   );
   if (!user || !user.is_active) {
-    const err = new Error('User not found');
+    const err = new Error("User not found");
     err.status = 404;
     throw err;
   }
 
-  if (purpose === 'login' && !userRequiresMfaEmail(user)) {
-    const err = new Error('Email MFA is not enabled for this account');
+  if (purpose === "login" && !userRequiresMfaEmail(user)) {
+    const err = new Error("Email MFA is not enabled for this account");
     err.status = 400;
     throw err;
   }
 
   if (!(await isEmailOperational())) {
     const err = new Error(
-      'Email is not configured on this server. Contact an administrator to enable email MFA.'
+      "Email is not configured on this server. Contact an administrator to enable email MFA.",
     );
     err.status = 503;
     throw err;
@@ -73,14 +81,14 @@ export async function createMfaEmailChallenge(userId, purpose = 'login', { resen
      WHERE user_id = ? AND purpose = ? AND expires_at > NOW()
      ORDER BY created_at DESC
      LIMIT 1`,
-    [userId, purpose]
+    [userId, purpose],
   );
 
   if (existing) {
     const ageMs = Date.now() - new Date(existing.created_at).getTime();
     if (ageMs < MFA_CHALLENGE_COOLDOWN_MS) {
       if (resend) {
-        const err = new Error('Please wait before requesting a new code.');
+        const err = new Error("Please wait before requesting a new code.");
         err.status = 429;
         throw err;
       }
@@ -89,15 +97,17 @@ export async function createMfaEmailChallenge(userId, purpose = 'login', { resen
         emailHint: maskEmail(user.email),
         expiresInSeconds: Math.max(
           0,
-          Math.floor((new Date(existing.expires_at).getTime() - Date.now()) / 1000)
+          Math.floor(
+            (new Date(existing.expires_at).getTime() - Date.now()) / 1000,
+          ),
         ),
       };
     }
   }
 
   await execute(
-    'DELETE FROM mfa_email_challenges WHERE user_id = ? AND purpose = ?',
-    [userId, purpose]
+    "DELETE FROM mfa_email_challenges WHERE user_id = ? AND purpose = ?",
+    [userId, purpose],
   );
 
   const code = generateCode();
@@ -115,14 +125,17 @@ export async function createMfaEmailChallenge(userId, purpose = 'login', { resen
       purpose,
       bcrypt.hashSync(code, 10),
       expiresAt,
-    ]
+    ],
   );
 
   const emailResult = await sendMfaCodeEmail(user.email, code);
   if (!emailResult.sent) {
-    await execute('DELETE FROM mfa_email_challenges WHERE challenge_token = ?', [challengeToken]);
+    await execute(
+      "DELETE FROM mfa_email_challenges WHERE challenge_token = ?",
+      [challengeToken],
+    );
     const err = new Error(
-      'Could not send verification email. Ensure MAIL_ENABLED and SMTP settings are configured.'
+      "Could not send verification email. Ensure MAIL_ENABLED and SMTP settings are configured.",
     );
     err.status = 503;
     throw err;
@@ -135,53 +148,69 @@ export async function createMfaEmailChallenge(userId, purpose = 'login', { resen
   };
 }
 
-export async function verifyMfaEmailChallenge(challengeToken, code, { purpose } = {}) {
+export async function verifyMfaEmailChallenge(
+  challengeToken,
+  code,
+  { purpose } = {},
+) {
   const challenge = await queryOne(
-    'SELECT * FROM mfa_email_challenges WHERE challenge_token = ?',
-    [challengeToken]
+    "SELECT * FROM mfa_email_challenges WHERE challenge_token = ?",
+    [challengeToken],
   );
 
   if (!challenge) {
-    const err = new Error('Invalid or expired verification code');
+    const err = new Error("Invalid or expired verification code");
     err.status = 400;
     throw err;
   }
 
   if (purpose && challenge.purpose !== purpose) {
-    const err = new Error('Invalid or expired verification code');
+    const err = new Error("Invalid or expired verification code");
     err.status = 400;
     throw err;
   }
 
   if (new Date(challenge.expires_at) < new Date()) {
-    await execute('DELETE FROM mfa_email_challenges WHERE id = ?', [challenge.id]);
-    const err = new Error('Verification code expired. Request a new code.');
+    await execute("DELETE FROM mfa_email_challenges WHERE id = ?", [
+      challenge.id,
+    ]);
+    const err = new Error("Verification code expired. Request a new code.");
     err.status = 400;
     throw err;
   }
 
   if (challenge.attempts >= MFA_MAX_VERIFY_ATTEMPTS) {
-    await execute('DELETE FROM mfa_email_challenges WHERE id = ?', [challenge.id]);
-    const err = new Error('Too many failed attempts. Request a new code.');
+    await execute("DELETE FROM mfa_email_challenges WHERE id = ?", [
+      challenge.id,
+    ]);
+    const err = new Error("Too many failed attempts. Request a new code.");
     err.status = 429;
     throw err;
   }
 
-  const match = bcrypt.compareSync(String(code || '').trim(), challenge.code_hash);
+  const match = bcrypt.compareSync(
+    String(code || "").trim(),
+    challenge.code_hash,
+  );
   if (!match) {
-    await execute('UPDATE mfa_email_challenges SET attempts = attempts + 1 WHERE id = ?', [
-      challenge.id,
-    ]);
-    const err = new Error('Invalid verification code');
+    await execute(
+      "UPDATE mfa_email_challenges SET attempts = attempts + 1 WHERE id = ?",
+      [challenge.id],
+    );
+    const err = new Error("Invalid verification code");
     err.status = 400;
     throw err;
   }
 
-  await execute('DELETE FROM mfa_email_challenges WHERE id = ?', [challenge.id]);
+  await execute("DELETE FROM mfa_email_challenges WHERE id = ?", [
+    challenge.id,
+  ]);
 
-  const user = await queryOne('SELECT * FROM users WHERE id = ?', [challenge.user_id]);
+  const user = await queryOne("SELECT * FROM users WHERE id = ?", [
+    challenge.user_id,
+  ]);
   if (!user || !user.is_active) {
-    const err = new Error('User not found');
+    const err = new Error("User not found");
     err.status = 404;
     throw err;
   }

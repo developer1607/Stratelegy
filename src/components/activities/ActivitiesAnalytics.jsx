@@ -1,11 +1,18 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { Checkbox } from '@/components/ui/checkbox';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function ActivitiesAnalytics({ activities }) {
   const activitiesByType = React.useMemo(() => {
-    const types = ['Call', 'Email', 'Meeting', 'Task', 'Note'];
+    const types = ["Call", "Email", "Meeting", "Task", "Note"];
     return types.map((type) => ({
       type,
       count: activities.filter((a) => a.type === type).length,
@@ -13,11 +20,11 @@ export default function ActivitiesAnalytics({ activities }) {
   }, [activities]);
 
   const colors = {
-    Call: '#3b82f6',
-    Email: '#8b5cf6',
-    Meeting: '#f59e0b',
-    Task: '#10b981',
-    Note: '#14b8a6',
+    Call: "#3b82f6",
+    Email: "#8b5cf6",
+    Meeting: "#f59e0b",
+    Task: "#10b981",
+    Note: "#14b8a6",
   };
 
   return (
@@ -41,7 +48,10 @@ export default function ActivitiesAnalytics({ activities }) {
         <div className="flex flex-wrap gap-3 mt-4">
           {activitiesByType.map((item) => (
             <div key={item.type} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: colors[item.type] }}></div>
+              <div
+                className="w-3 h-3 rounded"
+                style={{ backgroundColor: colors[item.type] }}
+              ></div>
               <span className="text-xs text-gray-600">
                 {item.type} {item.count}
               </span>
@@ -51,10 +61,15 @@ export default function ActivitiesAnalytics({ activities }) {
         <div className="mt-4 pt-4 border-t">
           <div className="flex items-center gap-2">
             <Checkbox id="activities" defaultChecked />
-            <label htmlFor="activities" className="text-sm font-medium cursor-pointer">
+            <label
+              htmlFor="activities"
+              className="text-sm font-medium cursor-pointer"
+            >
               Activities
             </label>
-            <button className="ml-auto text-gray-400 hover:text-gray-600">•••</button>
+            <button className="ml-auto text-gray-400 hover:text-gray-600">
+              •••
+            </button>
           </div>
         </div>
       </CardContent>

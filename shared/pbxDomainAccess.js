@@ -6,11 +6,11 @@ export function domainsMatch(a, b) {
 }
 
 export function parsePbxDomains(value) {
-  if (value == null || value === '') return [];
+  if (value == null || value === "") return [];
   if (Array.isArray(value)) {
     return value.map((d) => String(d).trim()).filter(Boolean);
   }
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     const trimmed = value.trim();
     if (!trimmed) return [];
     try {
@@ -20,7 +20,7 @@ export function parsePbxDomains(value) {
       }
     } catch {
       return trimmed
-        .split(',')
+        .split(",")
         .map((d) => d.trim())
         .filter(Boolean);
     }
@@ -30,7 +30,7 @@ export function parsePbxDomains(value) {
 
 export function serializePbxDomains(domains) {
   const list = parsePbxDomains(domains);
-  return list.length ? JSON.stringify(list) : '';
+  return list.length ? JSON.stringify(list) : "";
 }
 
 /** User is limited to assigned domain(s) — not full PBX or admin. */
@@ -52,21 +52,27 @@ export function filterDomainsForUser(permissions, domains) {
   if (!allowed.length) return [];
 
   const matched = domains.filter((d) =>
-    allowed.some((name) => domainsMatch(d.domain ?? d, name))
+    allowed.some((name) => domainsMatch(d.domain ?? d, name)),
   );
 
-  const seen = new Set(matched.map((d) => String(d.domain ?? d).trim().toLowerCase()));
+  const seen = new Set(
+    matched.map((d) =>
+      String(d.domain ?? d)
+        .trim()
+        .toLowerCase(),
+    ),
+  );
   for (const name of allowed) {
     const key = String(name).trim().toLowerCase();
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    matched.push({ domain: name, description: 'Assigned domain' });
+    matched.push({ domain: name, description: "Assigned domain" });
   }
 
   return matched.sort((a, b) =>
-    String(a.domain || '').localeCompare(String(b.domain || ''), undefined, {
-      sensitivity: 'base',
-    })
+    String(a.domain || "").localeCompare(String(b.domain || ""), undefined, {
+      sensitivity: "base",
+    }),
   );
 }
 
@@ -74,12 +80,12 @@ export function assertDomainAllowed(permissions, domain) {
   if (!domain || !isPbxDomainRestricted(permissions)) return;
   const allowed = getAssignedPbxDomains(permissions);
   if (!allowed.length) {
-    const err = new Error('No PBX domains assigned to your account');
+    const err = new Error("No PBX domains assigned to your account");
     err.status = 403;
     throw err;
   }
   if (!allowed.some((name) => domainsMatch(name, domain))) {
-    const err = new Error('You do not have access to this PBX domain');
+    const err = new Error("You do not have access to this PBX domain");
     err.status = 403;
     throw err;
   }
@@ -96,7 +102,11 @@ export function canPerformPbxWrite(permissions) {
   return !isPbxDomainRestricted(permissions);
 }
 
-export function resolveAllowedPbxDomain(permissions, requestedDomain, fallbackDomain) {
+export function resolveAllowedPbxDomain(
+  permissions,
+  requestedDomain,
+  fallbackDomain,
+) {
   if (!isPbxDomainRestricted(permissions)) {
     return requestedDomain || fallbackDomain || null;
   }

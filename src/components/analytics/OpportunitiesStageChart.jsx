@@ -1,20 +1,24 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 export default function OpportunitiesStageChart({ opportunities = [] }) {
   const data = React.useMemo(() => {
     const stages = {};
     const colors = {
-      prospecting: '#3b82f6',
-      qualification: '#06b6d4',
-      proposal: '#eab308',
-      negotiation: '#f97316',
+      prospecting: "#3b82f6",
+      qualification: "#06b6d4",
+      proposal: "#eab308",
+      negotiation: "#f97316",
     };
 
     opportunities.forEach((opp) => {
-      const stage = opp.stage || 'prospecting';
-      if (['prospecting', 'qualification', 'proposal', 'negotiation'].includes(stage)) {
+      const stage = opp.stage || "prospecting";
+      if (
+        ["prospecting", "qualification", "proposal", "negotiation"].includes(
+          stage,
+        )
+      ) {
         stages[stage] = (stages[stage] || 0) + 1;
       }
     });
@@ -24,7 +28,7 @@ export default function OpportunitiesStageChart({ opportunities = [] }) {
     return Object.entries(stages).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
       value: Math.round((value / total) * 100),
-      color: colors[name] || '#6b7280',
+      color: colors[name] || "#6b7280",
     }));
   }, [opportunities]);
 
@@ -32,7 +36,9 @@ export default function OpportunitiesStageChart({ opportunities = [] }) {
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-lg font-semibold">Opportunities by Stage</CardTitle>
+        <CardTitle className="text-lg font-semibold">
+          Opportunities by Stage
+        </CardTitle>
         <button className="text-gray-400 hover:text-gray-600">⋮</button>
       </CardHeader>
       <CardContent>
@@ -62,7 +68,10 @@ export default function OpportunitiesStageChart({ opportunities = [] }) {
         <div className="mt-6 grid grid-cols-2 gap-3">
           {data.map((item, index) => (
             <div key={index} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: item.color }}
+              ></div>
               <span className="text-sm text-gray-600">
                 {item.name} {item.value}%
               </span>

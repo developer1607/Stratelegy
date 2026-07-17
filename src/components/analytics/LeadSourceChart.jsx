@@ -1,28 +1,29 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 
 export default function LeadSourceChart({ leads = [], opportunities = [] }) {
   const data = React.useMemo(() => {
     const sources = {};
     const colors = {
-      call: '#3b82f6',
-      email: '#f97316',
-      website: '#06b6d4',
-      partner: '#eab308',
+      call: "#3b82f6",
+      email: "#f97316",
+      website: "#06b6d4",
+      partner: "#eab308",
     };
 
     [...leads, ...opportunities].forEach((item) => {
-      const source = item.source || 'email';
+      const source = item.source || "email";
       sources[source] = (sources[source] || 0) + 1;
     });
 
-    const total = Object.values(sources).reduce((sum, val) => sum + val, 0) || 1;
+    const total =
+      Object.values(sources).reduce((sum, val) => sum + val, 0) || 1;
 
     return Object.entries(sources).map(([name, value]) => ({
       name: name.charAt(0).toUpperCase() + name.slice(1),
       value: Math.round((value / total) * 100),
-      color: colors[name] || '#6b7280',
+      color: colors[name] || "#6b7280",
     }));
   }, [leads, opportunities]);
 
@@ -60,7 +61,10 @@ export default function LeadSourceChart({ leads = [], opportunities = [] }) {
         <div className="mt-6 grid grid-cols-2 gap-3">
           {data.map((item, index) => (
             <div key={index} className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+              <div
+                className="w-3 h-3 rounded-full"
+                style={{ backgroundColor: item.color }}
+              ></div>
               <span className="text-sm text-gray-600">{item.name}</span>
             </div>
           ))}

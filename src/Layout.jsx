@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "./utils";
 import { useAuth } from "@/lib/AuthContext";
@@ -15,7 +15,7 @@ import {
   getAdminBottomNav,
   PBX_PAGES_NO_DOMAIN_BAR,
 } from "@/lib/navConfig";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import HeaderQuickActions from "@/components/layout/HeaderQuickActions";
 import CommandPalette from "@/components/layout/CommandPalette";
 import { Avatar } from "@/components/ui/avatar";
@@ -28,6 +28,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export default function Layout({ children, currentPageName }) {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem("stratelegy-sidebar-collapsed") === "true";
+  });
   const {
     user: currentUser,
     logout,
@@ -70,6 +74,13 @@ export default function Layout({ children, currentPageName }) {
         ? "bg-[#F07020] text-white"
         : "hover:bg-white/10 text-white/80 hover:text-white"
     }`;
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      "stratelegy-sidebar-collapsed",
+      String(sidebarCollapsed),
+    );
+  }, [sidebarCollapsed]);
 
   useEffect(() => {
     if (isPermissionsLoading || !currentUser) return;
@@ -119,7 +130,29 @@ export default function Layout({ children, currentPageName }) {
 
   const layoutBody = (
     <div className="flex h-screen bg-gray-50">
-      <div className="w-64 bg-[#0D1B2E] text-white flex flex-col flex-shrink-0">
+      <div
+        className={`app-sidebar-space relative h-full flex-shrink-0 transition-[width] duration-300 ease-in-out ${
+          sidebarCollapsed ? "w-0" : "w-64"
+        }`}
+      >
+        <div
+          className={`app-sidebar-panel absolute inset-y-0 left-0 z-30 w-64 bg-[#0D1B2E] text-white flex flex-col transition-transform duration-300 ease-in-out ${
+            sidebarCollapsed ? "-translate-x-full" : "translate-x-0"
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+            className="absolute right-0 top-5 z-40 inline-flex h-9 w-9 translate-x-1/2 items-center justify-center rounded-full border border-slate-600 bg-[#0D1B2E] text-white shadow-md transition-colors hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+            aria-label={sidebarCollapsed ? "Open sidebar" : "Collapse sidebar"}
+            title={sidebarCollapsed ? "Open sidebar" : "Collapse sidebar"}
+          >
+            {sidebarCollapsed ? (
+              <PanelLeftOpen className="h-4 w-4" />
+            ) : (
+              <PanelLeftClose className="h-4 w-4" />
+            )}
+          </button>
         <div className="p-6 flex items-center flex-shrink-0">
           <img
             src="/logo.svg"
@@ -128,7 +161,7 @@ export default function Layout({ children, currentPageName }) {
           />
         </div>
 
-        <nav className="flex-1 px-3 flex flex-col overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+        <nav className="sidebar-scrollbar min-h-0 flex-1 px-3 flex flex-col overflow-y-scroll">
           {crmItems.length > 0 && (
             <SidebarNavSection
               label="Sales"
@@ -198,12 +231,28 @@ export default function Layout({ children, currentPageName }) {
             </div>
           )}
         </nav>
+        </div>
       </div>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="min-w-0 flex-1 flex flex-col overflow-hidden">
         <header className="bg-white border-b border-gray-100 px-4 sm:px-8 py-4">
           <div className="flex items-center justify-between gap-4">
-            <CommandPalette canAccessPage={canAccessPage} isAdmin={isAdmin} />
+            <div className="flex min-w-0 items-center gap-2">
+              {sidebarCollapsed ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSidebarCollapsed(false)}
+                  aria-label="Open sidebar"
+                  title="Open sidebar"
+                  className="shrink-0"
+                >
+                  <PanelLeftOpen className="h-4 w-4" />
+                </Button>
+              ) : null}
+              <CommandPalette canAccessPage={canAccessPage} isAdmin={isAdmin} />
+            </div>
 
             <div className="flex items-center gap-2 sm:gap-4">
               <HeaderQuickActions
@@ -254,7 +303,9 @@ export default function Layout({ children, currentPageName }) {
 
         {showPbxDomainBar && <PbxDomainBar currentPageName={currentPageName} />}
 
-        <main className="flex-1 overflow-auto bg-[#F4F6F9]">{children}</main>
+        <main className="app-scrollbar min-h-0 flex-1 overflow-auto bg-[#F4F6F9]">
+          {children}
+        </main>
       </div>
     </div>
   );

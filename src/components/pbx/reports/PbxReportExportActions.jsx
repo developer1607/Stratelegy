@@ -1,14 +1,14 @@
-import React, { useState } from 'react';
-import { FileDown, Play } from 'lucide-react';
-import PermissionGate from '@/components/PermissionGate';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { FileDown, Play } from "lucide-react";
+import PermissionGate from "@/components/PermissionGate";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import QueueReportDialog from '@/components/pbx/reports/QueueReportDialog';
+} from "@/components/ui/dropdown-menu";
+import QueueReportDialog from "@/components/pbx/reports/QueueReportDialog";
 
 /**
  * Header actions: generate async SkySwitch export (CSV/ZIP download when ready).
@@ -41,7 +41,10 @@ export default function PbxReportExportActions({ reportTypes }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-72">
             {reportTypes.map((type) => (
-              <DropdownMenuItem key={type.value} onClick={() => openQueue(type)}>
+              <DropdownMenuItem
+                key={type.value}
+                onClick={() => openQueue(type)}
+              >
                 <Play className="h-3.5 w-3.5 mr-2 shrink-0" />
                 <span className="truncate">{type.label}</span>
               </DropdownMenuItem>
@@ -50,7 +53,11 @@ export default function PbxReportExportActions({ reportTypes }) {
         </DropdownMenu>
       )}
 
-      <QueueReportDialog open={queueOpen} onOpenChange={setQueueOpen} reportType={queueType} />
+      <QueueReportDialog
+        open={queueOpen}
+        onOpenChange={setQueueOpen}
+        reportType={queueType}
+      />
     </PermissionGate>
   );
 }

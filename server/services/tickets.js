@@ -1,15 +1,16 @@
-import * as ticketStore from './ticketStore.js';
-import { sendTicketCreatedEmails } from './email/notifications.js';
-import { onTicketCreatedNotification } from './notificationEvents.js';
-import { assigneeMatchesTicket } from '../constants/ticketRouting.js';
-import { listTicketAssignees } from './ticketAssignees.js';
+import * as ticketStore from "./ticketStore.js";
+import { sendTicketCreatedEmails } from "./email/notifications.js";
+import { onTicketCreatedNotification } from "./notificationEvents.js";
+import { assigneeMatchesTicket } from "../constants/ticketRouting.js";
+import { listTicketAssignees } from "./ticketAssignees.js";
 
 export async function assignTicketNumber(ticketId) {
   await ticketStore.getTicket(ticketId);
   const allTickets = await ticketStore.listTickets();
   const maxNumber = allTickets.reduce(
-    (max, t) => (t.ticket_number && t.ticket_number > max ? t.ticket_number : max),
-    0
+    (max, t) =>
+      t.ticket_number && t.ticket_number > max ? t.ticket_number : max,
+    0,
   );
   const nextNumber = Math.max(maxNumber + 1, 1200);
   await ticketStore.updateTicket(ticketId, { ticket_number: nextNumber });
@@ -21,7 +22,7 @@ export async function autoAssignTicket(ticketId) {
   if (ticket.assigned_to || ticket.assignee) {
     return {
       assigned_to: ticket.assigned_to || ticket.assignee,
-      message: 'Ticket already has an assignee',
+      message: "Ticket already has an assignee",
     };
   }
 
@@ -33,7 +34,7 @@ export async function autoAssignTicket(ticketId) {
   const pickAssignee = async (candidates) => {
     if (candidates.length === 0) return null;
     const openTickets = (await ticketStore.listTickets()).filter((t) =>
-      ['open', 'in_progress'].includes(t.status)
+      ["open", "in_progress"].includes(t.status),
     );
     const workload = candidates.map((user) => ({
       user,
@@ -46,18 +47,29 @@ export async function autoAssignTicket(ticketId) {
   let matching = assignees;
   if (ticket.department || ticket.category) {
     matching = assignees.filter((user) =>
-      assigneeMatchesTicket(user, { department: ticket.department, category: ticket.category })
+      assigneeMatchesTicket(user, {
+        department: ticket.department,
+        category: ticket.category,
+      }),
     );
   }
 
-  const assignee = await pickAssignee(matching.length > 0 ? matching : assignees);
+  const assignee = await pickAssignee(
+    matching.length > 0 ? matching : assignees,
+  );
 
   if (assignee) {
     await ticketStore.updateTicket(ticketId, { assigned_to: assignee });
-    return { assigned_to: assignee, message: `Ticket auto-assigned to ${assignee}` };
+    return {
+      assigned_to: assignee,
+      message: `Ticket auto-assigned to ${assignee}`,
+    };
   }
 
-  return { assigned_to: null, message: 'No suitable portal user found for auto-assignment' };
+  return {
+    assigned_to: null,
+    message: "No suitable portal user found for auto-assignment",
+  };
 }
 
 export async function onTicketCreated(ticket, { actorEmail } = {}) {
@@ -68,22 +80,22 @@ export async function onTicketCreated(ticket, { actorEmail } = {}) {
     await sendTicketCreatedEmails(fresh);
     await onTicketCreatedNotification(fresh, { actorEmail });
   } catch (e) {
-    console.error('[tickets] post-create hooks failed:', e);
+    console.error("[tickets] post-create hooks failed:", e);
   }
 }
 
 export async function createTicketFromEmail({ subject, body, fromEmail }) {
   const cleanBody = body
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/\s+/g, ' ')
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
   const ticket = await ticketStore.createTicket({
     title: subject.substring(0, 200),
     description: `**From:** ${fromEmail}\n\n${cleanBody || body}`,
-    category: 'report_a_problem',
-    priority: 'medium',
-    status: 'open',
-    source: 'email',
+    category: "report_a_problem",
+    priority: "medium",
+    status: "open",
+    source: "email",
     requester_email: fromEmail || null,
   });
   await onTicketCreated(ticket);

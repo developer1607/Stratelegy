@@ -1,22 +1,25 @@
-import React, { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import FieldError from '@/components/forms/FieldError';
-import { usePermissions } from '@/hooks/usePermissions';
+} from "@/components/ui/select";
+import FieldError from "@/components/forms/FieldError";
+import { usePermissions } from "@/hooks/usePermissions";
 
-export const ACCOUNT_NONE = '__none__';
-export const ACCOUNT_CUSTOM = '__custom__';
+export const ACCOUNT_NONE = "__none__";
+export const ACCOUNT_CUSTOM = "__custom__";
 
-const selectContentProps = { position: 'popper', className: 'max-h-[min(16rem,50dvh)]' };
+const selectContentProps = {
+  position: "popper",
+  className: "max-h-[min(16rem,50dvh)]",
+};
 
 const defaultLinkedHint = (accountName) =>
   `Linked to ${accountName} in Account Insights.`;
@@ -29,26 +32,26 @@ export default function AccountSelectField({
   onValueChange,
   company,
   onCompanyChange,
-  accountId = '',
+  accountId = "",
   onAccountIdChange,
   disabled = false,
-  accountSelectId = 'account-select',
-  companyInputId = 'account-custom-name',
+  accountSelectId = "account-select",
+  companyInputId = "account-custom-name",
   companyError,
-  companyInputClassName = '',
+  companyInputClassName = "",
   onCompanyBlur,
   linkedHint = defaultLinkedHint,
-  customValueLabel = 'Account / company name',
+  customValueLabel = "Account / company name",
 }) {
-  const value = valueProp ?? company ?? '';
+  const value = valueProp ?? company ?? "";
   const onChange = onValueChange ?? onCompanyChange;
 
   const { canReadEntity, isLoading: permsLoading } = usePermissions();
-  const canLoadAccounts = !permsLoading && canReadEntity('Account');
+  const canLoadAccounts = !permsLoading && canReadEntity("Account");
 
   const { data: accounts = [], isLoading } = useQuery({
-    queryKey: ['accounts', 'select'],
-    queryFn: () => api.entities.Account.list('name'),
+    queryKey: ["accounts", "select"],
+    queryFn: () => api.entities.Account.list("name"),
     staleTime: 60_000,
     enabled: canLoadAccounts,
   });
@@ -60,28 +63,29 @@ export default function AccountSelectField({
     return accounts.find((account) => account.name === value) || null;
   }, [accounts, accountId, value]);
 
-  const selectValue = matchedAccount?.id ?? (value ? ACCOUNT_CUSTOM : ACCOUNT_NONE);
+  const selectValue =
+    matchedAccount?.id ?? (value ? ACCOUNT_CUSTOM : ACCOUNT_NONE);
   const showCustomValue = selectValue === ACCOUNT_CUSTOM;
 
   const handleAccountSelect = (selected) => {
     if (selected === ACCOUNT_NONE) {
-      onChange?.('');
-      onAccountIdChange?.('');
+      onChange?.("");
+      onAccountIdChange?.("");
       return;
     }
     if (selected === ACCOUNT_CUSTOM) {
-      onChange?.(value && !matchedAccount ? value : '');
-      onAccountIdChange?.('');
+      onChange?.(value && !matchedAccount ? value : "");
+      onAccountIdChange?.("");
       return;
     }
     const account = accounts.find((item) => item.id === selected);
-    onChange?.(account?.name || '');
-    onAccountIdChange?.(account?.id || '');
+    onChange?.(account?.name || "");
+    onAccountIdChange?.(account?.id || "");
   };
 
   const handleCustomNameChange = (nextValue) => {
     onChange?.(nextValue);
-    onAccountIdChange?.('');
+    onAccountIdChange?.("");
   };
 
   return (
@@ -94,7 +98,9 @@ export default function AccountSelectField({
           disabled={disabled || isLoading}
         >
           <SelectTrigger id={accountSelectId}>
-            <SelectValue placeholder={isLoading ? 'Loading accounts...' : 'Select account'} />
+            <SelectValue
+              placeholder={isLoading ? "Loading accounts..." : "Select account"}
+            />
           </SelectTrigger>
           <SelectContent {...selectContentProps}>
             <SelectItem value={ACCOUNT_NONE}>None</SelectItem>
@@ -103,11 +109,15 @@ export default function AccountSelectField({
                 {account.name}
               </SelectItem>
             ))}
-            <SelectItem value={ACCOUNT_CUSTOM}>Other (not in Accounts)</SelectItem>
+            <SelectItem value={ACCOUNT_CUSTOM}>
+              Other (not in Accounts)
+            </SelectItem>
           </SelectContent>
         </Select>
         {matchedAccount && linkedHint && (
-          <p className="text-xs text-gray-500">{linkedHint(matchedAccount.name)}</p>
+          <p className="text-xs text-gray-500">
+            {linkedHint(matchedAccount.name)}
+          </p>
         )}
       </div>
 
@@ -125,7 +135,8 @@ export default function AccountSelectField({
           />
           <FieldError message={companyError} />
           <p className="text-xs text-gray-500">
-            Create an Account with this exact name to link records in Account Insights.
+            Create an Account with this exact name to link records in Account
+            Insights.
           </p>
         </div>
       )}

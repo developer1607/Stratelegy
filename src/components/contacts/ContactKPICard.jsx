@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default function ContactKPICard({
   title,
@@ -18,18 +18,16 @@ export default function ContactKPICard({
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
             <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
-            {subtitle && (
-              <p className="text-sm text-gray-500">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
             {trend && (
               <div className="flex items-center gap-1">
-                {trend === 'up' ? (
+                {trend === "up" ? (
                   <TrendingUp className="w-4 h-4 text-green-600" />
                 ) : (
                   <TrendingDown className="w-4 h-4 text-red-600" />
                 )}
                 <span
-                  className={`text-sm font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+                  className={`text-sm font-medium ${trend === "up" ? "text-green-600" : "text-red-600"}`}
                 >
                   {trendValue}
                 </span>

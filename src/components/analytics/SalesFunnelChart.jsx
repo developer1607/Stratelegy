@@ -1,13 +1,21 @@
-import React from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Button } from '@/components/ui/button';
-import { SlidersHorizontal } from 'lucide-react';
+import React from "react";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { Button } from "@/components/ui/button";
+import { SlidersHorizontal } from "lucide-react";
 
 export default function SalesFunnelChart({ opportunities = [] }) {
   const data = React.useMemo(() => {
     const monthlyData = {};
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun"];
 
     opportunities.forEach((opp) => {
       const date = new Date(opp.created_date || opp.close_date || new Date());
@@ -22,14 +30,22 @@ export default function SalesFunnelChart({ opportunities = [] }) {
         };
       }
 
-      if (opp.stage === 'prospecting') monthlyData[monthKey].prospecting += opp.amount || 0;
-      else if (opp.stage === 'qualification')
+      if (opp.stage === "prospecting")
+        monthlyData[monthKey].prospecting += opp.amount || 0;
+      else if (opp.stage === "qualification")
         monthlyData[monthKey].qualification += opp.amount || 0;
-      else if (opp.stage === 'negotiation') monthlyData[monthKey].negotiation += opp.amount || 0;
+      else if (opp.stage === "negotiation")
+        monthlyData[monthKey].negotiation += opp.amount || 0;
     });
 
     return months.map(
-      (month) => monthlyData[month] || { month, prospecting: 0, qualification: 0, negotiation: 0 }
+      (month) =>
+        monthlyData[month] || {
+          month,
+          prospecting: 0,
+          qualification: 0,
+          negotiation: 0,
+        },
     );
   }, [opportunities]);
   return (

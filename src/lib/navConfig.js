@@ -60,6 +60,8 @@ export const PBX_NAV = [
   { name: "Route by ANI", icon: Radio, path: "PBXRouteByAni" },
   { name: "SIP Trunks", icon: Briefcase, path: "SIPTrunks" },
   { name: "E911 Review", icon: Mail, path: "E911Review" },
+  { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
+  { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
   {
     name: "Reports",
     icon: BarChart3,
@@ -69,13 +71,11 @@ export const PBX_NAV = [
         icon: PBX_REPORT_NAV_ICONS[def.id] || BarChart3,
         path: def.page,
       })),
-      { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
     ],
   },
   { name: "Call Logs", icon: Phone, path: "CallLogs" },
   { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
   { name: "SIP ALG", icon: Settings, path: "SIPALG" },
-  { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
 ];
 
 /** @deprecated Use PBX_NAV — kept for callers that flatten grouped items. */

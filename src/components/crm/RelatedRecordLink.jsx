@@ -1,13 +1,13 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Link2 } from 'lucide-react';
-import { createPageUrl } from '@/utils';
+import React from "react";
+import { Link } from "react-router-dom";
+import { Link2 } from "lucide-react";
+import { createPageUrl } from "@/utils";
 
 const ENTITY_LIST_PAGES = {
-  Contact: 'Contacts',
-  Account: 'Accounts',
-  Opportunity: 'Opportunities',
-  Lead: 'Leads',
+  Contact: "Contacts",
+  Account: "Accounts",
+  Opportunity: "Opportunities",
+  Lead: "Leads",
 };
 
 /** CRM list page for a related record type, when the app has one. */
@@ -16,7 +16,10 @@ export function relatedRecordListPage(type) {
 }
 
 export function hasRelatedRecord(record) {
-  return Boolean(record?.related_to_type && (record?.related_to_name || record?.related_to_id));
+  return Boolean(
+    record?.related_to_type &&
+    (record?.related_to_name || record?.related_to_id),
+  );
 }
 
 /**
@@ -25,9 +28,9 @@ export function hasRelatedRecord(record) {
 export default function RelatedRecordLink({
   type,
   name,
-  className = '',
+  className = "",
   showIcon = true,
-  prefix = 'Linked',
+  prefix = "Linked",
 }) {
   if (!type || !name) return null;
 

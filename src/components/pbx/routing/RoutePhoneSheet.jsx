@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -10,11 +10,11 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import PbxFormSelect from '@/components/pbx/shared/PbxFormSelect';
-import { mapRouteToForm } from '@/components/pbx/shared/pbxFormMappers';
-import { toast } from 'sonner';
+} from "@/components/ui/sheet";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import PbxFormSelect from "@/components/pbx/shared/PbxFormSelect";
+import { mapRouteToForm } from "@/components/pbx/shared/pbxFormMappers";
+import { toast } from "sonner";
 
 export default function RoutePhoneSheet({
   phoneNumber,
@@ -31,7 +31,7 @@ export default function RoutePhoneSheet({
     isLoading,
     isFetching,
   } = useQuery({
-    queryKey: ['pbx-route', phoneNumber],
+    queryKey: ["pbx-route", phoneNumber],
     queryFn: () => pbxApi.getRoute(phoneNumber),
     enabled: open && !!phoneNumber,
   });
@@ -44,21 +44,29 @@ export default function RoutePhoneSheet({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const route = { treatment: form.treatment, enable: form.enable, notes: form.notes };
+      const route = {
+        treatment: form.treatment,
+        enable: form.enable,
+        notes: form.notes,
+      };
       if (form.domain) route.domain = form.domain;
       if (form.subscriber) route.subscriber = form.subscriber;
       return pbxApi.setRoute(phoneNumber, { type: form.type, route });
     },
     onSuccess: () => {
-      toast.success('Route updated');
+      toast.success("Route updated");
       onOpenChange(false);
       onSuccess?.();
     },
-    onError: (err) => toast.error(err.message || 'Failed to update route'),
+    onError: (err) => toast.error(err.message || "Failed to update route"),
   });
 
   const loadingExisting =
-    open && !!phoneNumber && (isLoading || isFetching) && !routeData && !initialData;
+    open &&
+    !!phoneNumber &&
+    (isLoading || isFetching) &&
+    !routeData &&
+    !initialData;
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -97,21 +105,25 @@ export default function RoutePhoneSheet({
               <PbxFormField
                 label="Subscriber"
                 value={form.subscriber}
-                onChange={(e) => setForm({ ...form, subscriber: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, subscriber: e.target.value })
+                }
                 placeholder="100@domain.service"
               />
               <PbxFormField
                 label="Treatment"
                 value={form.treatment}
-                onChange={(e) => setForm({ ...form, treatment: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, treatment: e.target.value })
+                }
               />
               <PbxFormSelect
                 label="Enabled"
-                value={form.enable === 'no' ? 'no' : 'yes'}
+                value={form.enable === "no" ? "no" : "yes"}
                 onValueChange={(enable) => setForm({ ...form, enable })}
                 options={[
-                  { value: 'yes', label: 'Yes — route active' },
-                  { value: 'no', label: 'No — route disabled' },
+                  { value: "yes", label: "Yes — route active" },
+                  { value: "no", label: "No — route disabled" },
                 ]}
               />
               <PbxFormField
@@ -123,8 +135,11 @@ export default function RoutePhoneSheet({
           )}
 
           <SheetFooter>
-            <Button type="submit" disabled={mutation.isPending || loadingExisting}>
-              {mutation.isPending ? 'Saving…' : 'Save changes'}
+            <Button
+              type="submit"
+              disabled={mutation.isPending || loadingExisting}
+            >
+              {mutation.isPending ? "Saving…" : "Save changes"}
             </Button>
           </SheetFooter>
         </form>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 export default function KPICard({
   title,
@@ -8,15 +8,15 @@ export default function KPICard({
   subValue = undefined,
   trend = undefined,
   Icon = undefined,
-  color = 'blue',
+  color = "blue",
 }) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    orange: 'bg-orange-50 text-orange-600',
-    red: 'bg-red-50 text-red-600',
-    purple: 'bg-purple-50 text-purple-600',
-    cyan: 'bg-cyan-50 text-cyan-600',
+    blue: "bg-blue-50 text-blue-600",
+    green: "bg-green-50 text-green-600",
+    orange: "bg-orange-50 text-orange-600",
+    red: "bg-red-50 text-red-600",
+    purple: "bg-purple-50 text-purple-600",
+    cyan: "bg-cyan-50 text-cyan-600",
   };
 
   return (
@@ -33,11 +33,17 @@ export default function KPICard({
           )}
         </div>
         <div className="flex flex-col">
-          <span className="text-xl sm:text-2xl font-bold text-gray-900">{value}</span>
-          {subValue && <span className="text-xs sm:text-sm text-gray-500 mt-1">{subValue}</span>}
+          <span className="text-xl sm:text-2xl font-bold text-gray-900">
+            {value}
+          </span>
+          {subValue && (
+            <span className="text-xs sm:text-sm text-gray-500 mt-1">
+              {subValue}
+            </span>
+          )}
           {trend !== undefined && (
             <div
-              className={`flex items-center gap-1 mt-2 text-xs ${trend >= 0 ? 'text-green-600' : 'text-red-600'}`}
+              className={`flex items-center gap-1 mt-2 text-xs ${trend >= 0 ? "text-green-600" : "text-red-600"}`}
             >
               {trend >= 0 ? (
                 <TrendingUp className="w-3 h-3" />

@@ -45,7 +45,7 @@ export default function EditAccountDialog({
   isLoading,
   readOnly = false,
   tiers = [],
-  defaultTier = 'Standard',
+  defaultTier = "Standard",
 }) {
   const { accountTiers, industries } = useCrmConfig({ enabled: open });
   const [formData, setFormData] = useState({
@@ -148,7 +148,12 @@ export default function EditAccountDialog({
                   id="edit-account-industry"
                   value={formData.industry}
                   onValueChange={(value) =>
-                    validation.updateField("industry", value, formData, setFormData)
+                    validation.updateField(
+                      "industry",
+                      value,
+                      formData,
+                      setFormData,
+                    )
                   }
                   options={industryOpts}
                   placeholder="Select industry"

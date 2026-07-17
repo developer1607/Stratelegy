@@ -13,7 +13,11 @@ function safeWrite(entityName, res, chunk) {
 export function notifyEntityChange(entityName, record, oldRecord = null) {
   const subs = subscribers.get(entityName);
   if (!subs) return;
-  const event = { type: record ? 'update' : 'delete', data: record, old_data: oldRecord };
+  const event = {
+    type: record ? "update" : "delete",
+    data: record,
+    old_data: oldRecord,
+  };
   const payload = `data: ${JSON.stringify(event)}\n\n`;
   for (const res of [...subs]) {
     safeWrite(entityName, res, payload);

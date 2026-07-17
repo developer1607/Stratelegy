@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   BarChart,
   Bar,
@@ -22,21 +22,24 @@ import {
   Cell,
   LineChart,
   Line,
-} from 'recharts';
-import { differenceInDays, parseISO, format } from 'date-fns';
-import { activityMatchesOpportunity } from '@/lib/crmHelpers';
-import TableExportButtons from './TableExportButtons';
+} from "recharts";
+import { differenceInDays, parseISO, format } from "date-fns";
+import { activityMatchesOpportunity } from "@/lib/crmHelpers";
+import TableExportButtons from "./TableExportButtons";
 
-export default function PipelineForecastTab({ filteredOpportunities, filteredActivities }) {
+export default function PipelineForecastTab({
+  filteredOpportunities,
+  filteredActivities,
+}) {
   const openOpps = filteredOpportunities.filter(
-    (o) => o.stage !== 'closed_won' && o.stage !== 'closed_lost'
+    (o) => o.stage !== "closed_won" && o.stage !== "closed_lost",
   );
 
   // Pipeline by Stage
   const pipelineByStage = React.useMemo(() => {
     const stageData = {};
     openOpps.forEach((opp) => {
-      const stage = opp.stage || 'unknown';
+      const stage = opp.stage || "unknown";
       if (!stageData[stage]) stageData[stage] = { stage, count: 0, value: 0 };
       stageData[stage].count++;
       stageData[stage].value += opp.amount || 0;
@@ -46,26 +49,31 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
 
   // Forecast by Probability
   const forecastByProbability = React.useMemo(() => {
-    const bands = { '0-25': 0, '26-50': 0, '51-75': 0, '76-100': 0 };
+    const bands = { "0-25": 0, "26-50": 0, "51-75": 0, "76-100": 0 };
     openOpps.forEach((opp) => {
       const prob = opp.probability || 0;
-      if (prob <= 25) bands['0-25'] += opp.amount || 0;
-      else if (prob <= 50) bands['26-50'] += opp.amount || 0;
-      else if (prob <= 75) bands['51-75'] += opp.amount || 0;
-      else bands['76-100'] += opp.amount || 0;
+      if (prob <= 25) bands["0-25"] += opp.amount || 0;
+      else if (prob <= 50) bands["26-50"] += opp.amount || 0;
+      else if (prob <= 75) bands["51-75"] += opp.amount || 0;
+      else bands["76-100"] += opp.amount || 0;
     });
     return Object.entries(bands).map(([band, value]) => ({ band, value }));
   }, [openOpps]);
 
   // Aging Pipeline
   const agingPipeline = React.useMemo(() => {
-    const ageData = { '<30 days': 0, '30-60 days': 0, '60-90 days': 0, '>90 days': 0 };
+    const ageData = {
+      "<30 days": 0,
+      "30-60 days": 0,
+      "60-90 days": 0,
+      ">90 days": 0,
+    };
     openOpps.forEach((opp) => {
       const days = differenceInDays(new Date(), parseISO(opp.created_date));
-      if (days < 30) ageData['<30 days']++;
-      else if (days < 60) ageData['30-60 days']++;
-      else if (days < 90) ageData['60-90 days']++;
-      else ageData['>90 days']++;
+      if (days < 30) ageData["<30 days"]++;
+      else if (days < 60) ageData["30-60 days"]++;
+      else if (days < 90) ageData["60-90 days"]++;
+      else ageData[">90 days"]++;
     });
     return Object.entries(ageData).map(([age, count]) => ({ age, count }));
   }, [openOpps]);
@@ -76,7 +84,9 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
       .filter((opp) => {
         const lastActivity = filteredActivities
           .filter((a) => activityMatchesOpportunity(a, opp))
-          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+          .sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+          )[0];
 
         const daysSinceActivity = lastActivity
           ? differenceInDays(new Date(), parseISO(lastActivity.date))
@@ -90,19 +100,20 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
   // Forecasting Accuracy
   const forecastingAccuracy = React.useMemo(() => {
     const closedDeals = filteredOpportunities.filter(
-      (o) => o.stage === 'closed_won' || o.stage === 'closed_lost'
+      (o) => o.stage === "closed_won" || o.stage === "closed_lost",
     );
 
     const monthlyData = {};
     closedDeals.forEach((deal) => {
       if (deal.close_date && deal.created_date) {
-        const month = format(parseISO(deal.close_date), 'MMM yyyy');
+        const month = format(parseISO(deal.close_date), "MMM yyyy");
         if (!monthlyData[month]) {
           monthlyData[month] = { month, forecasted: 0, actual: 0, accuracy: 0 };
         }
 
-        const forecastedAmount = (deal.amount || 0) * ((deal.probability || 50) / 100);
-        const actualAmount = deal.stage === 'closed_won' ? deal.amount || 0 : 0;
+        const forecastedAmount =
+          (deal.amount || 0) * ((deal.probability || 50) / 100);
+        const actualAmount = deal.stage === "closed_won" ? deal.amount || 0 : 0;
 
         monthlyData[month].forecasted += forecastedAmount;
         monthlyData[month].actual += actualAmount;
@@ -111,40 +122,49 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
 
     return Object.values(monthlyData).map((item) => ({
       ...item,
-      accuracy: item.forecasted > 0 ? ((item.actual / item.forecasted) * 100).toFixed(1) : 0,
+      accuracy:
+        item.forecasted > 0
+          ? ((item.actual / item.forecasted) * 100).toFixed(1)
+          : 0,
     }));
   }, [filteredOpportunities]);
 
-  const COLORS = ['#3b82f6', '#06b6d4', '#8b5cf6', '#ec4899'];
+  const COLORS = ["#3b82f6", "#06b6d4", "#8b5cf6", "#ec4899"];
 
   const exportDealsAtRiskCSV = () => {
-    const headers = ['Deal', 'Account', 'Amount'];
-    const rows = dealsAtRisk.map((d) => [d.name, d.account_name, d.amount || 0]);
+    const headers = ["Deal", "Account", "Amount"];
+    const rows = dealsAtRisk.map((d) => [
+      d.name,
+      d.account_name,
+      d.amount || 0,
+    ]);
     const csvContent = [
-      headers.join(','),
-      ...rows.map((r) => r.map((c) => `"${c}"`).join(',')),
-    ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+      headers.join(","),
+      ...rows.map((r) => r.map((c) => `"${c}"`).join(",")),
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `deals_at_risk_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `deals_at_risk_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
 
   const exportOpenDealsCSV = () => {
-    const headers = ['Deal', 'Stage', 'Amount'];
-    const rows = openOpps.slice(0, 10).map((d) => [d.name, d.stage, d.amount || 0]);
+    const headers = ["Deal", "Stage", "Amount"];
+    const rows = openOpps
+      .slice(0, 10)
+      .map((d) => [d.name, d.stage, d.amount || 0]);
     const csvContent = [
-      headers.join(','),
-      ...rows.map((r) => r.map((c) => `"${c}"`).join(',')),
-    ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
+      headers.join(","),
+      ...rows.map((r) => r.map((c) => `"${c}"`).join(",")),
+    ].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
-    a.download = `open_deals_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `open_deals_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
   };
@@ -181,13 +201,13 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
           </ResponsiveContainer>
           <div className="mt-4 text-center">
             <p className="text-sm text-gray-500">
-              Average Accuracy:{' '}
+              Average Accuracy:{" "}
               <span className="font-bold text-lg text-gray-900">
                 {forecastingAccuracy.length > 0
                   ? (
                       forecastingAccuracy.reduce(
                         (sum, item) => sum + parseFloat(item.accuracy),
-                        0
+                        0,
                       ) / forecastingAccuracy.length
                     ).toFixed(1)
                   : 0}
@@ -229,12 +249,17 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ band, value }) => `${band}%: $${(value / 1000).toFixed(0)}K`}
+                  label={({ band, value }) =>
+                    `${band}%: $${(value / 1000).toFixed(0)}K`
+                  }
                   outerRadius={90}
                   dataKey="value"
                 >
                   {forecastByProbability.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
@@ -269,8 +294,12 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
             <TableExportButtons
               data={openOpps
                 .slice(0, 10)
-                .map((d) => [d.name, d.stage, `$${(d.amount || 0).toLocaleString()}`])}
-              headers={['Deal', 'Stage', 'Amount']}
+                .map((d) => [
+                  d.name,
+                  d.stage,
+                  `$${(d.amount || 0).toLocaleString()}`,
+                ])}
+              headers={["Deal", "Stage", "Amount"]}
               title="Open Deals by Stage"
               onExportCSV={exportOpenDealsCSV}
             />
@@ -298,7 +327,10 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
                 ))}
                 {openOpps.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">
+                    <TableCell
+                      colSpan={3}
+                      className="text-center text-gray-500"
+                    >
                       No open deals
                     </TableCell>
                   </TableRow>
@@ -317,7 +349,7 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
                 d.account_name,
                 `$${(d.amount || 0).toLocaleString()}`,
               ])}
-              headers={['Deal', 'Account', 'Amount']}
+              headers={["Deal", "Account", "Amount"]}
               title="Deals at Risk"
               onExportCSV={exportDealsAtRiskCSV}
             />
@@ -334,7 +366,10 @@ export default function PipelineForecastTab({ filteredOpportunities, filteredAct
               <TableBody>
                 {dealsAtRisk.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">
+                    <TableCell
+                      colSpan={3}
+                      className="text-center text-gray-500"
+                    >
                       No at-risk deals
                     </TableCell>
                   </TableRow>

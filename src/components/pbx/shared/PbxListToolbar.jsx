@@ -1,13 +1,13 @@
-import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 
 export default function PbxListToolbar({
   search,
   onSearchChange,
-  searchPlaceholder = 'Search…',
-  searchFieldId = 'pbx-list-search',
-  searchFieldName = 'pbx-list-search',
+  searchPlaceholder = "Search…",
+  searchFieldId = "pbx-list-search",
+  searchFieldName = "pbx-list-search",
   children,
 }) {
   return (
@@ -27,7 +27,9 @@ export default function PbxListToolbar({
       ) : (
         <div />
       )}
-      {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
+      {children ? (
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
+      ) : null}
     </div>
   );
 }

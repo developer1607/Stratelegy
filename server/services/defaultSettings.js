@@ -1,8 +1,10 @@
-import { queryOne } from '../db/query.js';
-import { isEmailOperational } from './email/mailer.js';
+import { queryOne } from "../db/query.js";
+import { isEmailOperational } from "./email/mailer.js";
 
 export async function getDefaultSettingsRow() {
-  return queryOne('SELECT * FROM default_settings ORDER BY created_date ASC LIMIT 1');
+  return queryOne(
+    "SELECT * FROM default_settings ORDER BY created_date ASC LIMIT 1",
+  );
 }
 
 /** MFA defaults applied when creating users or completing invite registration. */

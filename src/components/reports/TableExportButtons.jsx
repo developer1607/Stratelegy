@@ -1,9 +1,14 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Download, FileText } from 'lucide-react';
-import jsPDF from 'jspdf';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Download, FileText } from "lucide-react";
+import jsPDF from "jspdf";
 
-export default function TableExportButtons({ data, headers, title, onExportCSV }) {
+export default function TableExportButtons({
+  data,
+  headers,
+  title,
+  onExportCSV,
+}) {
   const handleExportPDF = () => {
     const doc = new jsPDF();
 
@@ -20,7 +25,7 @@ export default function TableExportButtons({ data, headers, title, onExportCSV }
     let yPosition = 32;
 
     // Add headers
-    doc.setFont(undefined, 'bold');
+    doc.setFont(undefined, "bold");
     let xPosition = 14;
     headers.forEach((header, _idx) => {
       doc.text(header, xPosition, yPosition);
@@ -28,7 +33,7 @@ export default function TableExportButtons({ data, headers, title, onExportCSV }
     });
 
     // Add data rows
-    doc.setFont(undefined, 'normal');
+    doc.setFont(undefined, "normal");
     yPosition += 7;
     data.forEach((row) => {
       if (yPosition > 280) {
@@ -44,7 +49,7 @@ export default function TableExportButtons({ data, headers, title, onExportCSV }
     });
 
     doc.save(
-      `${title.replace(/\s+/g, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.pdf`
+      `${title.replace(/\s+/g, "_").toLowerCase()}_${new Date().toISOString().split("T")[0]}.pdf`,
     );
   };
 

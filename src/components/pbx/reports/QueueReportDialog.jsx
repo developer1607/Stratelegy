@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Loader2, Play } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Play } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -12,31 +12,31 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
+} from "@/components/ui/select";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
 import {
   buildReportPayload,
   initialReportParams,
   parseFieldRule,
-} from '@/lib/reportTypes';
-import { toast } from 'sonner';
+} from "@/lib/reportTypes";
+import { toast } from "sonner";
 
 function ReportParamField({ name, rule, value, onChange, domains }) {
   const { required, type, enumValues } = parseFieldRule(rule);
-  const label = `${name}${required ? ' *' : ''}`;
+  const label = `${name}${required ? " *" : ""}`;
 
   if (enumValues) {
     return (
       <div className="space-y-1.5">
         <Label>{label}</Label>
-        <Select value={value || ''} onValueChange={onChange}>
+        <Select value={value || ""} onValueChange={onChange}>
           <SelectTrigger>
             <SelectValue placeholder={`Select ${name}`} />
           </SelectTrigger>
@@ -52,17 +52,17 @@ function ReportParamField({ name, rule, value, onChange, domains }) {
     );
   }
 
-  if (name === 'domain' && domains?.length) {
+  if (name === "domain" && domains?.length) {
     return (
       <div className="space-y-1.5">
         <Label>{label}</Label>
-        <Select value={value || ''} onValueChange={onChange}>
+        <Select value={value || ""} onValueChange={onChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select domain" />
           </SelectTrigger>
           <SelectContent>
             {domains.map((d) => {
-              const domain = typeof d === 'string' ? d : d?.domain;
+              const domain = typeof d === "string" ? d : d?.domain;
               if (!domain) return null;
               return (
                 <SelectItem key={domain} value={domain}>
@@ -79,10 +79,10 @@ function ReportParamField({ name, rule, value, onChange, domains }) {
   return (
     <PbxFormField
       label={label}
-      type={type === 'date' ? 'date' : type === 'integer' ? 'number' : 'text'}
+      type={type === "date" ? "date" : type === "integer" ? "number" : "text"}
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      placeholder={type === 'date' ? 'YYYY-MM-DD' : name}
+      placeholder={type === "date" ? "YYYY-MM-DD" : name}
     />
   );
 }
@@ -96,16 +96,16 @@ export default function QueueReportDialog({
 }) {
   const queryClient = useQueryClient();
   const [params, setParams] = useState({});
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState("");
 
   const fieldEntries = useMemo(
     () => Object.entries(reportType?.fields || {}),
-    [reportType?.fields]
+    [reportType?.fields],
   );
-  const needsDomains = fieldEntries.some(([name]) => name === 'domain');
+  const needsDomains = fieldEntries.some(([name]) => name === "domain");
 
   const domainsQuery = useQuery({
-    queryKey: ['pbx-domains'],
+    queryKey: ["pbx-domains"],
     queryFn: () => pbxApi.domains(),
     enabled: open && needsDomains,
   });
@@ -113,7 +113,7 @@ export default function QueueReportDialog({
   useEffect(() => {
     if (!open || !reportType) return;
     setParams({ ...initialReportParams(reportType.fields), ...defaultParams });
-    setNotes('');
+    setNotes("");
   }, [open, reportType, defaultParams]);
 
   const queueMutation = useMutation({
@@ -127,11 +127,11 @@ export default function QueueReportDialog({
     },
     onSuccess: () => {
       toast.success(`Report queued: ${reportType.label}`);
-      queryClient.invalidateQueries({ queryKey: ['pbx-generated-reports'] });
+      queryClient.invalidateQueries({ queryKey: ["pbx-generated-reports"] });
       onOpenChange(false);
       onSuccess?.();
     },
-    onError: (err) => toast.error(err.message || 'Failed to queue report'),
+    onError: (err) => toast.error(err.message || "Failed to queue report"),
   });
 
   if (!reportType) return null;
@@ -144,25 +144,31 @@ export default function QueueReportDialog({
         <DialogHeader>
           <DialogTitle>Queue report</DialogTitle>
           <DialogDescription>
-            {reportType.label}{' '}
+            {reportType.label}{" "}
             <span className="text-gray-500">({reportType.value})</span>
             {reportType.category ? (
-              <span className="block text-xs mt-1">Category: {reportType.category}</span>
+              <span className="block text-xs mt-1">
+                Category: {reportType.category}
+              </span>
             ) : null}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           {fieldEntries.length === 0 ? (
-            <p className="text-sm text-gray-600">This report runs with no parameters.</p>
+            <p className="text-sm text-gray-600">
+              This report runs with no parameters.
+            </p>
           ) : (
             fieldEntries.map(([name, rule]) => (
               <ReportParamField
                 key={name}
                 name={name}
                 rule={rule}
-                value={params[name] ?? ''}
-                onChange={(val) => setParams((prev) => ({ ...prev, [name]: val }))}
+                value={params[name] ?? ""}
+                onChange={(val) =>
+                  setParams((prev) => ({ ...prev, [name]: val }))
+                }
                 domains={domains}
               />
             ))
@@ -181,7 +187,11 @@ export default function QueueReportDialog({
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button

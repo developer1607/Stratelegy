@@ -1,8 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -10,16 +10,18 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import PbxFormSelect, { mapCodeLabelOptions } from '@/components/pbx/shared/PbxFormSelect';
+} from "@/components/ui/sheet";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import PbxFormSelect, {
+  mapCodeLabelOptions,
+} from "@/components/pbx/shared/PbxFormSelect";
 import {
   EMPTY_E911_FORM,
   buildE911ValidateQuery,
   e911AddressFieldsComplete,
   mapE911ToForm,
-} from '@/components/pbx/shared/pbxFormMappers';
-import { toast } from 'sonner';
+} from "@/components/pbx/shared/pbxFormMappers";
+import { toast } from "sonner";
 
 export default function E911ProvisionSheet({
   phoneNumber,
@@ -38,7 +40,7 @@ export default function E911ProvisionSheet({
     isLoading,
     isFetching,
   } = useQuery({
-    queryKey: ['pbx-e911-detail', phoneNumber],
+    queryKey: ["pbx-e911-detail", phoneNumber],
     queryFn: async () => {
       try {
         return await pbxApi.e911Detail(phoneNumber);
@@ -52,7 +54,7 @@ export default function E911ProvisionSheet({
   });
 
   const countriesQuery = useQuery({
-    queryKey: ['pbx-e911-countries'],
+    queryKey: ["pbx-e911-countries"],
     queryFn: () => pbxApi.e911Countries(),
     enabled: open,
     staleTime: 30 * 60 * 1000,
@@ -60,7 +62,7 @@ export default function E911ProvisionSheet({
   });
 
   const statesQuery = useQuery({
-    queryKey: ['pbx-e911-states'],
+    queryKey: ["pbx-e911-states"],
     queryFn: () => pbxApi.e911States(),
     enabled: open,
     staleTime: 30 * 60 * 1000,
@@ -69,7 +71,7 @@ export default function E911ProvisionSheet({
 
   const countryOptions = useMemo(
     () => mapCodeLabelOptions(countriesQuery.data),
-    [countriesQuery.data]
+    [countriesQuery.data],
   );
 
   const stateOptions = useMemo(() => {
@@ -93,11 +95,11 @@ export default function E911ProvisionSheet({
   const mutation = useMutation({
     mutationFn: () => pbxApi.provisionE911(phoneNumber, form),
     onSuccess: () => {
-      toast.success(loadExisting ? 'E911 updated' : 'E911 provisioned');
+      toast.success(loadExisting ? "E911 updated" : "E911 provisioned");
       onOpenChange(false);
       onSuccess?.();
     },
-    onError: (err) => toast.error(err.message || 'Failed to save E911'),
+    onError: (err) => toast.error(err.message || "Failed to save E911"),
   });
 
   const validateMutation = useMutation({
@@ -112,16 +114,26 @@ export default function E911ProvisionSheet({
         corrected: data?.address_corrected || null,
       });
       toast.success(
-        routing ? `Address validated (${routing}${msag ? `, ${msag}` : ''})` : 'Address validated'
+        routing
+          ? `Address validated (${routing}${msag ? `, ${msag}` : ""})`
+          : "Address validated",
       );
     },
     onError: (err) => {
-      setValidationSummary({ ok: false, message: err.message || 'Address validation failed' });
-      toast.error(err.message || 'Address validation failed');
+      setValidationSummary({
+        ok: false,
+        message: err.message || "Address validation failed",
+      });
+      toast.error(err.message || "Address validation failed");
     },
   });
 
-  const loadingExisting = open && loadExisting && (isLoading || isFetching) && !detail && !initialData;
+  const loadingExisting =
+    open &&
+    loadExisting &&
+    (isLoading || isFetching) &&
+    !detail &&
+    !initialData;
   const loadingGeo = countriesQuery.isLoading || statesQuery.isLoading;
   const canValidate = e911AddressFieldsComplete(form) && !loadingExisting;
 
@@ -130,13 +142,13 @@ export default function E911ProvisionSheet({
     setForm((prev) => {
       const nextStates = statesQuery.data?.[country] || {};
       const stateStillValid = prev.state && nextStates[prev.state];
-      return { ...prev, country, state: stateStillValid ? prev.state : '' };
+      return { ...prev, country, state: stateStillValid ? prev.state : "" };
     });
   };
 
   const handleValidate = () => {
     if (!canValidate) {
-      toast.error('Enter a full address first.');
+      toast.error("Enter a full address first.");
       return;
     }
     setValidationSummary(null);
@@ -153,11 +165,13 @@ export default function E911ProvisionSheet({
           }}
         >
           <SheetHeader>
-            <SheetTitle>{loadExisting ? 'Update E911' : 'Provision E911'}</SheetTitle>
+            <SheetTitle>
+              {loadExisting ? "Update E911" : "Provision E911"}
+            </SheetTitle>
             <SheetDescription>
               {loadExisting
-                ? 'Review the current emergency location and update as needed.'
-                : 'Enter emergency location details for this phone number.'}
+                ? "Review the current emergency location and update as needed."
+                : "Enter emergency location details for this phone number."}
             </SheetDescription>
           </SheetHeader>
 
@@ -168,7 +182,12 @@ export default function E911ProvisionSheet({
             </div>
           ) : (
             <div className="grid gap-3 py-6">
-              <PbxFormField label="Phone number" value={phoneNumber} readOnly required />
+              <PbxFormField
+                label="Phone number"
+                value={phoneNumber}
+                readOnly
+                required
+              />
               <PbxFormField
                 label="Name"
                 value={form.name}
@@ -224,7 +243,8 @@ export default function E911ProvisionSheet({
                 </div>
               ) : countriesQuery.error || statesQuery.error ? (
                 <p className="text-sm text-amber-700">
-                  Country/state lists unavailable — you can still enter codes manually.
+                  Country/state lists unavailable — you can still enter codes
+                  manually.
                 </p>
               ) : null}
               {countryOptions.length > 0 ? (
@@ -288,8 +308,10 @@ export default function E911ProvisionSheet({
               {validationSummary?.ok ? (
                 <div className="rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-900">
                   Address validated
-                  {validationSummary.routing ? ` — ${validationSummary.routing}` : ''}
-                  {validationSummary.msag ? ` (${validationSummary.msag})` : ''}
+                  {validationSummary.routing
+                    ? ` — ${validationSummary.routing}`
+                    : ""}
+                  {validationSummary.msag ? ` (${validationSummary.msag})` : ""}
                 </div>
               ) : null}
               {validationSummary && !validationSummary.ok ? (
@@ -307,10 +329,13 @@ export default function E911ProvisionSheet({
               disabled={validateMutation.isPending || !canValidate}
               onClick={handleValidate}
             >
-              {validateMutation.isPending ? 'Validating…' : 'Validate address'}
+              {validateMutation.isPending ? "Validating…" : "Validate address"}
             </Button>
-            <Button type="submit" disabled={mutation.isPending || loadingExisting}>
-              {mutation.isPending ? 'Saving…' : 'Save E911'}
+            <Button
+              type="submit"
+              disabled={mutation.isPending || loadingExisting}
+            >
+              {mutation.isPending ? "Saving…" : "Save E911"}
             </Button>
           </SheetFooter>
         </form>

@@ -1,8 +1,12 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { ChevronRight } from 'lucide-react';
+import React from "react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronRight } from "lucide-react";
 
 function filterVisible(items, canAccessPage, isAdmin) {
   return items.filter((item) => {

@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
-import { execute } from '../db/query.js';
-import { getClientIp } from './loginProtection.js';
+import { v4 as uuidv4 } from "uuid";
+import { execute } from "../db/query.js";
+import { getClientIp } from "./loginProtection.js";
 
 /**
  * @param {import('express').Request} req
@@ -24,9 +24,9 @@ export async function auditLog(req, action, opts = {}) {
         opts.resourceId ?? null,
         metadata,
         ip,
-      ]
+      ],
     );
   } catch (e) {
-    console.error('[audit] failed to write event:', action, e?.message || e);
+    console.error("[audit] failed to write event:", action, e?.message || e);
   }
 }

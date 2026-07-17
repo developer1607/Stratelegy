@@ -1,15 +1,15 @@
-import { listUsers, getUserById } from './users.js';
-import { clampLimit } from '../utils/sql.js';
-import * as ticketStore from './ticketStore.js';
-import * as saasStore from './saasStore.js';
-import { onTicketCreated } from './tickets.js';
+import { listUsers, getUserById } from "./users.js";
+import { clampLimit } from "../utils/sql.js";
+import * as ticketStore from "./ticketStore.js";
+import * as saasStore from "./saasStore.js";
+import { onTicketCreated } from "./tickets.js";
 
-const USER_ENTITY = 'User';
-const TICKET_ENTITIES = new Set(['Ticket', 'TicketComment']);
+const USER_ENTITY = "User";
+const TICKET_ENTITIES = new Set(["Ticket", "TicketComment"]);
 
 export async function listEntities(entityName, sort, limit) {
   if (TICKET_ENTITIES.has(entityName)) {
-    if (entityName === 'Ticket') return ticketStore.listTickets(sort, limit);
+    if (entityName === "Ticket") return ticketStore.listTickets(sort, limit);
     return ticketStore.filterComments({}, sort);
   }
 
@@ -43,8 +43,8 @@ export async function listEntitiesPage(entityName, sort, limit, offset) {
 }
 
 export async function getEntity(entityName, id) {
-  if (entityName === 'Ticket') return ticketStore.getTicket(id);
-  if (entityName === 'TicketComment') return ticketStore.getComment(id);
+  if (entityName === "Ticket") return ticketStore.getTicket(id);
+  if (entityName === "TicketComment") return ticketStore.getComment(id);
   if (entityName === USER_ENTITY) {
     return getUserById(id);
   }
@@ -52,8 +52,10 @@ export async function getEntity(entityName, id) {
 }
 
 export async function filterEntities(entityName, filterQuery, sort) {
-  if (entityName === 'Ticket') return ticketStore.filterTickets(filterQuery, sort);
-  if (entityName === 'TicketComment') return ticketStore.filterComments(filterQuery, sort);
+  if (entityName === "Ticket")
+    return ticketStore.filterTickets(filterQuery, sort);
+  if (entityName === "TicketComment")
+    return ticketStore.filterComments(filterQuery, sort);
   if (entityName === USER_ENTITY) {
     let items = await listUsers();
     items = items.filter((r) => matchesFilter(r, filterQuery));
@@ -69,17 +71,21 @@ export async function filterEntities(entityName, filterQuery, sort) {
   return saasStore.filterEntities(entityName, filterQuery, sort);
 }
 
-export async function createEntity(entityName, data, { skipHooks = false, actorEmail } = {}) {
-  if (entityName === 'Ticket') {
+export async function createEntity(
+  entityName,
+  data,
+  { skipHooks = false, actorEmail } = {},
+) {
+  if (entityName === "Ticket") {
     const created = await ticketStore.createTicket(data);
     if (!skipHooks) await onTicketCreated(created, { actorEmail });
-    return getEntity('Ticket', created.id);
+    return getEntity("Ticket", created.id);
   }
-  if (entityName === 'TicketComment') {
+  if (entityName === "TicketComment") {
     return ticketStore.createComment(data, { actorEmail });
   }
   if (entityName === USER_ENTITY) {
-    const err = new Error('Use user management API to create users');
+    const err = new Error("Use user management API to create users");
     err.status = 400;
     throw err;
   }
@@ -87,10 +93,12 @@ export async function createEntity(entityName, data, { skipHooks = false, actorE
 }
 
 export async function updateEntity(entityName, id, data, { actorEmail } = {}) {
-  if (entityName === 'Ticket') return ticketStore.updateTicket(id, data, { actorEmail });
-  if (entityName === 'TicketComment') return ticketStore.updateComment(id, data);
+  if (entityName === "Ticket")
+    return ticketStore.updateTicket(id, data, { actorEmail });
+  if (entityName === "TicketComment")
+    return ticketStore.updateComment(id, data);
   if (entityName === USER_ENTITY) {
-    const err = new Error('Use user management API to update users');
+    const err = new Error("Use user management API to update users");
     err.status = 400;
     throw err;
   }
@@ -98,10 +106,10 @@ export async function updateEntity(entityName, id, data, { actorEmail } = {}) {
 }
 
 export async function deleteEntity(entityName, id) {
-  if (entityName === 'Ticket') return ticketStore.deleteTicket(id);
-  if (entityName === 'TicketComment') return ticketStore.deleteComment(id);
+  if (entityName === "Ticket") return ticketStore.deleteTicket(id);
+  if (entityName === "TicketComment") return ticketStore.deleteComment(id);
   if (entityName === USER_ENTITY) {
-    const err = new Error('Use user management API to delete users');
+    const err = new Error("Use user management API to delete users");
     err.status = 400;
     throw err;
   }
@@ -117,8 +125,8 @@ export async function bulkCreateEntities(entityName, items) {
 }
 
 function parseSort(sort) {
-  if (!sort) return { field: 'created_date', desc: true };
-  const desc = sort.startsWith('-');
+  if (!sort) return { field: "created_date", desc: true };
+  const desc = sort.startsWith("-");
   const field = desc ? sort.slice(1) : sort;
   return { field, desc };
 }
@@ -127,13 +135,13 @@ function compareValues(a, b) {
   if (a == null && b == null) return 0;
   if (a == null) return -1;
   if (b == null) return 1;
-  if (typeof a === 'number' && typeof b === 'number') return a - b;
+  if (typeof a === "number" && typeof b === "number") return a - b;
   return String(a).localeCompare(String(b));
 }
 
 function matchesFilter(record, filterQuery) {
   for (const [key, value] of Object.entries(filterQuery)) {
-    if (value && typeof value === 'object' && Array.isArray(value.$in)) {
+    if (value && typeof value === "object" && Array.isArray(value.$in)) {
       if (!value.$in.includes(record[key])) return false;
       continue;
     }

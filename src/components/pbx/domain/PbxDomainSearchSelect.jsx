@@ -1,10 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
-import { domainsMatch } from '@/lib/pbxDomain';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { domainsMatch } from "@/lib/pbxDomain";
 
 function filterDomains(domains, query) {
   const q = query.trim().toLowerCase();
@@ -12,7 +16,7 @@ function filterDomains(domains, query) {
   return domains.filter((d) => {
     const haystack = [d.domain, d.description, d.name, d.reseller]
       .filter(Boolean)
-      .join(' ')
+      .join(" ")
       .toLowerCase();
     return haystack.includes(q);
   });
@@ -24,11 +28,11 @@ export default function PbxDomainSearchSelect({
   onValueChange,
   className,
   disabled,
-  emptyMessage = 'No domains available.',
+  emptyMessage = "No domains available.",
   triggerClassName,
 }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchRef = useRef(null);
   const listRef = useRef(null);
@@ -37,19 +41,21 @@ export default function PbxDomainSearchSelect({
   const filtered = useMemo(
     () =>
       [...filterDomains(domains, query)].sort((a, b) =>
-        (a.domain || '').localeCompare(b.domain || '', undefined, { sensitivity: 'base' })
+        (a.domain || "").localeCompare(b.domain || "", undefined, {
+          sensitivity: "base",
+        }),
       ),
-    [domains, query]
+    [domains, query],
   );
 
   const selectedRecord = useMemo(
     () => domains.find((item) => domainsMatch(item.domain, value)) || null,
-    [domains, value]
+    [domains, value],
   );
 
   useEffect(() => {
     if (!open) {
-      setQuery('');
+      setQuery("");
       setHighlightedIndex(0);
       return;
     }
@@ -64,35 +70,37 @@ export default function PbxDomainSearchSelect({
   useEffect(() => {
     const node = optionRefs.current[highlightedIndex];
     if (node && listRef.current) {
-      node.scrollIntoView({ block: 'nearest' });
+      node.scrollIntoView({ block: "nearest" });
     }
   }, [highlightedIndex]);
 
   const handleSelect = (domainName) => {
     onValueChange(domainName);
     setOpen(false);
-    setQuery('');
+    setQuery("");
     setHighlightedIndex(0);
   };
 
   const handleSearchKeyDown = (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       setOpen(false);
       return;
     }
     if (!filtered.length) return;
 
-    if (event.key === 'ArrowDown') {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
-      setHighlightedIndex((current) => Math.min(current + 1, filtered.length - 1));
+      setHighlightedIndex((current) =>
+        Math.min(current + 1, filtered.length - 1),
+      );
       return;
     }
-    if (event.key === 'ArrowUp') {
+    if (event.key === "ArrowUp") {
       event.preventDefault();
       setHighlightedIndex((current) => Math.max(current - 1, 0));
       return;
     }
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       event.preventDefault();
       handleSelect(filtered[highlightedIndex].domain);
     }
@@ -101,8 +109,8 @@ export default function PbxDomainSearchSelect({
   const triggerLabel = value
     ? selectedRecord?.domain || value
     : domains.length
-      ? 'Select domain'
-      : 'No domains loaded';
+      ? "Select domain"
+      : "No domains loaded";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -115,14 +123,17 @@ export default function PbxDomainSearchSelect({
           aria-haspopup="listbox"
           disabled={disabled}
           className={cn(
-            'w-full sm:max-w-md justify-between bg-white/10 border-white/20 text-white hover:bg-white/15 hover:text-white',
+            "w-full sm:max-w-md justify-between bg-white/10 border-white/20 text-white hover:bg-white/15 hover:text-white",
             triggerClassName,
-            className
+            className,
           )}
         >
           <span className="truncate font-mono text-left">{triggerLabel}</span>
           <ChevronDown
-            className={cn('h-4 w-4 shrink-0 opacity-70 transition-transform', open && 'rotate-180')}
+            className={cn(
+              "h-4 w-4 shrink-0 opacity-70 transition-transform",
+              open && "rotate-180",
+            )}
           />
         </Button>
       </PopoverTrigger>
@@ -140,7 +151,11 @@ export default function PbxDomainSearchSelect({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               onKeyDown={handleSearchKeyDown}
-              placeholder={domains.length ? `Search ${domains.length} domains…` : 'Search domains…'}
+              placeholder={
+                domains.length
+                  ? `Search ${domains.length} domains…`
+                  : "Search domains…"
+              }
               className="h-9 pl-9"
               aria-label="Search domains"
               disabled={!domains.length}
@@ -155,9 +170,13 @@ export default function PbxDomainSearchSelect({
           aria-label="Domain list"
         >
           {!domains.length ? (
-            <p className="px-3 py-4 text-sm text-muted-foreground">{emptyMessage}</p>
+            <p className="px-3 py-4 text-sm text-muted-foreground">
+              {emptyMessage}
+            </p>
           ) : filtered.length === 0 ? (
-            <p className="px-3 py-4 text-sm text-muted-foreground">No domains match your search.</p>
+            <p className="px-3 py-4 text-sm text-muted-foreground">
+              No domains match your search.
+            </p>
           ) : (
             filtered.map((item, index) => {
               const selected = domainsMatch(item.domain, value);
@@ -172,18 +191,23 @@ export default function PbxDomainSearchSelect({
                   role="option"
                   aria-selected={selected}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground',
-                    selected && 'bg-accent/50',
-                    highlighted && !selected && 'bg-accent/30'
+                    "flex w-full items-center gap-2 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                    selected && "bg-accent/50",
+                    highlighted && !selected && "bg-accent/30",
                   )}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   onClick={() => handleSelect(item.domain)}
                 >
                   <Check
-                    className={cn('h-4 w-4 shrink-0', selected ? 'opacity-100' : 'opacity-0')}
+                    className={cn(
+                      "h-4 w-4 shrink-0",
+                      selected ? "opacity-100" : "opacity-0",
+                    )}
                   />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-mono">{item.domain}</span>
+                    <span className="block truncate font-mono">
+                      {item.domain}
+                    </span>
                     {item.description || item.name ? (
                       <span className="block truncate text-xs text-muted-foreground">
                         {item.description || item.name}
@@ -199,7 +223,7 @@ export default function PbxDomainSearchSelect({
         {domains.length > 0 ? (
           <div className="border-t px-3 py-2 text-[11px] text-muted-foreground">
             {filtered.length} of {domains.length} domains
-            {filtered.length > 8 ? ' — scroll for more' : ''}
+            {filtered.length > 8 ? " — scroll for more" : ""}
           </div>
         ) : null}
       </PopoverContent>

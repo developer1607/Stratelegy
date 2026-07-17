@@ -1,8 +1,8 @@
-import React from 'react';
-import { Avatar } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { CheckCircle2 } from 'lucide-react';
+import React from "react";
+import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { CheckCircle2 } from "lucide-react";
 
 export default function PriorityActivityItem({
   activity,
@@ -13,7 +13,9 @@ export default function PriorityActivityItem({
   const activityTime = new Date(activity.date).getTime();
   const now = Date.now();
   const isOverdue = !isCompleted && activityTime < now;
-  const hoursDiff = Math.abs(Math.floor((activityTime - now) / (1000 * 60 * 60)));
+  const hoursDiff = Math.abs(
+    Math.floor((activityTime - now) / (1000 * 60 * 60)),
+  );
 
   const getOverdueText = () => {
     const days = Math.floor(hoursDiff / 24);
@@ -26,15 +28,19 @@ export default function PriorityActivityItem({
       <div className="flex items-center gap-3 flex-1">
         <Avatar className="w-10 h-10 bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-semibold">
           {activity.related_to_name
-            ?.split(' ')
+            ?.split(" ")
             .map((n) => n[0])
-            .join('') || 'A'}
+            .join("") || "A"}
         </Avatar>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <p className="font-medium text-sm">{activity.related_to_name || 'Activity'}</p>
+            <p className="font-medium text-sm">
+              {activity.related_to_name || "Activity"}
+            </p>
             {isCompleted ? (
-              <Badge className="text-xs bg-green-100 text-green-800">Completed</Badge>
+              <Badge className="text-xs bg-green-100 text-green-800">
+                Completed
+              </Badge>
             ) : (
               isOverdue && (
                 <Badge variant="destructive" className="text-xs">
@@ -47,10 +53,12 @@ export default function PriorityActivityItem({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className={`text-sm font-medium ${isOverdue ? 'text-red-600' : 'text-gray-900'}`}>
-          {new Date(activity.date).toLocaleTimeString('en-US', {
-            hour: 'numeric',
-            minute: '2-digit',
+        <span
+          className={`text-sm font-medium ${isOverdue ? "text-red-600" : "text-gray-900"}`}
+        >
+          {new Date(activity.date).toLocaleTimeString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
           })}
         </span>
         {!isCompleted && onMarkComplete && (

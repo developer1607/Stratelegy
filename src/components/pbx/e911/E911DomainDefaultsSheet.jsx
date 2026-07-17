@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { Loader2 } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -10,19 +10,25 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import { toast } from 'sonner';
+} from "@/components/ui/sheet";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import { toast } from "sonner";
 
 function toFormValue(value) {
-  const text = String(value ?? '').trim();
-  return text === '[*]' ? '' : text;
+  const text = String(value ?? "").trim();
+  return text === "[*]" ? "" : text;
 }
 
-export default function E911DomainDefaultsSheet({ domain, defaults, open, onOpenChange, onSuccess }) {
-  const [callerId, setCallerId] = useState('');
-  const [callerIdName, setCallerIdName] = useState('');
-  const [e911CallerId, setE911CallerId] = useState('');
+export default function E911DomainDefaultsSheet({
+  domain,
+  defaults,
+  open,
+  onOpenChange,
+  onSuccess,
+}) {
+  const [callerId, setCallerId] = useState("");
+  const [callerIdName, setCallerIdName] = useState("");
+  const [e911CallerId, setE911CallerId] = useState("");
 
   useEffect(() => {
     if (!open || !defaults) return;
@@ -34,9 +40,9 @@ export default function E911DomainDefaultsSheet({ domain, defaults, open, onOpen
   const saveMutation = useMutation({
     mutationFn: () =>
       pbxApi.updateE911DomainDefaults(domain, {
-        caller_id: callerId.trim() || '[*]',
-        caller_id_name: callerIdName.trim() || '[*]',
-        e911_caller_id: e911CallerId.trim() || '[*]',
+        caller_id: callerId.trim() || "[*]",
+        caller_id_name: callerIdName.trim() || "[*]",
+        e911_caller_id: e911CallerId.trim() || "[*]",
       }),
     onSuccess: (data) => {
       const unchanged =
@@ -44,18 +50,18 @@ export default function E911DomainDefaultsSheet({ domain, defaults, open, onOpen
         data?.caller_id === defaults?.caller_id &&
         data?.caller_id_name === defaults?.caller_id_name;
       if (unchanged) {
-        toast.message('Saved request sent', {
+        toast.message("Saved request sent", {
           description:
-            'This portal may not apply domain default changes via API. Use the emergency pool tab for 911 numbers.',
+            "This portal may not apply domain default changes via API. Use the emergency pool tab for 911 numbers.",
         });
       } else {
-        toast.success('Domain caller ID defaults updated');
+        toast.success("Domain caller ID defaults updated");
       }
       onSuccess?.();
       onOpenChange(false);
     },
     onError: (err) => {
-      toast.error(err?.message || 'Failed to update domain defaults');
+      toast.error(err?.message || "Failed to update domain defaults");
     },
   });
 
@@ -67,8 +73,8 @@ export default function E911DomainDefaultsSheet({ domain, defaults, open, onOpen
         <SheetHeader>
           <SheetTitle>Domain caller ID defaults</SheetTitle>
           <SheetDescription>
-            Updates PBX domain fields for {domain}. Leave blank to use domain pool{' '}
-            <code className="text-xs">[*]</code>.
+            Updates PBX domain fields for {domain}. Leave blank to use domain
+            pool <code className="text-xs">[*]</code>.
           </SheetDescription>
         </SheetHeader>
 
@@ -94,11 +100,23 @@ export default function E911DomainDefaultsSheet({ domain, defaults, open, onOpen
         </div>
 
         <SheetFooter>
-          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
-          <Button type="button" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>
-            {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
+          <Button
+            type="button"
+            onClick={() => saveMutation.mutate()}
+            disabled={saveMutation.isPending}
+          >
+            {saveMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              "Save"
+            )}
           </Button>
         </SheetFooter>
       </SheetContent>

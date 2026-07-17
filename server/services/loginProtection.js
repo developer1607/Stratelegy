@@ -2,7 +2,7 @@
  * Brute-force protection for login — persisted in MySQL (works across app restarts).
  */
 
-import { queryOne, execute } from '../db/query.js';
+import { queryOne, execute } from "../db/query.js";
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 15 * 60 * 1000;
@@ -11,11 +11,11 @@ const WINDOW_SECONDS = Math.floor(WINDOW_MS / 1000);
 const LOCKOUT_SECONDS = Math.floor(LOCKOUT_MS / 1000);
 
 function normalizeIp(ip) {
-  return String(ip || 'unknown').slice(0, 64);
+  return String(ip || "unknown").slice(0, 64);
 }
 
 export function normalizeLoginEmail(email) {
-  return String(email || '')
+  return String(email || "")
     .trim()
     .toLowerCase();
 }
@@ -23,11 +23,11 @@ export function normalizeLoginEmail(email) {
 /** @param {import('express').Request} req */
 export function getClientIp(req) {
   // Use Express-derived req.ip so spoofed X-Forwarded-For is ignored unless trust proxy is enabled.
-  return normalizeIp(req.ip || req.socket?.remoteAddress || 'unknown');
+  return normalizeIp(req.ip || req.socket?.remoteAddress || "unknown");
 }
 
 async function getAttemptRow(ip, email) {
-  return queryOne('SELECT * FROM login_attempts WHERE ip = ? AND email = ?', [
+  return queryOne("SELECT * FROM login_attempts WHERE ip = ? AND email = ?", [
     normalizeIp(ip),
     normalizeLoginEmail(email),
   ]);
@@ -37,7 +37,7 @@ export async function isLoginLocked(ip, email) {
   const row = await getAttemptRow(ip, email);
   if (!row?.locked_until) return false;
   if (new Date(row.locked_until) > new Date()) return true;
-  await execute('DELETE FROM login_attempts WHERE ip = ? AND email = ?', [
+  await execute("DELETE FROM login_attempts WHERE ip = ? AND email = ?", [
     normalizeIp(ip),
     normalizeLoginEmail(email),
   ]);
@@ -82,12 +82,12 @@ export async function recordFailedLogin(ip, email) {
       WINDOW_SECONDS,
       MAX_ATTEMPTS,
       LOCKOUT_SECONDS,
-    ]
+    ],
   );
 }
 
 export async function clearFailedLogins(ip, email) {
-  await execute('DELETE FROM login_attempts WHERE ip = ? AND email = ?', [
+  await execute("DELETE FROM login_attempts WHERE ip = ? AND email = ?", [
     normalizeIp(ip),
     normalizeLoginEmail(email),
   ]);
@@ -98,13 +98,13 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export function validateLoginInput(email, password) {
   const normalized = normalizeLoginEmail(email);
   if (!normalized || !password) {
-    return { ok: false, message: 'Email and password are required' };
+    return { ok: false, message: "Email and password are required" };
   }
   if (normalized.length > 254 || !EMAIL_RE.test(normalized)) {
-    return { ok: false, message: 'Invalid email or password' };
+    return { ok: false, message: "Invalid email or password" };
   }
   if (String(password).length > 128) {
-    return { ok: false, message: 'Invalid email or password' };
+    return { ok: false, message: "Invalid email or password" };
   }
   return { ok: true, email: normalized };
 }

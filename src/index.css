@@ -102,6 +102,59 @@
   }
 }
 
+@layer utilities {
+  .app-scrollbar {
+    scrollbar-color: #64748b #e2e8f0;
+    scrollbar-width: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .app-scrollbar::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  .app-scrollbar::-webkit-scrollbar-track {
+    background: #e2e8f0;
+  }
+
+  .app-scrollbar::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border: 2px solid #e2e8f0;
+    border-radius: 9999px;
+  }
+
+  .sidebar-scrollbar {
+    scrollbar-color: #64748b #0d1b2e;
+    scrollbar-width: auto;
+    scrollbar-gutter: stable;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: #0d1b2e;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: #64748b;
+    border: 2px solid #0d1b2e;
+    border-radius: 9999px;
+  }
+}
+
+@media (max-width: 1536px) {
+  .app-sidebar-space {
+    width: 0 !important;
+  }
+
+  .app-sidebar-panel {
+    box-shadow: 8px 0 24px rgb(15 23 42 / 25%);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

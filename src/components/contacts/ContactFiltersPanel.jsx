@@ -1,8 +1,8 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 export default function ContactFiltersPanel({
   filters,
@@ -22,7 +22,11 @@ export default function ContactFiltersPanel({
     <div className="w-full lg:w-80 bg-white border-l h-full overflow-y-auto">
       <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between z-10">
         <h3 className="font-semibold">Filters</h3>
-        <Button variant="ghost" size="sm" onClick={() => onFilterChange('reset')}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onFilterChange("reset")}
+        >
           Clear All
         </Button>
       </div>
@@ -34,14 +38,23 @@ export default function ContactFiltersPanel({
             <CardTitle className="text-sm">Role</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {['Decision Maker', 'Key Contact', 'Influencer', 'End User', 'Other'].map((role) => (
+            {[
+              "Decision Maker",
+              "Key Contact",
+              "Influencer",
+              "End User",
+              "Other",
+            ].map((role) => (
               <div key={role} className="flex items-center space-x-2">
                 <Checkbox
                   id={`role-${role}`}
                   checked={filters.roles?.includes(role)}
-                  onCheckedChange={() => handleCheckboxChange('roles', role)}
+                  onCheckedChange={() => handleCheckboxChange("roles", role)}
                 />
-                <Label htmlFor={`role-${role}`} className="text-sm font-normal cursor-pointer">
+                <Label
+                  htmlFor={`role-${role}`}
+                  className="text-sm font-normal cursor-pointer"
+                >
                   {role}
                 </Label>
               </div>
@@ -55,12 +68,14 @@ export default function ContactFiltersPanel({
             <CardTitle className="text-sm">Priority</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {['Key', 'Standard', 'At Risk'].map((priority) => (
+            {["Key", "Standard", "At Risk"].map((priority) => (
               <div key={priority} className="flex items-center space-x-2">
                 <Checkbox
                   id={`priority-${priority}`}
                   checked={filters.priorities?.includes(priority)}
-                  onCheckedChange={() => handleCheckboxChange('priorities', priority)}
+                  onCheckedChange={() =>
+                    handleCheckboxChange("priorities", priority)
+                  }
                 />
                 <Label
                   htmlFor={`priority-${priority}`}
@@ -84,10 +99,13 @@ export default function ContactFiltersPanel({
                 id="no-activity"
                 checked={filters.noRecentActivity}
                 onCheckedChange={() =>
-                  onFilterChange('noRecentActivity', !filters.noRecentActivity)
+                  onFilterChange("noRecentActivity", !filters.noRecentActivity)
                 }
               />
-              <Label htmlFor="no-activity" className="text-sm font-normal cursor-pointer">
+              <Label
+                htmlFor="no-activity"
+                className="text-sm font-normal cursor-pointer"
+              >
                 No Recent Activity (30+ days)
               </Label>
             </div>
@@ -100,14 +118,19 @@ export default function ContactFiltersPanel({
             <CardTitle className="text-sm">Company Size</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {['Small (1-50)', 'Medium (51-500)', 'Large (500+)'].map((size) => (
+            {["Small (1-50)", "Medium (51-500)", "Large (500+)"].map((size) => (
               <div key={size} className="flex items-center space-x-2">
                 <Checkbox
                   id={`size-${size}`}
                   checked={filters.companySizes?.includes(size)}
-                  onCheckedChange={() => handleCheckboxChange('companySizes', size)}
+                  onCheckedChange={() =>
+                    handleCheckboxChange("companySizes", size)
+                  }
                 />
-                <Label htmlFor={`size-${size}`} className="text-sm font-normal cursor-pointer">
+                <Label
+                  htmlFor={`size-${size}`}
+                  className="text-sm font-normal cursor-pointer"
+                >
                   {size}
                 </Label>
               </div>
@@ -123,15 +146,22 @@ export default function ContactFiltersPanel({
           <CardContent className="space-y-2">
             {(sources.length > 0
               ? sources
-              : ['call', 'email', 'website', 'partner', 'referral']).map((source) => (
+              : ["call", "email", "website", "partner", "referral"]
+            ).map((source) => (
               <div key={source} className="flex items-center space-x-2">
                 <Checkbox
                   id={`source-${source}`}
                   checked={filters.sources?.includes(source)}
-                  onCheckedChange={() => handleCheckboxChange('sources', source)}
+                  onCheckedChange={() =>
+                    handleCheckboxChange("sources", source)
+                  }
                 />
-                <Label htmlFor={`source-${source}`} className="text-sm font-normal cursor-pointer">
-                  {String(source).charAt(0).toUpperCase() + String(source).slice(1)}
+                <Label
+                  htmlFor={`source-${source}`}
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  {String(source).charAt(0).toUpperCase() +
+                    String(source).slice(1)}
                 </Label>
               </div>
             ))}
@@ -144,12 +174,14 @@ export default function ContactFiltersPanel({
             <CardTitle className="text-sm">Engagement Level</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            {['High', 'Medium', 'Low'].map((level) => (
+            {["High", "Medium", "Low"].map((level) => (
               <div key={level} className="flex items-center space-x-2">
                 <Checkbox
                   id={`engagement-${level}`}
                   checked={filters.engagementLevels?.includes(level)}
-                  onCheckedChange={() => handleCheckboxChange('engagementLevels', level)}
+                  onCheckedChange={() =>
+                    handleCheckboxChange("engagementLevels", level)
+                  }
                 />
                 <Label
                   htmlFor={`engagement-${level}`}

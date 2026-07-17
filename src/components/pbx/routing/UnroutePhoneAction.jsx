@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { pbxApi } from '@/api/pbx';
-import PbxDeleteDialog from '@/components/pbx/shared/PbxDeleteDialog';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { pbxApi } from "@/api/pbx";
+import PbxDeleteDialog from "@/components/pbx/shared/PbxDeleteDialog";
+import { toast } from "sonner";
 
 export default function UnroutePhoneAction({ phoneNumber, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -10,10 +10,10 @@ export default function UnroutePhoneAction({ phoneNumber, onSuccess }) {
   const mutation = useMutation({
     mutationFn: () => pbxApi.deleteRoute(phoneNumber),
     onSuccess: () => {
-      toast.success('Route removed');
+      toast.success("Route removed");
       onSuccess?.();
     },
-    onError: (err) => toast.error(err.message || 'Failed to unroute'),
+    onError: (err) => toast.error(err.message || "Failed to unroute"),
     onSettled: () => setLoading(false),
   });
 

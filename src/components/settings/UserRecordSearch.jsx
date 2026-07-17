@@ -1,22 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, Search } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronDown, Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
 
 function filterUsers(users, query) {
   const q = query.trim().toLowerCase();
   if (!q) return [];
   return users.filter((user) => {
-    const haystack = [user.full_name, user.email].filter(Boolean).join(' ').toLowerCase();
+    const haystack = [user.full_name, user.email]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
     return haystack.includes(q);
   });
 }
 
 export default function UserRecordSearch({ users, onSelectUser, className }) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState("");
   const [highlightedIndex, setHighlightedIndex] = useState(0);
   const searchRef = useRef(null);
   const listRef = useRef(null);
@@ -25,16 +32,20 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
   const filtered = useMemo(
     () =>
       [...filterUsers(users, query)].sort((a, b) =>
-        (a.full_name || a.email || '').localeCompare(b.full_name || b.email || '', undefined, {
-          sensitivity: 'base',
-        })
+        (a.full_name || a.email || "").localeCompare(
+          b.full_name || b.email || "",
+          undefined,
+          {
+            sensitivity: "base",
+          },
+        ),
       ),
-    [users, query]
+    [users, query],
   );
 
   useEffect(() => {
     if (!open) {
-      setQuery('');
+      setQuery("");
       setHighlightedIndex(0);
       return;
     }
@@ -49,35 +60,37 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
   useEffect(() => {
     const node = optionRefs.current[highlightedIndex];
     if (node && listRef.current) {
-      node.scrollIntoView({ block: 'nearest' });
+      node.scrollIntoView({ block: "nearest" });
     }
   }, [highlightedIndex]);
 
   const handleSelect = (user) => {
     onSelectUser(user);
     setOpen(false);
-    setQuery('');
+    setQuery("");
     setHighlightedIndex(0);
   };
 
   const handleSearchKeyDown = (event) => {
-    if (event.key === 'Escape') {
+    if (event.key === "Escape") {
       setOpen(false);
       return;
     }
     if (!filtered.length) return;
 
-    if (event.key === 'ArrowDown') {
+    if (event.key === "ArrowDown") {
       event.preventDefault();
-      setHighlightedIndex((current) => Math.min(current + 1, filtered.length - 1));
+      setHighlightedIndex((current) =>
+        Math.min(current + 1, filtered.length - 1),
+      );
       return;
     }
-    if (event.key === 'ArrowUp') {
+    if (event.key === "ArrowUp") {
       event.preventDefault();
       setHighlightedIndex((current) => Math.max(current - 1, 0));
       return;
     }
-    if (event.key === 'Enter') {
+    if (event.key === "Enter") {
       event.preventDefault();
       handleSelect(filtered[highlightedIndex]);
     }
@@ -92,14 +105,20 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
           role="combobox"
           aria-expanded={open}
           aria-haspopup="listbox"
-          className={cn('w-full justify-between font-normal text-muted-foreground', className)}
+          className={cn(
+            "w-full justify-between font-normal text-muted-foreground",
+            className,
+          )}
         >
           <span className="flex items-center gap-2 truncate">
             <Search className="h-4 w-4 shrink-0 opacity-60" />
             Search users by name or email…
           </span>
           <ChevronDown
-            className={cn('h-4 w-4 shrink-0 opacity-60 transition-transform', open && 'rotate-180')}
+            className={cn(
+              "h-4 w-4 shrink-0 opacity-60 transition-transform",
+              open && "rotate-180",
+            )}
           />
         </Button>
       </PopoverTrigger>
@@ -136,7 +155,9 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
               Type a name or email address to find a user.
             </p>
           ) : filtered.length === 0 ? (
-            <p className="px-3 py-4 text-sm text-muted-foreground">No users match your search.</p>
+            <p className="px-3 py-4 text-sm text-muted-foreground">
+              No users match your search.
+            </p>
           ) : (
             filtered.map((user, index) => {
               const highlighted = index === highlightedIndex;
@@ -150,8 +171,8 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
                   role="option"
                   aria-selected={highlighted}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground',
-                    highlighted && 'bg-accent/30'
+                    "flex w-full items-center gap-3 rounded-sm px-2 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground",
+                    highlighted && "bg-accent/30",
                   )}
                   onMouseEnter={() => setHighlightedIndex(index)}
                   onPointerDown={(event) => event.preventDefault()}
@@ -160,11 +181,15 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
                     {user.full_name?.charAt(0)?.toUpperCase() ||
                       user.email?.charAt(0)?.toUpperCase() ||
-                      '?'}
+                      "?"}
                   </div>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium">{user.full_name || '—'}</span>
-                    <span className="block truncate text-xs text-muted-foreground">{user.email}</span>
+                    <span className="block truncate font-medium">
+                      {user.full_name || "—"}
+                    </span>
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {user.email}
+                    </span>
                   </span>
                   <Check className="h-4 w-4 shrink-0 opacity-0" />
                 </button>
@@ -175,8 +200,8 @@ export default function UserRecordSearch({ users, onSelectUser, className }) {
 
         {query.trim() && filtered.length > 0 ? (
           <div className="border-t px-3 py-2 text-[11px] text-muted-foreground">
-            {filtered.length} match{filtered.length === 1 ? '' : 'es'}
-            {filtered.length > 8 ? ' — scroll for more' : ''}
+            {filtered.length} match{filtered.length === 1 ? "" : "es"}
+            {filtered.length > 8 ? " — scroll for more" : ""}
           </div>
         ) : null}
       </PopoverContent>

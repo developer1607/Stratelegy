@@ -1,32 +1,41 @@
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Phone, Mail, MessageCircle, Building2, Calendar, Activity } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/api/client';
-import { format } from 'date-fns';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  X,
+  Phone,
+  Mail,
+  MessageCircle,
+  Building2,
+  Calendar,
+  Activity,
+} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/api/client";
+import { format } from "date-fns";
 import {
   contactPhoneHref,
   contactEmailHref,
   contactWhatsAppHref,
-} from '@/lib/contactActions';
+} from "@/lib/contactActions";
 
 export default function ContactDetailsPanel({ contact, onClose }) {
   const { data: activities = [] } = useQuery({
-    queryKey: ['activities', 'contact', contact?.id],
+    queryKey: ["activities", "contact", contact?.id],
     queryFn: () =>
       api.entities.Activity.filter({
-        related_to_type: 'Contact',
+        related_to_type: "Contact",
         related_to_name: contact.name,
       }),
     enabled: !!contact?.name,
   });
 
   const { data: opportunities = [] } = useQuery({
-    queryKey: ['opportunities', contact?.id],
-    queryFn: () => api.entities.Opportunity.filter({ account_name: contact.company }),
+    queryKey: ["opportunities", contact?.id],
+    queryFn: () =>
+      api.entities.Opportunity.filter({ account_name: contact.company }),
     enabled: !!contact?.company,
   });
 
@@ -37,15 +46,15 @@ export default function ContactDetailsPanel({ contact, onClose }) {
   const whatsappHref = contactWhatsAppHref(contact.phone);
 
   const priorityColors = {
-    Key: 'bg-amber-100 text-amber-800 border-amber-300',
-    Standard: 'bg-blue-100 text-blue-800 border-blue-300',
-    'At Risk': 'bg-red-100 text-red-800 border-red-300',
+    Key: "bg-amber-100 text-amber-800 border-amber-300",
+    Standard: "bg-blue-100 text-blue-800 border-blue-300",
+    "At Risk": "bg-red-100 text-red-800 border-red-300",
   };
 
   const engagementColors = {
-    High: 'bg-green-600',
-    Medium: 'bg-yellow-600',
-    Low: 'bg-red-600',
+    High: "bg-green-600",
+    Medium: "bg-yellow-600",
+    Low: "bg-red-600",
   };
 
   return (
@@ -65,11 +74,17 @@ export default function ContactDetailsPanel({ contact, onClose }) {
             </span>
           </div>
           <h3 className="text-2xl font-bold mb-1">{contact.name}</h3>
-          <p className="text-gray-600 mb-3">{contact.position || 'No position'}</p>
+          <p className="text-gray-600 mb-3">
+            {contact.position || "No position"}
+          </p>
 
           <div className="flex items-center justify-center gap-2 mb-4">
-            <Badge className={priorityColors[contact.priority] || priorityColors['Standard']}>
-              {contact.priority || 'Standard'}
+            <Badge
+              className={
+                priorityColors[contact.priority] || priorityColors["Standard"]
+              }
+            >
+              {contact.priority || "Standard"}
             </Badge>
             {contact.role && <Badge variant="outline">{contact.role}</Badge>}
           </div>
@@ -83,13 +98,13 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                     key={i}
                     className={`w-2 h-6 rounded ${
                       i <
-                      (contact.engagement_level === 'High'
+                      (contact.engagement_level === "High"
                         ? 3
-                        : contact.engagement_level === 'Medium'
+                        : contact.engagement_level === "Medium"
                           ? 2
                           : 1)
                         ? engagementColors[contact.engagement_level]
-                        : 'bg-gray-200'
+                        : "bg-gray-200"
                     }`}
                   />
                 ))}
@@ -168,7 +183,9 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                   <p className="text-sm text-gray-600">Company</p>
                   <p className="font-medium">{contact.company}</p>
                   {contact.company_size && (
-                    <p className="text-sm text-gray-500">{contact.company_size}</p>
+                    <p className="text-sm text-gray-500">
+                      {contact.company_size}
+                    </p>
                   )}
                 </div>
               </div>
@@ -179,7 +196,10 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                 <div className="flex-1">
                   <p className="text-sm text-gray-600">Last Activity</p>
                   <p className="font-medium">
-                    {format(new Date(contact.last_activity_date), 'MMM d, yyyy')}
+                    {format(
+                      new Date(contact.last_activity_date),
+                      "MMM d, yyyy",
+                    )}
                   </p>
                 </div>
               </div>
@@ -196,7 +216,9 @@ export default function ContactDetailsPanel({ contact, onClose }) {
 
           <TabsContent value="activities" className="mt-4 space-y-3">
             {activities.length === 0 ? (
-              <p className="text-center text-gray-500 py-8">No activities yet</p>
+              <p className="text-center text-gray-500 py-8">
+                No activities yet
+              </p>
             ) : (
               activities.slice(0, 5).map((activity) => (
                 <Card key={activity.id}>
@@ -205,9 +227,14 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                       <Activity className="w-4 h-4 text-blue-600 mt-1" />
                       <div className="flex-1">
                         <p className="font-medium">{activity.type}</p>
-                        <p className="text-sm text-gray-600">{activity.description}</p>
+                        <p className="text-sm text-gray-600">
+                          {activity.description}
+                        </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          {format(new Date(activity.date), 'MMM d, yyyy h:mm a')}
+                          {format(
+                            new Date(activity.date),
+                            "MMM d, yyyy h:mm a",
+                          )}
                         </p>
                       </div>
                     </div>
@@ -227,7 +254,9 @@ export default function ContactDetailsPanel({ contact, onClose }) {
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium">{opp.name}</p>
-                        <p className="text-sm text-gray-600">${opp.amount?.toLocaleString()}</p>
+                        <p className="text-sm text-gray-600">
+                          ${opp.amount?.toLocaleString()}
+                        </p>
                       </div>
                       <Badge>{opp.stage}</Badge>
                     </div>

@@ -1,25 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { validateOpportunityForm } from '@/lib/crmFormValidation';
-import { useCrmFormValidation } from '@/lib/useCrmFormValidation';
-import FieldError from '@/components/forms/FieldError';
-import AccountSelectField from '@/components/forms/AccountSelectField';
+} from "@/components/ui/select";
+import { validateOpportunityForm } from "@/lib/crmFormValidation";
+import { useCrmFormValidation } from "@/lib/useCrmFormValidation";
+import FieldError from "@/components/forms/FieldError";
+import AccountSelectField from "@/components/forms/AccountSelectField";
 import {
   formDialogContent,
   formDialogHeader,
@@ -28,27 +28,27 @@ import {
   formDialogField,
   formDialogForm,
   formDialogFooter,
-} from '@/lib/formDialog';
+} from "@/lib/formDialog";
 
 const STAGES = [
-  'prospecting',
-  'qualification',
-  'proposal',
-  'negotiation',
-  'closed_won',
-  'closed_lost',
+  "prospecting",
+  "qualification",
+  "proposal",
+  "negotiation",
+  "closed_won",
+  "closed_lost",
 ];
 
 const EMPTY_FORM = {
-  name: '',
-  account_name: '',
-  account_id: '',
-  amount: '',
-  stage: 'prospecting',
-  probability: '',
-  close_date: '',
-  owner: '',
-  source: '',
+  name: "",
+  account_name: "",
+  account_id: "",
+  amount: "",
+  stage: "prospecting",
+  probability: "",
+  close_date: "",
+  owner: "",
+  source: "",
 };
 
 export default function OpportunityDialog({
@@ -57,7 +57,7 @@ export default function OpportunityDialog({
   onSubmit,
   isLoading,
   initialData = null,
-  title = 'Create Opportunity',
+  title = "Create Opportunity",
 }) {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const validation = useCrmFormValidation(validateOpportunityForm);
@@ -80,13 +80,15 @@ export default function OpportunityDialog({
     onSubmit({
       ...formData,
       amount: formData.amount ? parseFloat(formData.amount) : undefined,
-      probability: formData.probability ? parseFloat(formData.probability) : undefined,
+      probability: formData.probability
+        ? parseFloat(formData.probability)
+        : undefined,
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className={formDialogContent('sm')}>
+      <DialogContent className={formDialogContent("sm")}>
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
@@ -98,25 +100,46 @@ export default function OpportunityDialog({
                 <Input
                   id="opp-name"
                   value={formData.name}
-                  onChange={(e) => validation.updateField('name', e.target.value, formData, setFormData)}
-                  onBlur={() => validation.touchField('name', formData)}
-                  className={validation.inputClassName('name')}
-                  aria-invalid={Boolean(validation.fieldError('name'))}
+                  onChange={(e) =>
+                    validation.updateField(
+                      "name",
+                      e.target.value,
+                      formData,
+                      setFormData,
+                    )
+                  }
+                  onBlur={() => validation.touchField("name", formData)}
+                  className={validation.inputClassName("name")}
+                  aria-invalid={Boolean(validation.fieldError("name"))}
                 />
-                <FieldError message={validation.fieldError('name')} />
+                <FieldError message={validation.fieldError("name")} />
               </div>
               <AccountSelectField
                 value={formData.account_name}
                 accountId={formData.account_id}
                 onValueChange={(accountName) =>
-                  validation.updateField('account_name', accountName, formData, setFormData)
+                  validation.updateField(
+                    "account_name",
+                    accountName,
+                    formData,
+                    setFormData,
+                  )
                 }
                 onAccountIdChange={(id) =>
-                  validation.updateField('account_id', id, formData, setFormData)
+                  validation.updateField(
+                    "account_id",
+                    id,
+                    formData,
+                    setFormData,
+                  )
                 }
-                onCompanyBlur={() => validation.touchField('account_name', formData)}
-                companyError={validation.fieldError('account_name')}
-                companyInputClassName={validation.inputClassName('account_name')}
+                onCompanyBlur={() =>
+                  validation.touchField("account_name", formData)
+                }
+                companyError={validation.fieldError("account_name")}
+                companyInputClassName={validation.inputClassName(
+                  "account_name",
+                )}
                 accountSelectId="opp-account"
                 companyInputId="opp-account-custom"
                 linkedHint={(name) =>
@@ -132,31 +155,51 @@ export default function OpportunityDialog({
                     min="0"
                     step="0.01"
                     value={formData.amount}
-                    onChange={(e) => validation.updateField('amount', e.target.value, formData, setFormData)}
-                    onBlur={() => validation.touchField('amount', formData)}
-                    className={validation.inputClassName('amount')}
-                    aria-invalid={Boolean(validation.fieldError('amount'))}
+                    onChange={(e) =>
+                      validation.updateField(
+                        "amount",
+                        e.target.value,
+                        formData,
+                        setFormData,
+                      )
+                    }
+                    onBlur={() => validation.touchField("amount", formData)}
+                    className={validation.inputClassName("amount")}
+                    aria-invalid={Boolean(validation.fieldError("amount"))}
                   />
-                  <FieldError message={validation.fieldError('amount')} />
+                  <FieldError message={validation.fieldError("amount")} />
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="opp-stage">Stage</Label>
                   <Select
                     value={formData.stage}
-                    onValueChange={(stage) => validation.updateField('stage', stage, formData, setFormData)}
+                    onValueChange={(stage) =>
+                      validation.updateField(
+                        "stage",
+                        stage,
+                        formData,
+                        setFormData,
+                      )
+                    }
                   >
-                    <SelectTrigger id="opp-stage" className={validation.inputClassName('stage')}>
+                    <SelectTrigger
+                      id="opp-stage"
+                      className={validation.inputClassName("stage")}
+                    >
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent position="popper" className="max-h-[min(16rem,50dvh)]">
+                    <SelectContent
+                      position="popper"
+                      className="max-h-[min(16rem,50dvh)]"
+                    >
                       {STAGES.map((stage) => (
                         <SelectItem key={stage} value={stage}>
-                          {stage.replace(/_/g, ' ')}
+                          {stage.replace(/_/g, " ")}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FieldError message={validation.fieldError('stage')} />
+                  <FieldError message={validation.fieldError("stage")} />
                 </div>
               </div>
               <div className={formDialogGrid}>
@@ -168,12 +211,21 @@ export default function OpportunityDialog({
                     min="0"
                     max="100"
                     value={formData.probability}
-                    onChange={(e) => validation.updateField('probability', e.target.value, formData, setFormData)}
-                    onBlur={() => validation.touchField('probability', formData)}
-                    className={validation.inputClassName('probability')}
-                    aria-invalid={Boolean(validation.fieldError('probability'))}
+                    onChange={(e) =>
+                      validation.updateField(
+                        "probability",
+                        e.target.value,
+                        formData,
+                        setFormData,
+                      )
+                    }
+                    onBlur={() =>
+                      validation.touchField("probability", formData)
+                    }
+                    className={validation.inputClassName("probability")}
+                    aria-invalid={Boolean(validation.fieldError("probability"))}
                   />
-                  <FieldError message={validation.fieldError('probability')} />
+                  <FieldError message={validation.fieldError("probability")} />
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="opp-close">Close date</Label>
@@ -181,12 +233,19 @@ export default function OpportunityDialog({
                     id="opp-close"
                     type="date"
                     value={formData.close_date}
-                    onChange={(e) => validation.updateField('close_date', e.target.value, formData, setFormData)}
-                    onBlur={() => validation.touchField('close_date', formData)}
-                    className={validation.inputClassName('close_date')}
-                    aria-invalid={Boolean(validation.fieldError('close_date'))}
+                    onChange={(e) =>
+                      validation.updateField(
+                        "close_date",
+                        e.target.value,
+                        formData,
+                        setFormData,
+                      )
+                    }
+                    onBlur={() => validation.touchField("close_date", formData)}
+                    className={validation.inputClassName("close_date")}
+                    aria-invalid={Boolean(validation.fieldError("close_date"))}
                   />
-                  <FieldError message={validation.fieldError('close_date')} />
+                  <FieldError message={validation.fieldError("close_date")} />
                 </div>
               </div>
               <div className={formDialogGrid}>
@@ -195,32 +254,51 @@ export default function OpportunityDialog({
                   <Input
                     id="opp-owner"
                     value={formData.owner}
-                    onChange={(e) => validation.updateField('owner', e.target.value, formData, setFormData)}
-                    onBlur={() => validation.touchField('owner', formData)}
-                    className={validation.inputClassName('owner')}
+                    onChange={(e) =>
+                      validation.updateField(
+                        "owner",
+                        e.target.value,
+                        formData,
+                        setFormData,
+                      )
+                    }
+                    onBlur={() => validation.touchField("owner", formData)}
+                    className={validation.inputClassName("owner")}
                   />
-                  <FieldError message={validation.fieldError('owner')} />
+                  <FieldError message={validation.fieldError("owner")} />
                 </div>
                 <div className={formDialogField}>
                   <Label htmlFor="opp-source">Source</Label>
                   <Input
                     id="opp-source"
                     value={formData.source}
-                    onChange={(e) => validation.updateField('source', e.target.value, formData, setFormData)}
-                    onBlur={() => validation.touchField('source', formData)}
-                    className={validation.inputClassName('source')}
+                    onChange={(e) =>
+                      validation.updateField(
+                        "source",
+                        e.target.value,
+                        formData,
+                        setFormData,
+                      )
+                    }
+                    onBlur={() => validation.touchField("source", formData)}
+                    className={validation.inputClassName("source")}
                   />
-                  <FieldError message={validation.fieldError('source')} />
+                  <FieldError message={validation.fieldError("source")} />
                 </div>
               </div>
             </div>
           </div>
           <DialogFooter className={formDialogFooter}>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isLoading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Creating...' : 'Create'}
+              {isLoading ? "Creating..." : "Create"}
             </Button>
           </DialogFooter>
         </form>

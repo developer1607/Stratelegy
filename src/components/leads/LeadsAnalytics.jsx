@@ -35,7 +35,9 @@ function ConversionFunnel({ data }) {
                 {item.value}
               </div>
             </div>
-            <span className="w-24 shrink-0 text-sm text-gray-700">{item.name}</span>
+            <span className="w-24 shrink-0 text-sm text-gray-700">
+              {item.name}
+            </span>
           </div>
         );
       })}

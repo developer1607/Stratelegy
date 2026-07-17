@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   BarChart,
   Bar,
@@ -20,33 +20,41 @@ import {
   PieChart,
   Pie,
   Cell,
-} from 'recharts';
+} from "recharts";
 
-export default function LeadSourcesTab({ filteredLeads, filteredOpportunities }) {
+export default function LeadSourcesTab({
+  filteredLeads,
+  filteredOpportunities,
+}) {
   // Leads by Source
   const leadsBySource = React.useMemo(() => {
     const sourceCounts = {};
     filteredLeads.forEach((lead) => {
-      const source = lead.source || 'Unknown';
+      const source = lead.source || "Unknown";
       sourceCounts[source] = (sourceCounts[source] || 0) + 1;
     });
-    return Object.entries(sourceCounts).map(([source, count]) => ({ source, count }));
+    return Object.entries(sourceCounts).map(([source, count]) => ({
+      source,
+      count,
+    }));
   }, [filteredLeads]);
 
   // Win Rate by Source
   const winRateBySource = React.useMemo(() => {
     const sourceData = {};
     filteredOpportunities.forEach((opp) => {
-      const source = opp.source || 'Unknown';
+      const source = opp.source || "Unknown";
       if (!sourceData[source]) sourceData[source] = { won: 0, lost: 0 };
-      if (opp.stage === 'closed_won') sourceData[source].won++;
-      else if (opp.stage === 'closed_lost') sourceData[source].lost++;
+      if (opp.stage === "closed_won") sourceData[source].won++;
+      else if (opp.stage === "closed_lost") sourceData[source].lost++;
     });
 
     return Object.entries(sourceData).map(([source, data]) => ({
       source,
       winRate:
-        data.won + data.lost > 0 ? ((data.won / (data.won + data.lost)) * 100).toFixed(1) : 0,
+        data.won + data.lost > 0
+          ? ((data.won / (data.won + data.lost)) * 100).toFixed(1)
+          : 0,
     }));
   }, [filteredOpportunities]);
 
@@ -54,7 +62,7 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
   const avgDealValueBySource = React.useMemo(() => {
     const sourceData = {};
     filteredOpportunities.forEach((opp) => {
-      const source = opp.source || 'Unknown';
+      const source = opp.source || "Unknown";
       if (!sourceData[source]) sourceData[source] = { total: 0, count: 0 };
       sourceData[source].total += opp.amount || 0;
       sourceData[source].count++;
@@ -71,20 +79,20 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
     const performance = {};
 
     filteredLeads.forEach((lead) => {
-      const source = lead.source || 'Unknown';
+      const source = lead.source || "Unknown";
       if (!performance[source])
         performance[source] = { source, leads: 0, won: 0, lost: 0, revenue: 0 };
       performance[source].leads++;
     });
 
     filteredOpportunities.forEach((opp) => {
-      const source = opp.source || 'Unknown';
+      const source = opp.source || "Unknown";
       if (!performance[source])
         performance[source] = { source, leads: 0, won: 0, lost: 0, revenue: 0 };
-      if (opp.stage === 'closed_won') {
+      if (opp.stage === "closed_won") {
         performance[source].won++;
         performance[source].revenue += opp.amount || 0;
-      } else if (opp.stage === 'closed_lost') {
+      } else if (opp.stage === "closed_lost") {
         performance[source].lost++;
       }
     });
@@ -92,7 +100,7 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
     return Object.values(performance);
   }, [filteredLeads, filteredOpportunities]);
 
-  const COLORS = ['#3b82f6', '#06b6d4', '#8b5cf6', '#ec4899', '#f97316'];
+  const COLORS = ["#3b82f6", "#06b6d4", "#8b5cf6", "#ec4899", "#f97316"];
 
   return (
     <div className="space-y-6">
@@ -115,7 +123,10 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
                   dataKey="count"
                 >
                   {leadsBySource.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[index % COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -178,7 +189,7 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
                 {filteredLeads.slice(0, 10).map((lead) => (
                   <TableRow key={lead.id}>
                     <TableCell className="font-medium">{lead.name}</TableCell>
-                    <TableCell>{lead.source || 'Unknown'}</TableCell>
+                    <TableCell>{lead.source || "Unknown"}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{lead.status}</Badge>
                     </TableCell>
@@ -186,7 +197,10 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
                 ))}
                 {filteredLeads.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">
+                    <TableCell
+                      colSpan={3}
+                      className="text-center text-gray-500"
+                    >
                       No leads
                     </TableCell>
                   </TableRow>
@@ -223,7 +237,10 @@ export default function LeadSourcesTab({ filteredLeads, filteredOpportunities })
                 ))}
                 {sourcePerformance.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={4} className="text-center text-gray-500">
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-gray-500"
+                    >
                       No data
                     </TableCell>
                   </TableRow>

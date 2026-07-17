@@ -1,8 +1,14 @@
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import React from "react";
+import { Card } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
-export default function StatsCard({ title, value, change, icon: Icon, iconColor }) {
+export default function StatsCard({
+  title,
+  value,
+  change,
+  icon: Icon,
+  iconColor,
+}) {
   const isPositive = change >= 0;
 
   return (
@@ -18,9 +24,9 @@ export default function StatsCard({ title, value, change, icon: Icon, iconColor 
               <TrendingDown className="w-4 h-4 text-red-500" />
             )}
             <span
-              className={`text-sm font-medium ${isPositive ? 'text-green-500' : 'text-red-500'}`}
+              className={`text-sm font-medium ${isPositive ? "text-green-500" : "text-red-500"}`}
             >
-              {isPositive ? '+' : ''}
+              {isPositive ? "+" : ""}
               {change}% Since last week
             </span>
           </div>

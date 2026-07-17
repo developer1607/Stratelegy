@@ -1,15 +1,15 @@
 /** Combine Telco civic_address fields into one Location label for E911 screens. */
 
 function cleanCivicPart(value) {
-  if (value == null) return '';
+  if (value == null) return "";
   const text = String(value).trim();
-  if (!text || text.toLowerCase() === 'n/a') return '';
+  if (!text || text.toLowerCase() === "n/a") return "";
   return text;
 }
 
 /** Normalize civic fields from list/detail/v2 E911 payloads. */
 export function extractCivicAddress(record) {
-  if (!record || typeof record !== 'object') return {};
+  if (!record || typeof record !== "object") return {};
   return (
     record?.location?.address?.civic_address ||
     record?.address?.civic_address ||
@@ -20,7 +20,10 @@ export function extractCivicAddress(record) {
 
 export function civicHasStreet(civic) {
   const address = extractCivicAddress(civic);
-  return Boolean(cleanCivicPart(address.street_number) || cleanCivicPart(address.street_name));
+  return Boolean(
+    cleanCivicPart(address.street_number) ||
+    cleanCivicPart(address.street_name),
+  );
 }
 
 /**
@@ -29,7 +32,7 @@ export function civicHasStreet(civic) {
  */
 export function formatCivicAddressLabel(civic) {
   const address = extractCivicAddress(civic);
-  if (!address || typeof address !== 'object') return null;
+  if (!address || typeof address !== "object") return null;
 
   const streetNumber = cleanCivicPart(address.street_number);
   const streetName = cleanCivicPart(address.street_name);
@@ -41,9 +44,9 @@ export function formatCivicAddressLabel(civic) {
   const state = cleanCivicPart(address.state);
   const zip = cleanCivicPart(address.zip_code);
   let country = cleanCivicPart(address.country);
-  if (/^us$|^usa$/i.test(country)) country = 'United States';
+  if (/^us$|^usa$/i.test(country)) country = "United States";
 
-  const streetLine = [streetNumber, streetName].filter(Boolean).join(' ');
+  const streetLine = [streetNumber, streetName].filter(Boolean).join(" ");
   if (!streetLine && !suite && !city && !state && !zip && !country) return null;
 
   let label = streetLine;
@@ -51,7 +54,7 @@ export function formatCivicAddressLabel(civic) {
     label = label ? `${label}, ${suite}` : suite;
   }
 
-  const locality = [city, state, zip].filter(Boolean).join(' ');
+  const locality = [city, state, zip].filter(Boolean).join(" ");
   if (locality) {
     label = label ? `${label} ${locality}` : locality;
   }

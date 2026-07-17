@@ -1,25 +1,25 @@
-import React from 'react';
+import React from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 export default function PbxFilterSelect({
   label,
   value,
   onValueChange,
   options = [],
-  allLabel = 'All',
+  allLabel = "All",
   hideAll = false,
-  className = 'w-[140px]',
+  className = "w-[140px]",
 }) {
   const normalized = options.map((opt) =>
-    typeof opt === 'string' ? { value: opt, label: opt } : opt
+    typeof opt === "string" ? { value: opt, label: opt } : opt,
   );
-  const selectValue = hideAll ? value : value || 'all';
+  const selectValue = hideAll ? value : value || "all";
 
   return (
     <Select value={selectValue} onValueChange={onValueChange}>

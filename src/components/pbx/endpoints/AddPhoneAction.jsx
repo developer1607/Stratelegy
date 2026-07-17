@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { pbxApi } from '@/api/pbx';
-import { Button } from '@/components/ui/button';
+import React, { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { pbxApi } from "@/api/pbx";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,38 +10,38 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import PbxFormField from '@/components/pbx/shared/PbxFormField';
-import PbxFormSelect from '@/components/pbx/shared/PbxFormSelect';
-import { toast } from 'sonner';
+} from "@/components/ui/dialog";
+import PbxFormField from "@/components/pbx/shared/PbxFormField";
+import PbxFormSelect from "@/components/pbx/shared/PbxFormSelect";
+import { toast } from "sonner";
 
 const TRANSPORT_OPTIONS = [
-  { value: 'UDP', label: 'UDP' },
-  { value: 'TCP', label: 'TCP' },
-  { value: 'TLS', label: 'TLS' },
+  { value: "UDP", label: "UDP" },
+  { value: "TCP", label: "TCP" },
+  { value: "TLS", label: "TLS" },
 ];
 
 export default function AddPhoneAction({ domain, extension, onSuccess }) {
   const [open, setOpen] = useState(false);
-  const [mac, setMac] = useState('');
-  const [model, setModel] = useState('generic');
-  const [transport, setTransport] = useState('UDP');
+  const [mac, setMac] = useState("");
+  const [model, setModel] = useState("generic");
+  const [transport, setTransport] = useState("UDP");
 
   const mutation = useMutation({
     mutationFn: () =>
       pbxApi.createPhone(domain, {
-        mac: mac.replace(/[^a-fA-F0-9]/g, ''),
+        mac: mac.replace(/[^a-fA-F0-9]/g, ""),
         model,
         transport,
         phone_ext: extension,
       }),
     onSuccess: () => {
-      toast.success('Phone provisioned');
+      toast.success("Phone provisioned");
       setOpen(false);
-      setMac('');
+      setMac("");
       onSuccess?.();
     },
-    onError: (err) => toast.error(err?.message || 'Failed to provision phone'),
+    onError: (err) => toast.error(err?.message || "Failed to provision phone"),
   });
 
   return (
@@ -55,7 +55,8 @@ export default function AddPhoneAction({ domain, extension, onSuccess }) {
         <DialogHeader>
           <DialogTitle>Provision phone</DialogTitle>
           <DialogDescription>
-            Assign a MAC address to extension {extension}. The device will receive provisioning on next boot.
+            Assign a MAC address to extension {extension}. The device will
+            receive provisioning on next boot.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
@@ -80,15 +81,19 @@ export default function AddPhoneAction({ domain, extension, onSuccess }) {
           />
         </div>
         <DialogFooter>
-          <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setOpen(false)}
+          >
             Cancel
           </Button>
           <Button
             type="button"
-            disabled={mutation.isPending || !mac.replace(/[^a-fA-F0-9]/g, '')}
+            disabled={mutation.isPending || !mac.replace(/[^a-fA-F0-9]/g, "")}
             onClick={() => mutation.mutate()}
           >
-            {mutation.isPending ? 'Saving…' : 'Provision phone'}
+            {mutation.isPending ? "Saving…" : "Provision phone"}
           </Button>
         </DialogFooter>
       </DialogContent>

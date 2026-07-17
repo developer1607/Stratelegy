@@ -1,15 +1,15 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { RotateCcw } from 'lucide-react';
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { RotateCcw } from "lucide-react";
 
 export default function AccountFilters({
   filters,
@@ -20,7 +20,7 @@ export default function AccountFilters({
   onClear,
 }) {
   const tierOptions =
-    tiers.length > 0 ? tiers : ['Standard', 'Premium', 'Enterprise'];
+    tiers.length > 0 ? tiers : ["Standard", "Premium", "Enterprise"];
 
   return (
     <Card>
@@ -38,14 +38,19 @@ export default function AccountFilters({
       <CardContent className="space-y-4">
         <div>
           <Label className="text-sm font-semibold mb-2 block">Owner</Label>
-          <Select value={filters.owner} onValueChange={(value) => onFilterChange('owner', value)}>
+          <Select
+            value={filters.owner}
+            onValueChange={(value) => onFilterChange("owner", value)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="All owners" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All owners</SelectItem>
               {owners.map((owner) => (
-                <SelectItem key={owner} value={owner}>{owner}</SelectItem>
+                <SelectItem key={owner} value={owner}>
+                  {owner}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -55,7 +60,7 @@ export default function AccountFilters({
           <Label className="text-sm font-semibold mb-2 block">Industry</Label>
           <Select
             value={filters.industry}
-            onValueChange={(value) => onFilterChange('industry', value)}
+            onValueChange={(value) => onFilterChange("industry", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All industries" />
@@ -63,17 +68,21 @@ export default function AccountFilters({
             <SelectContent>
               <SelectItem value="all">All industries</SelectItem>
               {industries.map((industry) => (
-                <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                <SelectItem key={industry} value={industry}>
+                  {industry}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label className="text-sm font-semibold mb-2 block">Revenue range</Label>
+          <Label className="text-sm font-semibold mb-2 block">
+            Revenue range
+          </Label>
           <Select
             value={filters.revenue}
-            onValueChange={(value) => onFilterChange('revenue', value)}
+            onValueChange={(value) => onFilterChange("revenue", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All revenue" />
@@ -90,8 +99,8 @@ export default function AccountFilters({
         <div>
           <Label className="text-sm font-semibold mb-2 block">Tier</Label>
           <Select
-            value={filters.tier || 'all'}
-            onValueChange={(value) => onFilterChange('tier', value)}
+            value={filters.tier || "all"}
+            onValueChange={(value) => onFilterChange("tier", value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="All tiers" />

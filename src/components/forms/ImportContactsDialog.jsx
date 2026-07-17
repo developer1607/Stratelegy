@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
@@ -8,22 +8,26 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { api } from '@/api/client';
-import { showError, showSuccess } from '@/lib/toast';
-import { validateContactForm } from '@/lib/crmFormValidation';
-import { useCrmConfig } from '@/hooks/useCrmConfig';
-import { contactSourceOptions } from '@/lib/crmConfig';
+} from "@/components/ui/dialog";
+import { api } from "@/api/client";
+import { showError, showSuccess } from "@/lib/toast";
+import { validateContactForm } from "@/lib/crmFormValidation";
+import { useCrmConfig } from "@/hooks/useCrmConfig";
+import { contactSourceOptions } from "@/lib/crmConfig";
 import {
   formDialogContent,
   formDialogHeader,
   formDialogBody,
   formDialogForm,
   formDialogFooter,
-} from '@/lib/formDialog';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+} from "@/lib/formDialog";
+import { Upload, FileText, CheckCircle, AlertCircle } from "lucide-react";
 
-export default function ImportContactsDialog({ open, onOpenChange, onImportComplete }) {
+export default function ImportContactsDialog({
+  open,
+  onOpenChange,
+  onImportComplete,
+}) {
   const { defaults, contactSources } = useCrmConfig({ enabled: open });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -40,18 +44,18 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
 
   const handleImport = async () => {
     if (!file) {
-      showError(null, 'Please select a file to import.');
+      showError(null, "Please select a file to import.");
       return;
     }
 
     const allowedTypes = [
-      'text/csv',
-      'application/vnd.ms-excel',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      "text/csv",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     ];
     const allowedExt = /\.(csv|xls|xlsx)$/i;
     if (!allowedTypes.includes(file.type) && !allowedExt.test(file.name)) {
-      showError(null, 'File must be CSV, XLS, or XLSX.');
+      showError(null, "File must be CSV, XLS, or XLSX.");
       return;
     }
 
@@ -63,28 +67,29 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
       setExtracting(true);
 
       const jsonSchema = {
-        type: 'array',
+        type: "array",
         items: {
-          type: 'object',
+          type: "object",
           properties: {
-            name: { type: 'string' },
-            email: { type: 'string' },
-            phone: { type: 'string' },
-            company: { type: 'string' },
-            position: { type: 'string' },
-            source: { type: 'string' },
+            name: { type: "string" },
+            email: { type: "string" },
+            phone: { type: "string" },
+            company: { type: "string" },
+            position: { type: "string" },
+            source: { type: "string" },
           },
         },
       };
 
-      const extractResult = await api.integrations.Core.ExtractDataFromUploadedFile({
-        file_url,
-        json_schema: jsonSchema,
-      });
+      const extractResult =
+        await api.integrations.Core.ExtractDataFromUploadedFile({
+          file_url,
+          json_schema: jsonSchema,
+        });
 
       setExtracting(false);
 
-      if (extractResult.status === 'success' && extractResult.output) {
+      if (extractResult.status === "success" && extractResult.output) {
         const contacts = Array.isArray(extractResult.output)
           ? extractResult.output
           : [extractResult.output];
@@ -100,7 +105,10 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
 
         const invalidCount = contacts.length - validContacts.length;
         if (invalidCount > 0) {
-          showError(null, `${invalidCount} row(s) skipped — each contact needs a valid name and email.`);
+          showError(
+            null,
+            `${invalidCount} row(s) skipped — each contact needs a valid name and email.`,
+          );
         }
 
         if (validContacts.length > 0) {
@@ -108,21 +116,23 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
             validContacts.map((c) => ({
               name: c.name,
               email: c.email,
-              phone: c.phone || '',
-              company: c.company || '',
-              position: c.position || '',
+              phone: c.phone || "",
+              company: c.company || "",
+              position: c.position || "",
               source: c.source || defaults.contactSource,
-              priority: 'Standard',
-              status: 'active',
-            }))
+              priority: "Standard",
+              status: "active",
+            })),
           );
 
           setResult({
             success: true,
             count: validContacts.length,
-            message: `Imported ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}`,
+            message: `Imported ${validContacts.length} contact${validContacts.length > 1 ? "s" : ""}`,
           });
-          showSuccess(`Imported ${validContacts.length} contact${validContacts.length > 1 ? 's' : ''}.`);
+          showSuccess(
+            `Imported ${validContacts.length} contact${validContacts.length > 1 ? "s" : ""}.`,
+          );
 
           setTimeout(() => {
             onImportComplete?.();
@@ -131,25 +141,32 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
             setResult(null);
           }, 2000);
         } else {
-          showError(null, 'No valid contacts found. Each row needs a name and valid email.');
+          showError(
+            null,
+            "No valid contacts found. Each row needs a name and valid email.",
+          );
           setResult({
             success: false,
-            message: 'File needs valid name and email for each contact.',
+            message: "File needs valid name and email for each contact.",
           });
         }
       } else {
-        showError(null, extractResult.details || 'Failed to extract contacts from file.');
+        showError(
+          null,
+          extractResult.details || "Failed to extract contacts from file.",
+        );
         setResult({
           success: false,
-          message: extractResult.details || 'Failed to extract contacts from file',
+          message:
+            extractResult.details || "Failed to extract contacts from file",
         });
       }
     } catch (error) {
       setExtracting(false);
-      showError(error, 'Import failed.');
+      showError(error, "Import failed.");
       setResult({
         success: false,
-        message: 'Import failed.',
+        message: "Import failed.",
       });
     }
   };
@@ -164,10 +181,12 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={formDialogContent('sm')}>
+      <DialogContent className={formDialogContent("sm")}>
         <DialogHeader className={formDialogHeader}>
           <DialogTitle>Import Contacts</DialogTitle>
-          <DialogDescription>Upload a CSV or Excel file with contact information</DialogDescription>
+          <DialogDescription>
+            Upload a CSV or Excel file with contact information
+          </DialogDescription>
         </DialogHeader>
 
         <div className={formDialogForm}>
@@ -181,7 +200,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
                       <div className="flex flex-col items-center justify-center gap-2 px-4">
                         <Upload className="h-8 w-8 text-gray-400" />
                         <p className="text-center text-sm text-gray-600">
-                          {file ? file.name : 'Click to upload CSV or Excel'}
+                          {file ? file.name : "Click to upload CSV or Excel"}
                         </p>
                         <p className="text-xs text-gray-400">CSV, XLS, XLSX</p>
                       </div>
@@ -217,7 +236,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
               </>
             ) : (
               <div
-                className={`flex items-center gap-3 rounded-lg p-4 ${result.success ? 'border border-green-200 bg-green-50' : 'border border-red-200 bg-red-50'}`}
+                className={`flex items-center gap-3 rounded-lg p-4 ${result.success ? "border border-green-200 bg-green-50" : "border border-red-200 bg-red-50"}`}
               >
                 {result.success ? (
                   <CheckCircle className="h-6 w-6 shrink-0 text-green-600" />
@@ -225,7 +244,7 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
                   <AlertCircle className="h-6 w-6 shrink-0 text-red-600" />
                 )}
                 <p
-                  className={`text-sm font-medium ${result.success ? 'text-green-900' : 'text-red-900'}`}
+                  className={`text-sm font-medium ${result.success ? "text-green-900" : "text-red-900"}`}
                 >
                   {result.message}
                 </p>
@@ -235,11 +254,18 @@ export default function ImportContactsDialog({ open, onOpenChange, onImportCompl
 
           <DialogFooter className={formDialogFooter}>
             <Button type="button" variant="outline" onClick={handleClose}>
-              {result?.success ? 'Close' : 'Cancel'}
+              {result?.success ? "Close" : "Cancel"}
             </Button>
             {!result && (
-              <Button onClick={handleImport} disabled={!file || uploading || extracting}>
-                {uploading ? 'Uploading...' : extracting ? 'Processing...' : 'Import'}
+              <Button
+                onClick={handleImport}
+                disabled={!file || uploading || extracting}
+              >
+                {uploading
+                  ? "Uploading..."
+                  : extracting
+                    ? "Processing..."
+                    : "Import"}
               </Button>
             )}
           </DialogFooter>

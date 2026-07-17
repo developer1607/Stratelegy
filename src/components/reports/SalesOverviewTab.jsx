@@ -1,5 +1,5 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -7,8 +7,8 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import {
   BarChart,
   Bar,
@@ -20,23 +20,33 @@ import {
   Tooltip,
   Legend,
   CartesianGrid,
-} from 'recharts';
-import { format, parseISO } from 'date-fns';
+} from "recharts";
+import { format, parseISO } from "date-fns";
 
-export default function SalesOverviewTab({ filteredOpportunities, filteredLeads }) {
-  const wonDeals = filteredOpportunities.filter((o) => o.stage === 'closed_won');
-  const lostDeals = filteredOpportunities.filter((o) => o.stage === 'closed_lost');
+export default function SalesOverviewTab({
+  filteredOpportunities,
+  filteredLeads,
+}) {
+  const wonDeals = filteredOpportunities.filter(
+    (o) => o.stage === "closed_won",
+  );
+  const lostDeals = filteredOpportunities.filter(
+    (o) => o.stage === "closed_lost",
+  );
 
   // Revenue Over Time
   const revenueOverTime = React.useMemo(() => {
     const monthlyData = {};
     wonDeals.forEach((deal) => {
       if (deal.close_date) {
-        const month = format(parseISO(deal.close_date), 'MMM yyyy');
+        const month = format(parseISO(deal.close_date), "MMM yyyy");
         monthlyData[month] = (monthlyData[month] || 0) + (deal.amount || 0);
       }
     });
-    return Object.entries(monthlyData).map(([month, revenue]) => ({ month, revenue }));
+    return Object.entries(monthlyData).map(([month, revenue]) => ({
+      month,
+      revenue,
+    }));
   }, [wonDeals]);
 
   // Won vs Lost Over Time
@@ -44,9 +54,10 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
     const monthlyData = {};
     [...wonDeals, ...lostDeals].forEach((deal) => {
       if (deal.close_date) {
-        const month = format(parseISO(deal.close_date), 'MMM yyyy');
-        if (!monthlyData[month]) monthlyData[month] = { month, won: 0, lost: 0 };
-        if (deal.stage === 'closed_won') monthlyData[month].won++;
+        const month = format(parseISO(deal.close_date), "MMM yyyy");
+        if (!monthlyData[month])
+          monthlyData[month] = { month, won: 0, lost: 0 };
+        if (deal.stage === "closed_won") monthlyData[month].won++;
         else monthlyData[month].lost++;
       }
     });
@@ -57,9 +68,9 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
   const pipelineByStage = React.useMemo(() => {
     const stageData = {};
     filteredOpportunities
-      .filter((o) => o.stage !== 'closed_won' && o.stage !== 'closed_lost')
+      .filter((o) => o.stage !== "closed_won" && o.stage !== "closed_lost")
       .forEach((opp) => {
-        const stage = opp.stage || 'unknown';
+        const stage = opp.stage || "unknown";
         if (!stageData[stage]) stageData[stage] = { stage, count: 0, value: 0 };
         stageData[stage].count++;
         stageData[stage].value += opp.amount || 0;
@@ -69,13 +80,19 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
 
   // Conversion Funnel
   const conversionFunnel = React.useMemo(() => {
-    const stages = ['new', 'contacted', 'qualified'];
+    const stages = ["new", "contacted", "qualified"];
     const leadsByStage = stages.map((stage) => ({
       stage,
       count: filteredLeads.filter((l) => l.status === stage).length,
     }));
 
-    const oppStages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won'];
+    const oppStages = [
+      "prospecting",
+      "qualification",
+      "proposal",
+      "negotiation",
+      "closed_won",
+    ];
     const oppsByStage = oppStages.map((stage) => ({
       stage,
       count: filteredOpportunities.filter((o) => o.stage === stage).length,
@@ -107,7 +124,12 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
-                <Line type="monotone" dataKey="revenue" stroke="#3b82f6" strokeWidth={2} />
+                <Line
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#3b82f6"
+                  strokeWidth={2}
+                />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
@@ -188,7 +210,10 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
               <TableBody>
                 {recentWonDeals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">
+                    <TableCell
+                      colSpan={3}
+                      className="text-center text-gray-500"
+                    >
                       No won deals
                     </TableCell>
                   </TableRow>
@@ -224,7 +249,10 @@ export default function SalesOverviewTab({ filteredOpportunities, filteredLeads 
               <TableBody>
                 {topDeals.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center text-gray-500">
+                    <TableCell
+                      colSpan={3}
+                      className="text-center text-gray-500"
+                    >
                       No deals
                     </TableCell>
                   </TableRow>

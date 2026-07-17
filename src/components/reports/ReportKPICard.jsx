@@ -1,25 +1,33 @@
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { TrendingUp, TrendingDown } from "lucide-react";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
 
 export default function ReportKPICard({
   title,
   value,
   subtitle = undefined,
   icon: Icon = undefined,
-  color = 'blue',
+  color = "blue",
   trend = undefined,
   trendValue = undefined,
   sparklineData = [],
 }) {
   const colorClasses = {
-    blue: { bg: 'bg-blue-50', text: 'text-blue-600', sparkline: '#3b82f6' },
-    green: { bg: 'bg-green-50', text: 'text-green-600', sparkline: '#10b981' },
-    purple: { bg: 'bg-purple-50', text: 'text-purple-600', sparkline: '#8b5cf6' },
-    orange: { bg: 'bg-orange-50', text: 'text-orange-600', sparkline: '#f97316' },
-    red: { bg: 'bg-red-50', text: 'text-red-600', sparkline: '#ef4444' },
-    cyan: { bg: 'bg-cyan-50', text: 'text-cyan-600', sparkline: '#06b6d4' },
+    blue: { bg: "bg-blue-50", text: "text-blue-600", sparkline: "#3b82f6" },
+    green: { bg: "bg-green-50", text: "text-green-600", sparkline: "#10b981" },
+    purple: {
+      bg: "bg-purple-50",
+      text: "text-purple-600",
+      sparkline: "#8b5cf6",
+    },
+    orange: {
+      bg: "bg-orange-50",
+      text: "text-orange-600",
+      sparkline: "#f97316",
+    },
+    red: { bg: "bg-red-50", text: "text-red-600", sparkline: "#ef4444" },
+    cyan: { bg: "bg-cyan-50", text: "text-cyan-600", sparkline: "#06b6d4" },
   };
 
   const colorClass = colorClasses[color];
@@ -61,9 +69,9 @@ export default function ReportKPICard({
           <div className="flex flex-col items-end">
             {trend && (
               <div
-                className={`flex items-center gap-1 text-xs font-medium ${trend === 'up' ? 'text-green-600' : 'text-red-600'}`}
+                className={`flex items-center gap-1 text-xs font-medium ${trend === "up" ? "text-green-600" : "text-red-600"}`}
               >
-                {trend === 'up' ? (
+                {trend === "up" ? (
                   <TrendingUp className="w-3 h-3" />
                 ) : (
                   <TrendingDown className="w-3 h-3" />
@@ -71,7 +79,9 @@ export default function ReportKPICard({
                 <span>{trendValue}</span>
               </div>
             )}
-            {subtitle && <div className="text-xs text-gray-500 mt-1">{subtitle}</div>}
+            {subtitle && (
+              <div className="text-xs text-gray-500 mt-1">{subtitle}</div>
+            )}
           </div>
         </div>
       </CardContent>
