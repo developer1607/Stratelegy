@@ -244,17 +244,31 @@ export async function getMosScores({
   };
 }
 
-export async function listDevices(domain, user) {
+export async function listDevices(domain, user, { start = 0, limit } = {}) {
   const params = new URLSearchParams({
     object: 'device',
     action: 'read',
     owner_domain: domain,
-    start: '0',
-    limit: user ? '50' : '500',
+    start: String(Math.max(0, Number(start) || 0)),
+    limit: String(limit ?? (user ? 50 : 500)),
   });
   if (user) params.set('owner', user);
   const xml = await pbxRequest('POST', '', { body: params });
   return normalizeDeviceRows(xml);
+}
+
+/** Paginate device read until a page is short (NetSapiens owner_domain read). */
+export async function listAllDevices(domain, { pageSize = 500 } = {}) {
+  const rows = [];
+  let start = 0;
+  const limit = Math.max(1, Number(pageSize) || 500);
+  while (true) {
+    const batch = await listDevices(domain, null, { start, limit });
+    rows.push(...batch);
+    if (batch.length < limit) break;
+    start += batch.length;
+  }
+  return rows;
 }
 
 export async function getSubscriber(domain, user) {
@@ -471,6 +485,20 @@ export async function listSubscribers(domain, { page = 1, perPage = 250 } = {}) 
     }),
   });
   return normalizePbxSubscriberRows(xml);
+}
+
+/** Paginate subscriber read until a page is short (NetSapiens domain read). */
+export async function listAllSubscribers(domain, { perPage = 250 } = {}) {
+  const rows = [];
+  let page = 1;
+  const limit = Math.max(1, Number(perPage) || 250);
+  while (true) {
+    const batch = await listSubscribers(domain, { page, perPage: limit });
+    rows.push(...batch);
+    if (batch.length < limit) break;
+    page += 1;
+  }
+  return rows;
 }
 
 export async function getPhone(domain, mac) {
@@ -824,11 +852,68 @@ function extensionKey(value) {
  */
 function deviceLineKey(device) {
   if (!device) return '';
-  for (const value of [device.aor, device.device, device.contact]) {
+  for (const value of [device.device, device.aor, device.contact]) {
+    const text = String(value ?? '').trim().toLowerCase();
+    if (!text || text.includes('conference-bridge')) continue;
     const key = extensionKey(value);
-    if (key) return key;
+    // Skip domain-qualified pseudo-AORs like sip:3010.domain.service@conference-bridge
+    if (!key || key.includes('.')) continue;
+    return key;
   }
   return '';
+}
+
+/**
+ * Letter-suffixed device AOR owner (3010m → 3010). Primary AORs (3010) return ''.
+ * Matches NetSapiens device model: subscriber_name = owner, aor = sip:<line>@domain.
+ */
+function ownerKeyForDeviceLine(lineKey, subscriberKeys) {
+  if (!lineKey || !/^[a-z0-9]+[a-z]$/i.test(lineKey)) return '';
+  const ownerKey = lineKey.slice(0, -1);
+  return subscriberKeys.has(ownerKey) ? ownerKey : '';
+}
+
+/**
+ * Resolve which subscriber owns a device line using API fields:
+ * - subscriber_name is the owner extension
+ * - aor/device is the registered line (letter-suffixed AOR for mobile/web/desk/fax)
+ */
+function resolveDeviceLineOwner(lineKey, subscriberName, subscriberKeys) {
+  const ownerFromApi = String(subscriberName || '').trim().toLowerCase();
+  if (!lineKey || lineKey === ownerFromApi) return '';
+  const inferredOwner = ownerKeyForDeviceLine(lineKey, subscriberKeys);
+  if (!inferredOwner) return '';
+  if (ownerFromApi && ownerFromApi !== inferredOwner) return '';
+  return inferredOwner;
+}
+
+/** All extension keys on a MAC record — phone_ext, lineN_ext, and device1–8 SIP URIs. */
+function phoneLineKeys(phone) {
+  return [
+    ...(phone?.lines || []),
+    phone?.phone_ext,
+    phone?.primary_line,
+    ...(phone?.devices || []),
+  ]
+    .map((value) => extensionKey(value))
+    .filter(Boolean);
+}
+
+function indexPhoneByExtension(phonesByExt, phone) {
+  for (const key of new Set(phoneLineKeys(phone))) {
+    const matches = phonesByExt.get(key) || [];
+    matches.push(phone);
+    phonesByExt.set(key, matches);
+  }
+}
+
+function phoneOwnedBySubscriber(phone, subscriberKeys) {
+  for (const extKey of new Set(phoneLineKeys(phone))) {
+    if (subscriberKeys.has(extKey)) return true;
+    const ownerKey = ownerKeyForDeviceLine(extKey, subscriberKeys);
+    if (ownerKey) return true;
+  }
+  return false;
 }
 
 function indexDeviceByExtension(deviceByExt, device) {
@@ -964,29 +1049,34 @@ function preferredPhone(phones = []) {
   );
 }
 
+function aggregateDeviceLineStatus(deviceLines = [], fallbackStatus = 'no_device') {
+  if (deviceLines.some((line) => line.online_status === 'online')) {
+    return { online_status: 'online', registration_status: 'Registered' };
+  }
+  if (deviceLines.some((line) => line.online_status === 'offline')) {
+    return { online_status: 'offline', registration_status: 'Unregistered' };
+  }
+  if (fallbackStatus === 'offline') {
+    return { online_status: 'offline', registration_status: 'Unregistered' };
+  }
+  if (fallbackStatus === 'online') {
+    return { online_status: 'online', registration_status: 'Registered' };
+  }
+  return { online_status: 'no_device', registration_status: '—' };
+}
+
 function buildSubscriberDeviceLines(pbxSubscribers, phones, devices) {
   const subscriberKeys = new Set(
     pbxSubscribers.map((row) => String(row.user || '').trim().toLowerCase()).filter(Boolean)
   );
   const phonesByLine = new Map();
   for (const phone of phones) {
-    const lineKeys = new Set(
-      [phone.phone_ext, phone.primary_line, ...(phone.lines || [])]
-        .map((value) => extensionKey(value))
-        .filter(Boolean)
-    );
-    for (const lineKey of lineKeys) {
+    for (const lineKey of new Set(phoneLineKeys(phone))) {
       const matches = phonesByLine.get(lineKey) || [];
       matches.push(phone);
       phonesByLine.set(lineKey, matches);
     }
   }
-
-  const ownerForLine = (lineKey) => {
-    if (!/^[a-z]$/i.test(lineKey.slice(-1))) return '';
-    const ownerKey = lineKey.slice(0, -1);
-    return subscriberKeys.has(ownerKey) ? ownerKey : '';
-  };
 
   const linesByOwner = new Map();
   const addLine = (ownerKey, lineKey, source) => {
@@ -999,14 +1089,16 @@ function buildSubscriberDeviceLines(pbxSubscribers, phones, devices) {
 
   for (const device of devices) {
     const lineKey = deviceLineKey(device);
-    const ownerKey = String(device.subscriber_name || '').trim().toLowerCase();
-    if (subscriberKeys.has(ownerKey) && ownerForLine(lineKey) === ownerKey) {
-      addLine(ownerKey, lineKey, { device });
-    }
+    const ownerKey = resolveDeviceLineOwner(
+      lineKey,
+      device.subscriber_name,
+      subscriberKeys
+    );
+    if (ownerKey) addLine(ownerKey, lineKey, { device });
   }
 
   for (const [lineKey, matchingPhones] of phonesByLine) {
-    const ownerKey = ownerForLine(lineKey);
+    const ownerKey = ownerKeyForDeviceLine(lineKey, subscriberKeys);
     if (ownerKey) addLine(ownerKey, lineKey, { phone: preferredPhone(matchingPhones) });
   }
 
@@ -1079,9 +1171,9 @@ function buildPhoneOnlySubscriberRow(phone, domain, device = null) {
 
 export async function getEndpointInventory(domain) {
   const [pbxSubscribers, phones, devices, legacyOverview] = await Promise.all([
-    listSubscribers(domain).catch(() => []),
+    listAllSubscribers(domain).catch(() => []),
     listPhones(domain).catch(() => []),
-    listDevices(domain).catch(() => []),
+    listAllDevices(domain).catch(() => []),
     legacyPbx.getEndpointControlOverview(domain).catch(() => ({
       subscribers: [],
       messagingUsers: [],
@@ -1093,16 +1185,14 @@ export async function getEndpointInventory(domain) {
   const legacyByExt = new Map(
     (legacyOverview.subscribers || []).map((row) => [String(row.user || '').toLowerCase(), row])
   );
-  const phoneByExt = new Map();
+  const subscriberKeys = new Set(
+    pbxSubscribers.map((row) => String(row.user || '').trim().toLowerCase()).filter(Boolean)
+  );
+  const phonesByExt = new Map();
   const phoneByDid = new Map();
   const deviceByExt = new Map();
   for (const phone of phones) {
-    for (const ext of phone.lines || []) {
-      const key = String(ext || '').toLowerCase();
-      if (key && !phoneByExt.has(key)) phoneByExt.set(key, phone);
-    }
-    const phoneExtKey = String(phone.phone_ext || '').toLowerCase();
-    if (phoneExtKey && !phoneByExt.has(phoneExtKey)) phoneByExt.set(phoneExtKey, phone);
+    indexPhoneByExtension(phonesByExt, phone);
     const didKey = phoneDigits(phone.primary_line);
     if (didKey && !phoneByDid.has(didKey)) phoneByDid.set(didKey, phone);
   }
@@ -1120,26 +1210,29 @@ export async function getEndpointInventory(domain) {
     const extKey = String(row.user || '').toLowerCase();
     const didKey = row.phone_match_key || row.e911_match_key || null;
     const legacy = legacyByExt.get(extKey) || null;
-    const phone = phoneByExt.get(extKey) || (didKey ? phoneByDid.get(didKey) : null) || null;
+    const phone = preferredPhone(phonesByExt.get(extKey) || []) || (didKey ? phoneByDid.get(didKey) : null) || null;
     const device = deviceByExt.get(extKey) || null;
     if (phone?.mac) usedPhoneMacs.add(String(phone.mac).toLowerCase());
     const deviceLines = deviceLinesBySubscriber.get(extKey) || [];
     for (const line of deviceLines) {
       if (line.mac_address) usedPhoneMacs.add(String(line.mac_address).toLowerCase());
     }
+    const merged = mergeSubscriberRecord(row, legacy, phone, device);
+    const aggregateStatus = aggregateDeviceLineStatus(deviceLines, merged.online_status);
     return {
-      ...mergeSubscriberRecord(row, legacy, phone, device),
+      ...merged,
+      ...aggregateStatus,
       deviceLines,
     };
   });
 
   const phoneOnlyRows = phones
-    .filter(
-      (phone) =>
-        phone.online_status === 'online' &&
-        phone.mac &&
-        !usedPhoneMacs.has(String(phone.mac).toLowerCase())
-    )
+    .filter((phone) => {
+      if (phone.online_status !== 'online' || !phone.mac) return false;
+      if (usedPhoneMacs.has(String(phone.mac).toLowerCase())) return false;
+      if (phoneOwnedBySubscriber(phone, subscriberKeys)) return false;
+      return true;
+    })
     .map((phone) => {
       const ext = extensionFromPhone(phone);
       const device = ext ? deviceByExt.get(String(ext).toLowerCase()) || null : null;

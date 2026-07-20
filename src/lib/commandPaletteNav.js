@@ -14,6 +14,7 @@ const PBX_DOMAIN_STORAGE_KEY = 'pbx_selected_domain';
 
 function filterNavItems(items, canAccessPage, isAdmin) {
   return items.filter((item) => {
+    if (item.hidden) return false;
     if (item.adminOnly) return isAdmin;
     return canAccessPage(item.path);
   });

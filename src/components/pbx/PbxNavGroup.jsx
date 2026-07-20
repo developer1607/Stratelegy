@@ -10,6 +10,7 @@ import { ChevronRight } from "lucide-react";
 
 function filterVisible(items, canAccessPage, isAdmin) {
   return items.filter((item) => {
+    if (item.hidden) return false;
     if (item.adminOnly) return isAdmin;
     return canAccessPage(item.path);
   });
@@ -54,6 +55,7 @@ export default function PbxNavGroup({
   }
 
   if (!item.path) return null;
+  if (item.hidden) return null;
   if (item.adminOnly && !isAdmin) return null;
   if (!canAccessPage(item.path)) return null;
 

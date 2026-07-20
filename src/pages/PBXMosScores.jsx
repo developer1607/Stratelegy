@@ -6,6 +6,7 @@ import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { daysAgo, todayInput } from '@/lib/listFilters';
+import { formatPbxDisplayValue } from '@/lib/pbxEndpointUtils';
 
 function QosBadge({ value }) {
   if (value == null || value === '') return '—';
@@ -126,14 +127,26 @@ function MosContent({ domain }) {
             label: 'Date',
             render: (row) => formatMosDate(row.date),
           },
-          { key: 'from', label: 'From' },
+          {
+            key: 'from',
+            label: 'From',
+            render: (row) => formatPbxDisplayValue(row.from),
+          },
           {
             key: 'qos_orig',
             label: 'QOS',
             render: (row) => <QosBadge value={row.qos_orig ?? row.qos} />,
           },
-          { key: 'dialed', label: 'Dialed' },
-          { key: 'to', label: 'To' },
+          {
+            key: 'dialed',
+            label: 'Dialed',
+            render: (row) => formatPbxDisplayValue(row.dialed),
+          },
+          {
+            key: 'to',
+            label: 'To',
+            render: (row) => formatPbxDisplayValue(row.to),
+          },
           {
             key: 'qos_term',
             label: 'QOS',

@@ -110,6 +110,25 @@ function formatDurationMmSs(totalSeconds) {
   return `${String(mins).padStart(2, '0')}:${String(rem).padStart(2, '0')}`;
 }
 
+function formatPhoneDisplay(value) {
+  const digits = String(value ?? '').replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return null;
+}
+
+function formatSipDisplay(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  const sipMatch = text.match(/^(?:sip:)?([^@;>\s]+)(?:@.*)?$/i);
+  const cleaned = sipMatch?.[1] || text;
+  return formatPhoneDisplay(cleaned) || cleaned;
+}
+
 export function normalizeCdrRows(xml) {
   return nodeList(xml, 'cdr').map((row) => {
     const duration = numeric(row.duration);
@@ -123,18 +142,25 @@ export function normalizeCdrRows(xml) {
       qos: row.term_qos,
     });
     const qos = qosOrig ?? qosTerm ?? pickCdrQosScore(row);
+    const fromDisplay = formatSipDisplay(row.orig_from_uri || row.orig_sub || row.orig_from_name);
+    const toDisplay = formatSipDisplay(
+      row.term_to_uri || row.term_sub || row.orig_to_user || row.term_to_name
+    );
+    const dialedDisplay = formatSipDisplay(
+      row.orig_to_user || row.orig_req_user || row.term_to_uri
+    );
     return {
       id: row.cdr_id || `${row.orig_sub || 'unknown'}-${row.time_start || Math.random()}`,
       cdr_id: row.cdr_id || null,
       domain: row.domain || null,
       type: row.type || null,
       direction: row.orig_sub && row.term_sub && row.orig_sub !== row.term_sub ? 'external' : 'internal',
-      from: row.orig_from_name || row.orig_sub || row.orig_from_uri || null,
+      from: row.orig_from_name || fromDisplay || row.orig_sub || row.orig_from_uri || null,
       from_name: row.orig_from_name || null,
-      from_number: row.orig_from_uri || row.orig_sub || null,
-      to: row.term_to_name || row.term_sub || row.term_to_uri || row.orig_to_user || null,
-      to_number: row.term_to_uri || row.orig_req_uri || null,
-      dialed: row.orig_to_user || row.orig_req_user || row.term_to_uri || null,
+      from_number: fromDisplay || row.orig_from_uri || row.orig_sub || null,
+      to: row.term_to_name || toDisplay || row.term_sub || row.term_to_uri || row.orig_to_user || null,
+      to_number: toDisplay || formatSipDisplay(row.orig_req_uri) || row.term_to_uri || row.orig_req_uri || null,
+      dialed: dialedDisplay || row.orig_to_user || row.orig_req_user || row.term_to_uri || null,
       by_sub: row.by_sub || null,
       orig_sub: row.orig_sub || null,
       term_sub: row.term_sub || null,

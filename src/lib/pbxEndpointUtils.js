@@ -16,3 +16,18 @@ export function endpointStatusBadge(status) {
 export function endpointStatusLabel(status) {
   return endpointStatusBadge(status).label;
 }
+
+export function formatPbxDisplayValue(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return '—';
+  const sipMatch = text.match(/^(?:sip:)?([^@;>\s]+)(?:@.*)?$/i);
+  const cleaned = sipMatch?.[1] || text;
+  const digits = cleaned.replace(/\D/g, '');
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits.startsWith('1')) {
+    return `1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  return cleaned;
+}

@@ -116,7 +116,13 @@ function EndpointContent({ domain }) {
         return false;
       }
       if (!matchSelect(row.srv_code || row.model, serviceFilter)) return false;
-      if (statusFilter !== 'all' && row.online_status !== statusFilter) return false;
+      if (
+        statusFilter !== 'all' &&
+        row.online_status !== statusFilter &&
+        !(row.deviceLines || []).some((line) => line.online_status === statusFilter)
+      ) {
+        return false;
+      }
       return true;
     });
   }, [subscribers, search, serviceFilter, statusFilter, recordFilter]);

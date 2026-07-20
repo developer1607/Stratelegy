@@ -54,14 +54,13 @@ export const PBX_NAV = [
   { name: "Domains", icon: Globe, path: "PBXDomains" },
   { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
   { name: "Offline Endpoints", icon: Activity, path: "OfflineEndpoints" },
-  { name: "Entitlements", icon: Layers, path: "Entitlements" },
-  { name: "Call Routing", icon: Route, path: "CallRouting" },
-  { name: "Phone Numbers", icon: PhoneForwarded, path: "PBXPhoneNumbers" },
-  { name: "Route by ANI", icon: Radio, path: "PBXRouteByAni" },
+  { name: "Entitlements", icon: Layers, path: "Entitlements", hidden: true },
+  { name: "Call Routing", icon: Route, path: "CallRouting", hidden: true },
+  { name: "Phone Numbers", icon: PhoneForwarded, path: "PBXPhoneNumbers", hidden: true },
+  { name: "Route by ANI", icon: Radio, path: "PBXRouteByAni", hidden: true },
   { name: "SIP Trunks", icon: Briefcase, path: "SIPTrunks" },
   { name: "E911 Review", icon: Mail, path: "E911Review" },
   { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
-  { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
   {
     name: "Reports",
     icon: BarChart3,
@@ -71,11 +70,18 @@ export const PBX_NAV = [
         icon: PBX_REPORT_NAV_ICONS[def.id] || BarChart3,
         path: def.page,
       })),
+      { name: "Call Logs", icon: Phone, path: "CallLogs" },
     ],
   },
-  { name: "Call Logs", icon: Phone, path: "CallLogs" },
-  { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
-  { name: "SIP ALG", icon: Settings, path: "SIPALG" },
+  {
+    name: "Troubleshooting",
+    icon: ShieldAlert,
+    children: [
+      { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
+      { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
+      { name: "SIP ALG", icon: Settings, path: "SIPALG" },
+    ],
+  },
 ];
 
 /** @deprecated Use PBX_NAV — kept for callers that flatten grouped items. */

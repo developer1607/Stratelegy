@@ -50,6 +50,7 @@ export default function Layout({ children, currentPageName }) {
 
   const filterMenu = (items) =>
     items.filter((item) => {
+      if (item.hidden) return false;
       if (item.adminOnly) return isAdmin;
       return canAccessPage(item.path);
     });
@@ -58,8 +59,9 @@ export default function Layout({ children, currentPageName }) {
   const supportItems = filterMenu(SUPPORT_NAV);
   const hasPbxNav = PBX_NAV.some((item) => {
     if (item.children?.length) {
-      return item.children.some((child) => canAccessPage(child.path));
+      return item.children.some((child) => !child.hidden && canAccessPage(child.path));
     }
+    if (item.hidden) return false;
     if (item.adminOnly) return isAdmin;
     return canAccessPage(item.path);
   });

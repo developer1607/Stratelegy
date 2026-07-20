@@ -23,6 +23,7 @@ import {
 import { usePbxDomain } from "@/components/pbx/domain/PbxDomainContext";
 import { isPbxDomainRestricted } from "@/lib/permissions";
 import { usePermissions } from "@/hooks/usePermissions";
+import { formatPbxDisplayValue } from "@/lib/pbxEndpointUtils";
 
 export default function CallLogs() {
   return (
@@ -286,8 +287,16 @@ function CdrTab({ search, startDate, endDate, domain, domainRestricted }) {
       <PbxDataTable
         columns={[
           { key: "start_at", label: "Start" },
-          { key: "from", label: "From" },
-          { key: "to", label: "To" },
+          {
+            key: "from",
+            label: "From",
+            render: (row) => formatPbxDisplayValue(row.from),
+          },
+          {
+            key: "to",
+            label: "To",
+            render: (row) => formatPbxDisplayValue(row.to),
+          },
           { key: "domain", label: "Domain" },
           { key: "duration_label", label: "Duration" },
           { key: "talk_label", label: "Talk" },
