@@ -17,12 +17,12 @@ export default function OfflineEndpoints() {
       title="Offline Endpoints"
       description="Extension downtime and fax ATA offline delivery"
     >
-      {({ domain }) => <OfflineContent domain={domain} />}
+      {({ domain }) => <OfflineEndpointsContent domain={domain} />}
     </PbxShell>
   );
 }
 
-function OfflineContent({ domain }) {
+export function OfflineEndpointsContent({ domain }) {
   const [search, setSearch] = useState('');
   const [offlineFilter, setOfflineFilter] = useState('all');
   const [showOfflineOnly, setShowOfflineOnly] = useState(false);

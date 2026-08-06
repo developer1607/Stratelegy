@@ -12,7 +12,7 @@ import {
 } from "@shared/pbxReportPages.js";
 import { usePermissions } from "@/hooks/usePermissions";
 
-export default function OperationalReportPage({ config }) {
+export default function OperationalReportPage({ config, embedded = false }) {
   const { isPbxDomainRestricted, isLoading: permissionsLoading } =
     usePermissions();
   const canUseAccountReports = !isPbxDomainRestricted;
@@ -30,25 +30,43 @@ export default function OperationalReportPage({ config }) {
 
   const requiresDomain = config.requiresDomain !== false;
 
-  if (permissionsLoading) {
+  const wrap = (body, { actions, description } = {}) => {
+    if (embedded) {
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">{config.title}</h2>
+              {description ? (
+                <p className="text-sm text-gray-500 mt-1">{description}</p>
+              ) : null}
+            </div>
+            {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+          </div>
+          {body}
+        </div>
+      );
+    }
+
     return (
       <PbxShell
         title={config.title}
-        description={config.description}
+        description={description ?? config.description}
         requiresDomain={requiresDomain}
+        actions={actions}
       >
-        <PbxLoading />
+        {body}
       </PbxShell>
     );
+  };
+
+  if (permissionsLoading) {
+    return wrap(<PbxLoading />);
   }
 
   if (!canUseAccountReports) {
-    return (
-      <PbxShell
-        title={config.title}
-        description={config.description}
-        requiresDomain={requiresDomain}
-      >
+    return wrap(
+      <>
         <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
           Account-wide report exports are not available for domain-scoped users.
           Live data below uses your assigned domain when selected above.
@@ -56,53 +74,36 @@ export default function OperationalReportPage({ config }) {
         <div className="mt-6">
           <PbxReportLiveData config={config} />
         </div>
-      </PbxShell>
+      </>
     );
   }
 
   if (reportsQuery.isLoading) {
-    return (
-      <PbxShell
-        title={config.title}
-        description={config.description}
-        requiresDomain={requiresDomain}
-        actions={<PbxReportExportActions reportTypes={[]} />}
-      >
-        <PbxLoading />
-      </PbxShell>
-    );
+    return wrap(<PbxLoading />, {
+      actions: <PbxReportExportActions reportTypes={[]} />,
+    });
   }
 
   if (reportsQuery.error) {
-    return (
-      <PbxShell
-        title={config.title}
-        description={config.description}
-        requiresDomain={requiresDomain}
-      >
-        <PbxError error={reportsQuery.error} />
-      </PbxShell>
-    );
+    return wrap(<PbxError error={reportsQuery.error} />);
   }
 
-  return (
-    <PbxShell
-      title={config.title}
-      description="Live data for your account. Use Generate export for a downloadable file."
-      requiresDomain={requiresDomain}
-      actions={<PbxReportExportActions reportTypes={reportTypes} />}
-    >
-      <div className="space-y-10">
-        <PbxReportLiveData config={config} />
+  return wrap(
+    <div className="space-y-10">
+      <PbxReportLiveData config={config} />
 
-        {exportMatchForPage(config) ? (
-          <PbxCompletedExports
-            title="Export history"
-            description="Previously generated files. Downloads are available when status is completed."
-            reportTypeMatch={exportMatchForPage(config)}
-          />
-        ) : null}
-      </div>
-    </PbxShell>
+      {exportMatchForPage(config) ? (
+        <PbxCompletedExports
+          title="Export history"
+          description="Previously generated files. Downloads are available when status is completed."
+          reportTypeMatch={exportMatchForPage(config)}
+        />
+      ) : null}
+    </div>,
+    {
+      description:
+        "Live data for your account. Use Generate export for a downloadable file.",
+      actions: <PbxReportExportActions reportTypes={reportTypes} />,
+    }
   );
 }

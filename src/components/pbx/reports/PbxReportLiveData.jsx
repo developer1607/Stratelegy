@@ -159,9 +159,11 @@ function DeviceMonitoringLive({ config, domain, search }) {
 function E911Live({ config, domain, search }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ["pbx-e911-review", domain],
-    queryFn: () => pbxApi.e911ReviewOverview(domain || undefined),
+    queryFn: () => pbxApi.e911ReviewOverview(domain),
+    enabled: !!domain,
   });
 
+  if (!domain) return <DomainRequired />;
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;
 

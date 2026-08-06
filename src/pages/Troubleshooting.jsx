@@ -51,7 +51,7 @@ export default function Troubleshooting() {
   );
 }
 
-function TroubleshootingContent({ domain }) {
+export function TroubleshootingContent({ domain }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);

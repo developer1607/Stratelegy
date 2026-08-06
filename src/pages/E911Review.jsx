@@ -62,7 +62,7 @@ export default function E911Review() {
   );
 }
 
-function E911Content({ domain }) {
+export function E911Content({ domain }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('all');

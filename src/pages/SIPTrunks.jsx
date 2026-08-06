@@ -9,12 +9,12 @@ import { usePermissions } from '@/hooks/usePermissions';
 export default function SIPTrunks() {
   return (
     <PbxShell title="SIP Trunks" description="SIP trunk groups" requiresDomain={false}>
-      <TrunksContent />
+      <SipTrunksContent />
     </PbxShell>
   );
 }
 
-function TrunksContent() {
+export function SipTrunksContent() {
   const { domain } = usePbxDomain();
   const { permissions } = usePermissions();
   const domainRestricted = isPbxDomainRestricted(permissions);

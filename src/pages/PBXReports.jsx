@@ -1,51 +1,153 @@
-import React, { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Play } from 'lucide-react';
-import { pbxApi } from '@/api/pbx';
-import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
-import PbxCompletedExports from '@/components/pbx/reports/PbxCompletedExports';
-import QueueReportDialog from '@/components/pbx/reports/QueueReportDialog';
-import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
-import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
-import PermissionGate from '@/components/PermissionGate';
-import { Button } from '@/components/ui/button';
-import { flattenReportTypes, filterReportTypes, describeReportFields } from '@/lib/reportTypes';
-import { uniqueFieldValues } from '@/lib/listFilters';
-import { usePermissions } from '@/hooks/usePermissions';
+import React, { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Play } from "lucide-react";
+import { pbxApi } from "@/api/pbx";
+import { usePbxDomain } from "@/components/pbx/domain/PbxDomainContext";
+import { PbxDataTable, PbxError, PbxLoading } from "@/components/pbx/PbxShell";
+import PbxCompletedExports from "@/components/pbx/reports/PbxCompletedExports";
+import QueueReportDialog from "@/components/pbx/reports/QueueReportDialog";
+import PbxListToolbar from "@/components/pbx/shared/PbxListToolbar";
+import PbxFilterSelect from "@/components/pbx/shared/PbxFilterSelect";
+import PermissionGate from "@/components/PermissionGate";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  flattenReportTypes,
+  filterReportTypes,
+  describeReportFields,
+} from "@/lib/reportTypes";
+import { uniqueFieldValues } from "@/lib/listFilters";
+import { usePermissions } from "@/hooks/usePermissions";
+import { cn } from "@/lib/utils";
+import { OfflineEndpointsContent } from "@/pages/OfflineEndpoints";
+import { EndpointControlContent } from "@/pages/EndpointControl";
+import { E911Content } from "@/pages/E911Review";
+import { SipAlgContent } from "@/pages/SIPALG";
+import { SipTrunksContent } from "@/pages/SIPTrunks";
+import { TroubleshootingContent } from "@/pages/Troubleshooting";
+import { VoicemailContent } from "@/pages/Voicemail";
+
+const REPORT_TABS = [
+  { id: "offline-endpoint", label: "Offline Endpoint", needsDomain: true },
+  { id: "device-monitoring", label: "Device Monitoring", needsDomain: true },
+  { id: "domain-export", label: "Domain Export", needsDomain: false },
+  { id: "e911-review", label: "E911 Review", needsDomain: true },
+  { id: "sip-alg", label: "SIP ALG", needsDomain: true },
+  { id: "sip-trunk", label: "SIP Trunk", needsDomain: false },
+  { id: "vulnerability-check", label: "Vulnerability Check", needsDomain: true },
+  { id: "voicemail", label: "Voicemail", needsDomain: true },
+];
 
 export default function PBXReports() {
+  const [tab, setTab] = useState(REPORT_TABS[0].id);
+  const { domain, isLoading: domainLoading } = usePbxDomain();
+
   return (
-    <PbxShell
-      title="Report catalog"
-      description="All async export types available for your account"
-      requiresDomain={false}
-    >
-      <ReportsCatalog />
-    </PbxShell>
+    <div className="p-4 sm:p-8 space-y-6">
+      <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Reports</h1>
+
+      <Tabs value={tab} onValueChange={setTab} className="w-full">
+        <TabsList
+          className={cn(
+            "h-auto w-full flex flex-wrap justify-start gap-1 rounded-none bg-transparent p-0",
+            "border-b border-gray-200"
+          )}
+        >
+          {REPORT_TABS.map((item) => (
+            <TabsTrigger
+              key={item.id}
+              value={item.id}
+              className={cn(
+                "rounded-md px-3 py-2 text-sm font-medium shadow-none",
+                "text-gray-500 bg-transparent hover:text-gray-700",
+                "data-[state=active]:bg-blue-600 data-[state=active]:text-white",
+                "data-[state=active]:shadow-none data-[state=active]:hover:bg-blue-600"
+              )}
+            >
+              {item.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {REPORT_TABS.map((item) => (
+          <TabsContent key={item.id} value={item.id} className="mt-6">
+            <ReportTabBody
+              tabId={item.id}
+              needsDomain={item.needsDomain}
+              domain={domain}
+              domainLoading={domainLoading}
+            />
+          </TabsContent>
+        ))}
+      </Tabs>
+    </div>
   );
 }
 
+function DomainRequired() {
+  return (
+    <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+      Select a domain in the bar above to load this report.
+    </p>
+  );
+}
+
+function ReportTabBody({ tabId, needsDomain, domain, domainLoading }) {
+  if (needsDomain) {
+    if (domainLoading) return <PbxLoading />;
+    if (!domain) return <DomainRequired />;
+  }
+
+  switch (tabId) {
+    case "offline-endpoint":
+      return <OfflineEndpointsContent domain={domain} />;
+    case "device-monitoring":
+      return <EndpointControlContent domain={domain} />;
+    case "domain-export":
+      return <ReportsCatalog />;
+    case "e911-review":
+      return <E911Content domain={domain} />;
+    case "sip-alg":
+      return <SipAlgContent domain={domain} />;
+    case "sip-trunk":
+      return <SipTrunksContent />;
+    case "vulnerability-check":
+      return <TroubleshootingContent domain={domain} />;
+    case "voicemail":
+      return <VoicemailContent domain={domain} />;
+    default:
+      return null;
+  }
+}
+
+/** Account-wide async export catalog (Domain Export tab). */
 function ReportsCatalog() {
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [queueType, setQueueType] = useState(null);
   const [queueOpen, setQueueOpen] = useState(false);
   const { isPbxDomainRestricted, isLoading: permissionsLoading } = usePermissions();
   const canUseAccountReports = !isPbxDomainRestricted;
 
   const reportsQuery = useQuery({
-    queryKey: ['pbx-report-types'],
+    queryKey: ["pbx-report-types"],
     queryFn: () => pbxApi.reportTypes(),
     enabled: canUseAccountReports && !permissionsLoading,
   });
 
-  const allRows = useMemo(() => flattenReportTypes(reportsQuery.data), [reportsQuery.data]);
+  const allRows = useMemo(
+    () => flattenReportTypes(reportsQuery.data),
+    [reportsQuery.data]
+  );
 
-  const categoryOptions = useMemo(() => uniqueFieldValues(allRows, 'category'), [allRows]);
+  const categoryOptions = useMemo(
+    () => uniqueFieldValues(allRows, "category"),
+    [allRows]
+  );
 
   const rows = useMemo(() => {
     let list = filterReportTypes(allRows, search);
-    if (categoryFilter !== 'all') {
+    if (categoryFilter !== "all") {
       list = list.filter((row) => row.category === categoryFilter);
     }
     return list.map((row) => ({
@@ -59,8 +161,7 @@ function ReportsCatalog() {
   if (!canUseAccountReports) {
     return (
       <p className="text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3">
-        Account-wide PBX report exports are not available for domain-scoped users. Use the
-        individual report pages under Reports for domain-specific live views where available.
+        Account-wide PBX report exports are not available for domain-scoped users.
       </p>
     );
   }
@@ -89,13 +190,13 @@ function ReportsCatalog() {
         </h2>
         <PbxDataTable
           columns={[
-            { key: 'category', label: 'Category' },
-            { key: 'label', label: 'Report' },
-            { key: 'value', label: 'Type key' },
-            { key: 'parameters', label: 'Parameters' },
+            { key: "category", label: "Category" },
+            { key: "label", label: "Report" },
+            { key: "value", label: "Type key" },
+            { key: "parameters", label: "Parameters" },
             {
-              key: 'actions',
-              label: 'Actions',
+              key: "actions",
+              label: "Actions",
               render: (row) => (
                 <PermissionGate pbxAction="manageReports" fallback="—">
                   <Button
@@ -120,7 +221,11 @@ function ReportsCatalog() {
 
       <PbxCompletedExports title="All report exports" />
 
-      <QueueReportDialog open={queueOpen} onOpenChange={setQueueOpen} reportType={queueType} />
+      <QueueReportDialog
+        open={queueOpen}
+        onOpenChange={setQueueOpen}
+        reportType={queueType}
+      />
     </div>
   );
 }

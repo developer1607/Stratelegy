@@ -56,7 +56,7 @@ export const PBX_OPERATIONAL_REPORT_PAGES = [
     exportMatchPattern: "e911|911|emergency",
     livePage: "E911Review",
     livePageLabel: "Full E911 review",
-    requiresDomain: false,
+    requiresDomain: true,
     permissionKey: "can_view_e911_reports",
   },
 ];

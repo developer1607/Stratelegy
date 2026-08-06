@@ -28,7 +28,7 @@ export default function Voicemail() {
   );
 }
 
-function VoicemailContent({ domain }) {
+export function VoicemailContent({ domain }) {
   const [search, setSearch] = useState('');
   const [serviceFilter, setServiceFilter] = useState('all');
 

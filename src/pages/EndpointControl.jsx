@@ -41,12 +41,12 @@ export default function EndpointControl() {
       title="Endpoint Control"
       description="Extension registration from PBX device and MAC APIs (not subscriber presence)"
     >
-      {({ domain }) => <EndpointContent domain={domain} />}
+      {({ domain }) => <EndpointControlContent domain={domain} />}
     </PbxShell>
   );
 }
 
-function EndpointContent({ domain }) {
+export function EndpointControlContent({ domain }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [serviceFilter, setServiceFilter] = useState('all');

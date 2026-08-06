@@ -10,7 +10,6 @@ import {
   BookOpen,
   UserCog,
   Briefcase,
-  Phone,
   Route,
   Voicemail,
   Layers,
@@ -20,7 +19,6 @@ import {
   Settings,
   Mail,
   LineChart,
-  Cpu,
   ShieldAlert,
 } from "lucide-react";
 import { PBX_OPERATIONAL_REPORT_PAGES } from "@shared/pbxReportPages.js";
@@ -43,31 +41,14 @@ export const SUPPORT_NAV = [
   { name: "Knowledge Base", icon: BookOpen, path: "KnowledgeBase" },
 ];
 
-const PBX_REPORT_NAV_ICONS = {
-  offlineEndpoints: Activity,
-  deviceMonitoring: Cpu,
-  e911: Mail,
-};
-
-/** Flat PBX sidebar — each item is permission-gated; Reports has a submenu. */
+/** Flat PBX sidebar — each item is permission-gated. */
 export const PBX_NAV = [
   { name: "Domains", icon: Globe, path: "PBXDomains" },
   { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
   { name: "Offline Endpoints", icon: Activity, path: "OfflineEndpoints" },
   { name: "SIP ALG", icon: Settings, path: "SIPALG" },
-  { name: "E-911 Review", icon: Mail, path: "E911Review" },
-  {
-    name: "Reports",
-    icon: BarChart3,
-    children: [
-      ...PBX_OPERATIONAL_REPORT_PAGES.map((def) => ({
-        name: def.title,
-        icon: PBX_REPORT_NAV_ICONS[def.id] || BarChart3,
-        path: def.page,
-      })),
-      { name: "Call Logs", icon: Phone, path: "CallLogs" },
-    ],
-  },
+  { name: "E911", icon: Mail, path: "PBXReportE911" },
+  { name: "Reports", icon: BarChart3, path: "PBXReports" },
   { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
   {
     name: "Troubleshooting",
@@ -90,9 +71,6 @@ export const PBX_NAV_GROUPS = [{ label: "PBX", items: PBX_NAV }];
 /** Account-wide PBX screens — no global domain selector (domain is picked on-page or not needed). */
 export const PBX_PAGES_NO_DOMAIN_BAR = new Set([
   "PBXDomains",
-  "E911Reports",
-  "PBXReportE911",
-  "PBXReports",
   "CallLogs",
   "SIPTrunks",
   ...PBX_OPERATIONAL_REPORT_PAGES.filter((def) => def.requiresDomain === false).map(

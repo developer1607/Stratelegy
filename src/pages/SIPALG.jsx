@@ -14,7 +14,7 @@ export default function SIPALG() {
   );
 }
 
-function SipAlgContent({ domain }) {
+export function SipAlgContent({ domain }) {
   const [search, setSearch] = useState('');
   const [serverFilter, setServerFilter] = useState('all');
 
