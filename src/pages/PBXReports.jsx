@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { Play } from "lucide-react";
 import { pbxApi } from "@/api/pbx";
 import { usePbxDomain } from "@/components/pbx/domain/PbxDomainContext";
@@ -18,6 +19,7 @@ import {
 } from "@/lib/reportTypes";
 import { uniqueFieldValues } from "@/lib/listFilters";
 import { usePermissions } from "@/hooks/usePermissions";
+import { PBX_REPORT_TAB_IDS } from "@/lib/navConfig";
 import { cn } from "@/lib/utils";
 import { OfflineEndpointsContent } from "@/pages/OfflineEndpoints";
 import { EndpointControlContent } from "@/pages/EndpointControl";
@@ -38,9 +40,33 @@ const REPORT_TABS = [
   { id: "voicemail", label: "Voicemail", needsDomain: true },
 ];
 
+function resolveTabId(raw) {
+  const value = String(raw || "").trim();
+  if (PBX_REPORT_TAB_IDS.includes(value)) return value;
+  return REPORT_TABS[0].id;
+}
+
 export default function PBXReports() {
-  const [tab, setTab] = useState(REPORT_TABS[0].id);
+  const [searchParams, setSearchParams] = useSearchParams();
   const { domain, isLoading: domainLoading } = usePbxDomain();
+  const tab = resolveTabId(searchParams.get("tab"));
+
+  const setTab = (nextTab) => {
+    const id = resolveTabId(nextTab);
+    const next = new URLSearchParams(searchParams);
+    if (id === REPORT_TABS[0].id) next.delete("tab");
+    else next.set("tab", id);
+    setSearchParams(next, { replace: true });
+  };
+
+  useEffect(() => {
+    const raw = searchParams.get("tab");
+    if (raw && !PBX_REPORT_TAB_IDS.includes(raw)) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("tab");
+      setSearchParams(next, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   return (
     <div className="p-4 sm:p-8 space-y-6">

@@ -1,4 +1,4 @@
-import { UserCircle } from 'lucide-react';
+import { UserCircle, Voicemail } from 'lucide-react';
 import { createPageUrl } from '@/utils';
 import {
   CRM_NAV,
@@ -18,6 +18,14 @@ function filterNavItems(items, canAccessPage, isAdmin) {
     if (item.adminOnly) return isAdmin;
     return canAccessPage(item.path);
   });
+}
+
+function withDomainQuery(url) {
+  if (typeof window === 'undefined') return url;
+  const domain = localStorage.getItem(PBX_DOMAIN_STORAGE_KEY);
+  if (!domain) return url;
+  const join = url.includes('?') ? '&' : '?';
+  return `${url}${join}domain=${encodeURIComponent(domain)}`;
 }
 
 /** @returns {{ label: string, items: Array<{ name: string, path: string, icon: import('react').ComponentType, keywords: string }> }[]} */
@@ -41,6 +49,20 @@ export function buildCommandPaletteGroups({ canAccessPage, isAdmin }) {
     ...item,
     keywords: `pbx ${item.name} ${item.path}`.toLowerCase(),
   }));
+
+  // Voicemail lives under Reports tabs (not a sidebar child).
+  if (
+    canAccessPage('PBXReports') &&
+    !pbxItems.some((item) => item.path === 'Voicemail' || item.name === 'Voicemail')
+  ) {
+    pbxItems.push({
+      name: 'Voicemail',
+      path: 'Voicemail',
+      icon: Voicemail,
+      keywords: 'pbx voicemail reports auto attendant queue',
+    });
+  }
+
   if (pbxItems.length) groups.push({ label: 'PBX', items: pbxItems });
 
   const adminItems = filterNavItems(getAdminBottomNav(), canAccessPage, isAdmin).map((item) => ({
@@ -83,12 +105,13 @@ export function filterCommandPaletteGroups(groups, query) {
 }
 
 export function buildPalettePageUrl(pageName) {
+  if (pageName === 'Voicemail') {
+    return withDomainQuery(`${createPageUrl('PBXReports')}?tab=voicemail`);
+  }
+
   const base = createPageUrl(pageName);
   if (!PBX_PAGES.includes(pageName) || PBX_PAGES_NO_DOMAIN_BAR.has(pageName)) {
     return base;
   }
-  if (typeof window === 'undefined') return base;
-  const domain = localStorage.getItem(PBX_DOMAIN_STORAGE_KEY);
-  if (!domain) return base;
-  return `${base}?domain=${encodeURIComponent(domain)}`;
+  return withDomainQuery(base);
 }

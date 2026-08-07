@@ -11,7 +11,6 @@ import {
   UserCog,
   Briefcase,
   Route,
-  Voicemail,
   Layers,
   Radio,
   Globe,
@@ -41,7 +40,11 @@ export const SUPPORT_NAV = [
   { name: "Knowledge Base", icon: BookOpen, path: "KnowledgeBase" },
 ];
 
-/** Flat PBX sidebar — each item is permission-gated. */
+/**
+ * Flat PBX sidebar — each item is permission-gated.
+ * Reports opens the tabbed hub (Voicemail lives there as a tab, not a sidebar child).
+ * Troubleshooting is a single top-level item (not a dropdown).
+ */
 export const PBX_NAV = [
   { name: "Domains", icon: Globe, path: "PBXDomains" },
   { name: "Endpoint Control", icon: Users, path: "EndpointControl" },
@@ -50,14 +53,7 @@ export const PBX_NAV = [
   { name: "E911", icon: Mail, path: "PBXReportE911" },
   { name: "Reports", icon: BarChart3, path: "PBXReports" },
   { name: "MOS Scores", icon: LineChart, path: "PBXMosScores" },
-  {
-    name: "Troubleshooting",
-    icon: ShieldAlert,
-    children: [
-      { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
-      { name: "Voicemail", icon: Voicemail, path: "Voicemail" },
-    ],
-  },
+  { name: "Troubleshooting", icon: ShieldAlert, path: "Troubleshooting" },
   { name: "SIP Trunks", icon: Briefcase, path: "SIPTrunks" },
   { name: "Entitlements", icon: Layers, path: "Entitlements", hidden: true },
   { name: "Call Routing", icon: Route, path: "CallRouting", hidden: true },
@@ -105,3 +101,15 @@ export function flattenPbxNav(items = PBX_NAV) {
   }
   return out;
 }
+
+/** Report hub tab ids — keep in sync with PBXReports.jsx */
+export const PBX_REPORT_TAB_IDS = [
+  "offline-endpoint",
+  "device-monitoring",
+  "domain-export",
+  "e911-review",
+  "sip-alg",
+  "sip-trunk",
+  "vulnerability-check",
+  "voicemail",
+];

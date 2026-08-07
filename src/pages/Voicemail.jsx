@@ -1,10 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import { Navigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { pbxApi } from '@/api/pbx';
-import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
+import { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/PbxShell';
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
+import { createPageUrl } from '@/utils';
 
 const aaColumns = [
   { key: 'user', label: 'User' },
@@ -20,12 +22,14 @@ function filterSection(rows, search, serviceFilter) {
   });
 }
 
+/** Legacy /Voicemail route → Reports hub Voicemail tab. */
 export default function Voicemail() {
-  return (
-    <PbxShell title="Voicemail" description="Auto attendants, call queues, and subscriber services">
-      {({ domain }) => <VoicemailContent domain={domain} />}
-    </PbxShell>
-  );
+  const [searchParams] = useSearchParams();
+  const domain = searchParams.get('domain');
+  const next = new URLSearchParams();
+  next.set('tab', 'voicemail');
+  if (domain) next.set('domain', domain);
+  return <Navigate to={`${createPageUrl('PBXReports')}?${next.toString()}`} replace />;
 }
 
 export function VoicemailContent({ domain }) {
