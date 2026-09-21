@@ -24,6 +24,16 @@ import {
 import { config } from '../config.js';
 import { requireAdmin } from '../middleware/auth.js';
 import * as hybridPbx from '../services/pbx/index.js';
+import {
+  listReportSchedules,
+  getReportSchedule,
+  createReportSchedule,
+  updateReportSchedule,
+  deleteReportSchedule,
+  runReportSchedule,
+  REPORT_SCHEDULE_TYPES,
+} from '../services/pbx/reportSchedules.js';
+import { runDomainExportJob } from '../services/pbx/domainExportReport.js';
 
 const router = Router();
 
@@ -1219,6 +1229,140 @@ router.delete(
     try {
       await pbx.cancelReport(req.params.reportId);
       res.status(204).send();
+    } catch (err) {
+      return scopeErr(err, 'report', res, next);
+    }
+  }
+);
+
+router.get(
+  '/report-schedules',
+  requireViewReports,
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const enabledParam = req.query.enabled;
+      let enabled;
+      if (enabledParam === 'true' || enabledParam === '1') enabled = true;
+      else if (enabledParam === 'false' || enabledParam === '0') enabled = false;
+      const rows = await listReportSchedules({
+        type: req.query.type || undefined,
+        domain: req.query.domain || undefined,
+        enabled,
+      });
+      res.json({ schedules: rows, types: REPORT_SCHEDULE_TYPES });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.get(
+  '/report-schedules/:id',
+  requireViewReports,
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const schedule = await getReportSchedule(req.params.id);
+      if (!schedule) {
+        return res.status(404).json({ message: 'Schedule not found' });
+      }
+      res.json(schedule);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/report-schedules',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const schedule = await createReportSchedule(req.body || {}, {
+        createdBy: req.user?.id,
+      });
+      res.status(201).json(schedule);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.put(
+  '/report-schedules/:id',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const schedule = await updateReportSchedule(req.params.id, req.body || {});
+      res.json(schedule);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.delete(
+  '/report-schedules/:id',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const result = await deleteReportSchedule(req.params.id);
+      if (!result.deleted) {
+        return res.status(404).json({ message: 'Schedule not found' });
+      }
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/report-schedules/:id/run',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const schedule = await getReportSchedule(req.params.id);
+      if (!schedule) {
+        return res.status(404).json({ message: 'Schedule not found' });
+      }
+      const result = await runReportSchedule(schedule, { force: true });
+      res.json({
+        ...result,
+        schedule: await getReportSchedule(req.params.id),
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
+
+router.post(
+  '/domain-export/immediate',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const body = req.body || {};
+      const domain = String(body.domain || '').trim();
+      if (!domain) {
+        return res.status(400).json({ message: 'domain is required' });
+      }
+      assertDomainAllowed(req.permissions || {}, domain);
+      const result = await runDomainExportJob({
+        domain,
+        recipients: body.recipients,
+        reportType: body.report_type || body.reportType,
+        scheduled: false,
+        // Immediate UI returns quickly; poll+email continues in background.
+        waitForCompletion: false,
+      });
+      res.status(202).json(result);
     } catch (err) {
       return scopeErr(err, 'report', res, next);
     }

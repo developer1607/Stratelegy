@@ -28,9 +28,10 @@ import { SipAlgContent } from "@/pages/SIPALG";
 import { SipTrunksContent } from "@/pages/SIPTrunks";
 import { TroubleshootingContent } from "@/pages/Troubleshooting";
 import { VoicemailContent } from "@/pages/Voicemail";
+import DomainExportPanel from "@/components/pbx/reports/DomainExportPanel";
 
 const REPORT_TABS = [
-  { id: "offline-endpoint", label: "Offline Endpoint", needsDomain: true },
+  { id: "offline-endpoint", label: "Offline Endpoint", needsDomain: false },
   { id: "device-monitoring", label: "Device Monitoring", needsDomain: true },
   { id: "domain-export", label: "Domain Export", needsDomain: false },
   { id: "e911-review", label: "E911 Review", needsDomain: true },
@@ -130,7 +131,12 @@ function ReportTabBody({ tabId, needsDomain, domain, domainLoading }) {
     case "device-monitoring":
       return <EndpointControlContent domain={domain} />;
     case "domain-export":
-      return <ReportsCatalog />;
+      return (
+        <div className="space-y-10">
+          <DomainExportPanel />
+          <ReportsCatalog />
+        </div>
+      );
     case "e911-review":
       return <E911Content domain={domain} />;
     case "sip-alg":

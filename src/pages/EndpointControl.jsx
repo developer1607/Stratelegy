@@ -50,7 +50,9 @@ export function EndpointControlContent({ domain }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [serviceFilter, setServiceFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
+  // Default hides "No device" so the list focuses on provisioned endpoints.
+  // Use status filter → "No device" or "All statuses" to review them manually.
+  const [statusFilter, setStatusFilter] = useState('hide_no_device');
   const [recordFilter, setRecordFilter] = useState('all');
   const [sortBy, setSortBy] = useState('extension');
   const [sortDir, setSortDir] = useState('asc');
@@ -94,6 +96,10 @@ export function EndpointControlContent({ domain }) {
     [serviceOptions, phoneModelOptions]
   );
 
+  const rowMatchesStatus = (row, status) =>
+    row.online_status === status ||
+    (row.deviceLines || []).some((line) => line.online_status === status);
+
   const filteredRows = useMemo(() => {
     return subscribers.filter((row) => {
       if (recordFilter === 'extensions' && row.is_phone_inventory) return false;
@@ -116,17 +122,17 @@ export function EndpointControlContent({ domain }) {
         return false;
       }
       if (!matchSelect(row.srv_code || row.model, serviceFilter)) return false;
-      if (
-        statusFilter !== 'all' &&
-        row.online_status !== statusFilter &&
-        !(row.deviceLines || []).some((line) => line.online_status === statusFilter)
-      ) {
+      if (statusFilter === 'hide_no_device') {
+        // Hide extensions with no provisioned device (still reachable via "No device" / "All").
+        if (row.online_status === 'no_device' && !rowMatchesStatus(row, 'online') && !rowMatchesStatus(row, 'offline')) {
+          return false;
+        }
+      } else if (statusFilter !== 'all' && !rowMatchesStatus(row, statusFilter)) {
         return false;
       }
       return true;
     });
   }, [subscribers, search, serviceFilter, statusFilter, recordFilter]);
-
   const sortedRows = useMemo(() => {
     const list = [...filteredRows];
     const dir = sortDir === 'desc' ? -1 : 1;
@@ -208,12 +214,15 @@ export function EndpointControlContent({ domain }) {
         <PbxFilterSelect
           value={statusFilter}
           onValueChange={setStatusFilter}
+          hideAll
+          className="w-[170px]"
           options={[
+            { value: 'hide_no_device', label: 'Hide no device' },
             { value: 'online', label: 'Online' },
             { value: 'offline', label: 'Unregistered' },
-            { value: 'no_device', label: 'No device' },
+            { value: 'no_device', label: 'No device only' },
+            { value: 'all', label: 'All statuses' },
           ]}
-          allLabel="All statuses"
         />
         <PbxFilterSelect
           value={serviceFilter}

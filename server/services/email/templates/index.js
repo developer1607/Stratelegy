@@ -205,6 +205,92 @@ export const EMAIL_TEMPLATES = {
       }),
     }),
   },
+
+  pbx_offline_daily: {
+    subject: ({ rowCount, minDowntime }) =>
+      `Offline Endpoints — ${rowCount ?? 0} matching (min ${minDowntime || 'any'})`,
+    render: ({
+      generatedAt,
+      domainsScanned,
+      domainsFailed,
+      rowCount,
+      minDowntime,
+      elapsedMs,
+      tableHtml,
+      textBody,
+      reportUrl,
+    }) => ({
+      subject: `Offline Endpoints — ${rowCount ?? 0} matching (min ${minDowntime || 'any'})`,
+      text:
+        textBody ||
+        [
+          `Offline Endpoint daily report — ${config.appName}`,
+          `Generated: ${generatedAt}`,
+          `Domains scanned: ${domainsScanned}`,
+          `Matching offline: ${rowCount}`,
+          reportUrl,
+        ].join('\n'),
+      html: renderLayout({
+        title: 'Offline Endpoint report',
+        preheader: `${rowCount ?? 0} offline endpoints`,
+        bodyHtml: `
+          <p style="margin:0 0 16px;">Daily Offline Endpoint scan for all domains.</p>
+          ${infoRow('Generated', generatedAt)}
+          ${infoRow('Domains scanned', domainsScanned)}
+          ${infoRow('Domain scan errors', domainsFailed ?? 0)}
+          ${infoRow('Matching offline', rowCount)}
+          ${infoRow('Min downtime', minDowntime || 'any')}
+          ${infoRow('Scan time', elapsedMs != null ? `${Math.round(Number(elapsedMs) / 1000)}s` : '—')}
+          <div style="margin-top:20px;overflow-x:auto;">${tableHtml || ''}</div>
+        `,
+        ctaUrl: reportUrl,
+        ctaLabel: 'Open Offline Endpoint report',
+      }),
+    }),
+  },
+
+  pbx_domain_export: {
+    subject: ({ domain }) => `Domain Export — ${domain || 'domain'}`,
+    render: ({
+      domain,
+      reportType,
+      downloadUrl,
+      status,
+      generatedAt,
+      scheduled,
+      reportsUrl,
+    }) => ({
+      subject: `Domain Export — ${domain || 'domain'}`,
+      text: [
+        `Domain Export for ${domain}`,
+        `Type: ${reportType}`,
+        `Status: ${status}`,
+        `Generated: ${generatedAt}`,
+        scheduled ? 'Source: daily schedule' : 'Source: immediate request',
+        downloadUrl || `Open portal: ${reportsUrl}`,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      html: renderLayout({
+        title: 'Domain Export',
+        preheader: `Domain Export — ${domain}`,
+        bodyHtml: `
+          <p style="margin:0 0 16px;">${scheduled ? 'Scheduled' : 'Requested'} Domain Export is ready to review.</p>
+          ${infoRow('Domain', domain)}
+          ${infoRow('Report type', reportType)}
+          ${infoRow('Status', status)}
+          ${infoRow('Generated', generatedAt)}
+          ${
+            downloadUrl
+              ? ''
+              : '<p style="margin:16px 0 0;color:#64748b;font-size:14px;">Download link not available yet — open Reports → Domain Export → Completed exports.</p>'
+          }
+        `,
+        ctaUrl: downloadUrl || reportsUrl,
+        ctaLabel: downloadUrl ? 'Download export' : 'Open Domain Export',
+      }),
+    }),
+  },
 };
 
 export async function renderEmailTemplate(templateId, data) {

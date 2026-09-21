@@ -261,4 +261,16 @@ export const pbxApi = {
     pbxRequest("PATCH", "/troubleshooting/vulnerability/call-limit", body, {
       domain,
     }),
+  listReportSchedules: (query = {}) => pbxGet("/report-schedules", query),
+  getReportSchedule: (id) =>
+    pbxGet(`/report-schedules/${encodeURIComponent(id)}`),
+  createReportSchedule: (body) => pbxRequest("POST", "/report-schedules", body),
+  updateReportSchedule: (id, body) =>
+    pbxRequest("PUT", `/report-schedules/${encodeURIComponent(id)}`, body),
+  deleteReportSchedule: (id) =>
+    pbxRequest("DELETE", `/report-schedules/${encodeURIComponent(id)}`),
+  runReportSchedule: (id) =>
+    pbxRequest("POST", `/report-schedules/${encodeURIComponent(id)}/run`),
+  immediateDomainExport: (body) =>
+    pbxRequest("POST", "/domain-export/immediate", body),
 };

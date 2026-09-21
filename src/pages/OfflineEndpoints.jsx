@@ -10,12 +10,14 @@ import SubscriberDetailSheet from '@/components/pbx/endpoints/SubscriberDetailSh
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { matchSearch } from '@/lib/listFilters';
+import OfflineEndpointSchedulePanel from '@/components/pbx/reports/OfflineEndpointSchedulePanel';
 
 export default function OfflineEndpoints() {
   return (
     <PbxShell
       title="Offline Endpoints"
       description="Extension downtime and fax ATA offline delivery"
+      requiresDomain={false}
     >
       {({ domain }) => <OfflineEndpointsContent domain={domain} />}
     </PbxShell>
@@ -84,12 +86,27 @@ export function OfflineEndpointsContent({ domain }) {
     return filterAtaRows(source);
   }, [data?.fax, search, offlineFilter, showOfflineOnly]);
 
-  if (!domain) return <PbxLoading />;
-  if (isLoading) return <PbxLoading />;
-  if (error) return <PbxError error={error} />;
+  if (error && domain) {
+    return (
+      <div className="space-y-6">
+        <OfflineEndpointSchedulePanel />
+        <PbxError error={error} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      <OfflineEndpointSchedulePanel />
+
+      {!domain ? (
+        <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          Select a domain in the bar above to load the live offline list for that domain.
+        </p>
+      ) : isLoading ? (
+        <PbxLoading />
+      ) : (
+        <>
       <PbxListToolbar
         search={search}
         onSearchChange={setSearch}
@@ -219,6 +236,8 @@ export function OfflineEndpointsContent({ domain }) {
         open={!!detailSub}
         onOpenChange={(open) => !open && setDetailSub(null)}
       />
+        </>
+      )}
     </div>
   );
 }

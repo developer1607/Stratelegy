@@ -36,6 +36,13 @@ import realtimeRoutes from "./routes/realtime.js";
 import pbxRoutes from "./routes/pbx.js";
 import notificationRoutes from "./routes/notifications.js";
 import emailRoutes from "./routes/email.js";
+import {
+  startReportScheduleRunner,
+  stopReportScheduleRunner,
+} from "./services/pbx/reportSchedules.js";
+// Registers offline_endpoint / domain_export generators with the runner.
+import "./services/pbx/offlineDailyReport.js";
+import "./services/pbx/domainExportReport.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -238,6 +245,7 @@ const server = app.listen(port, host, () => {
       `[server] SkySwitch PBX enabled — requires DNS/network access to ${config.skyswitch.apiBaseUrl}`,
     );
   }
+  startReportScheduleRunner();
 });
 
 server.on("error", (err) => {
@@ -252,6 +260,7 @@ async function shutdown(signal) {
   shuttingDown = true;
   console.log(`[server] ${signal} received — shutting down`);
 
+  stopReportScheduleRunner();
   closeAllSubscribers();
 
   const forceExit = setTimeout(() => {

@@ -11,6 +11,7 @@ import { formatE911Row, E911_COLUMNS } from "@/lib/pbxTable";
 import { matchSearch } from "@/lib/listFilters";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
+import PbxFilterSelect from "@/components/pbx/shared/PbxFilterSelect";
 
 function LiveSection({
   title,
@@ -101,6 +102,8 @@ function OfflineEndpointsLive({ config, domain, search }) {
 }
 
 function DeviceMonitoringLive({ config, domain, search }) {
+  // Match Endpoint Control / Reports → Device Monitoring: hide "No device" by default.
+  const [statusFilter, setStatusFilter] = useState("hide_no_device");
   const { data, isLoading, error } = useQuery({
     queryKey: ["pbx-endpoint-inventory", domain],
     queryFn: () => pbxApi.endpointControlOverview(domain),
@@ -111,19 +114,39 @@ function DeviceMonitoringLive({ config, domain, search }) {
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;
 
-  const rows = (data?.subscribers || []).filter((row) =>
-    matchSearch(row, search, [
-      "user",
-      "name",
-      "subscriber_login",
-      "caller_id",
-      "site",
-      "department",
-      "mac_address",
-      "model",
-      "registration_status",
-    ]),
-  );
+  const rowMatchesStatus = (row, status) =>
+    row.online_status === status ||
+    (row.deviceLines || []).some((line) => line.online_status === status);
+
+  const rows = (data?.subscribers || []).filter((row) => {
+    if (
+      !matchSearch(row, search, [
+        "user",
+        "name",
+        "subscriber_login",
+        "caller_id",
+        "site",
+        "department",
+        "mac_address",
+        "model",
+        "registration_status",
+      ])
+    ) {
+      return false;
+    }
+    if (statusFilter === "hide_no_device") {
+      if (
+        row.online_status === "no_device" &&
+        !rowMatchesStatus(row, "online") &&
+        !rowMatchesStatus(row, "offline")
+      ) {
+        return false;
+      }
+    } else if (statusFilter !== "all" && !rowMatchesStatus(row, statusFilter)) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <LiveSection
@@ -132,6 +155,21 @@ function DeviceMonitoringLive({ config, domain, search }) {
       livePageLabel={config.livePageLabel}
       description="Hybrid PBX + Telco endpoint inventory. Use Generate export for the official SkySwitch user_device file."
     >
+      <PbxListToolbar>
+        <PbxFilterSelect
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+          hideAll
+          className="w-[170px]"
+          options={[
+            { value: "hide_no_device", label: "Hide no device" },
+            { value: "online", label: "Online" },
+            { value: "offline", label: "Unregistered" },
+            { value: "no_device", label: "No device only" },
+            { value: "all", label: "All statuses" },
+          ]}
+        />
+      </PbxListToolbar>
       <PbxDataTable
         columns={[
           {
