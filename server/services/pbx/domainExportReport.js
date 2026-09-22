@@ -1,4 +1,4 @@
-import { config } from '../../config.js';
+import { config, publicAppBaseUrl } from '../../config.js';
 import {
   listReportTypes,
   createReport,
@@ -178,7 +178,7 @@ async function emailDomainExportLink({
       status: job?.status || 'completed',
       generatedAt: new Date().toISOString(),
       scheduled: Boolean(scheduled),
-      reportsUrl: `${config.appBaseUrl}/PBXReports?tab=domain-export`,
+      reportsUrl: `${publicAppBaseUrl()}/PBXReports?tab=domain-export`,
     },
   );
 

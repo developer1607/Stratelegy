@@ -6,7 +6,7 @@ import {
 import { buildReportTableHtml } from './reportEmailTable.js';
 import { renderEmailTemplate } from '../email/templates/index.js';
 import { sendRenderedEmail } from '../email/mailer.js';
-import { config } from '../../config.js';
+import { publicAppBaseUrl } from '../../config.js';
 
 function hostFromContact(contact) {
   const text = String(contact || '').trim();
@@ -143,7 +143,7 @@ export async function runSipAlgSameIpReport(schedule, ctx = {}) {
     domain,
     rowCount: collection.row_count,
     tableHtml,
-    reportUrl: `${config.appBaseUrl}/PBXReports?tab=sip-alg`,
+    reportUrl: `${publicAppBaseUrl()}/PBXReports?tab=sip-alg`,
     ctaLabel: 'Open SIP ALG',
   });
 

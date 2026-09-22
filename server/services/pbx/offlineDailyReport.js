@@ -6,7 +6,7 @@ import {
 } from './reportSchedules.js';
 import { renderEmailTemplate } from '../email/templates/index.js';
 import { sendRenderedEmail } from '../email/mailer.js';
-import { config } from '../../config.js';
+import { config, publicAppBaseUrl } from '../../config.js';
 
 const DEFAULT_CONCURRENCY = 3;
 const MIN_DOWNTIME_SECONDS = {
@@ -248,7 +248,7 @@ export async function runOfflineEndpointDailyReport(schedule, ctx = {}) {
     elapsedMs: collection.elapsed_ms,
     tableHtml: buildOfflineTableHtml(collection.rows),
     textBody: buildOfflineText(collection.rows, collection),
-    reportUrl: `${config.appBaseUrl}/PBXReports?tab=offline-endpoint`,
+    reportUrl: `${publicAppBaseUrl()}/PBXReports?tab=offline-endpoint`,
   });
 
   await sendRenderedEmail({

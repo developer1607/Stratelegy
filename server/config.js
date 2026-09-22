@@ -73,6 +73,11 @@ function isLocalhostUrl(url) {
   }
 }
 
+/** Public site origin for email CTAs (no trailing slash). Uses APP_BASE_URL. */
+export function publicAppBaseUrl() {
+  return String(config.appBaseUrl || "http://localhost:3000").replace(/\/+$/, "");
+}
+
 /** Fail fast when production is misconfigured. */
 export function assertProductionConfig() {
   if (!config.isProduction) return;
@@ -124,16 +129,9 @@ export function assertProductionConfig() {
       console.warn(`[config] PBX enabled but missing: ${missing.join(", ")}`);
     }
   }
-  if (!config.emailWebhookSecret) {
-    console.warn(
-      "[config] EMAIL_WEBHOOK_SECRET is not set — inbound email webhooks are disabled",
-    );
-  }
-  if (!process.env.ADMIN_PASSWORD) {
-    console.warn(
-      "[config] ADMIN_PASSWORD is not set — first admin will not be created until you set it",
-    );
-  }
+  // EMAIL_WEBHOOK_SECRET / ADMIN_PASSWORD are optional once the portal is
+  // running — no startup noise. Webhooks stay disabled without a secret;
+  // admin seed only runs when the users table is empty (see seed/admin.js).
 }
 
 function parseCorsOrigins() {

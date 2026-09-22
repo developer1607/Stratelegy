@@ -36,6 +36,7 @@ coverage/
 # Archives / backups
 *.tar.gz
 .tmp-pdf-pages/
+.tmp-report-previews/
 
 # Self-hosted data
 data/

@@ -7,7 +7,7 @@ import {
 import { buildReportTableHtml } from './reportEmailTable.js';
 import { renderEmailTemplate } from '../email/templates/index.js';
 import { sendRenderedEmail } from '../email/mailer.js';
-import { config } from '../../config.js';
+import { publicAppBaseUrl } from '../../config.js';
 
 const DEFAULT_CONCURRENCY = 3;
 
@@ -119,7 +119,7 @@ export async function runE911EmptyCidReport(schedule, ctx = {}) {
     domainsScanned: collection.domains_scanned,
     rowCount: collection.row_count,
     tableHtml,
-    reportUrl: `${config.appBaseUrl}/PBXReports?tab=e911-review`,
+    reportUrl: `${publicAppBaseUrl()}/PBXReports?tab=e911-review`,
     ctaLabel: 'Open E911 Review',
     extraRows: [['Domain scan errors', collection.domains_failed]],
   });

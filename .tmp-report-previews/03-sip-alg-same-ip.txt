@@ -1,5 +1,0 @@
-SIP ALG — same internal/external IP
-Generated: 2026-09-22T09:02:17.681Z
-Domain: Alexandria.20989.service
-Rows: 0
-http://localhost:3000/PBXReports?tab=sip-alg

@@ -1,6 +1,0 @@
-Offline Endpoints
-Generated: 2026-09-22T09:02:17.681Z
-Domain: Alexandria.20989.service
-Domains scanned: 1
-Rows: 2
-http://localhost:3000/PBXReports?tab=offline-endpoint
