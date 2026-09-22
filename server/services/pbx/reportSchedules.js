@@ -6,6 +6,9 @@ import { toIsoDate } from '../../db/helpers.js';
 export const REPORT_SCHEDULE_TYPES = Object.freeze([
   'offline_endpoint',
   'domain_export',
+  'e911_empty_cid',
+  'sip_alg_same_ip',
+  'vulnerability_dial_policy',
 ]);
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
@@ -142,6 +145,11 @@ function rowToSchedule(row) {
     options: parseJsonField(row.options_json, {}),
     enabled: Boolean(row.enabled),
     created_by: row.created_by || null,
+    created_by_name: row.created_by_name || null,
+    created_by_email: row.created_by_email || null,
+    recipient_emails: Array.isArray(row.recipient_emails)
+      ? row.recipient_emails
+      : null,
     last_sent_at: toIsoDate(row.last_sent_at) || null,
     last_run_status: row.last_run_status || null,
     last_run_message: row.last_run_message || null,
@@ -154,28 +162,39 @@ export async function listReportSchedules({ type, domain, enabled } = {}) {
   const clauses = [];
   const params = [];
   if (type) {
-    clauses.push('type = ?');
+    clauses.push('s.type = ?');
     params.push(String(type));
   }
   if (domain === 'all' || domain === null) {
     // no filter
   } else if (domain === '__null__') {
-    clauses.push('domain IS NULL');
+    clauses.push('s.domain IS NULL');
   } else if (domain) {
-    clauses.push('(domain = ? OR domain IS NULL)');
+    clauses.push('(s.domain = ? OR s.domain IS NULL)');
     params.push(String(domain));
   }
   if (enabled === true || enabled === false) {
-    clauses.push('enabled = ?');
+    clauses.push('s.enabled = ?');
     params.push(enabled ? 1 : 0);
   }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   const rows = await query(
-    `SELECT * FROM pbx_report_schedules ${where}
-     ORDER BY type ASC, domain ASC, created_date DESC`,
+    `SELECT s.*,
+            u.full_name AS created_by_name,
+            u.email AS created_by_email
+     FROM pbx_report_schedules s
+     LEFT JOIN users u ON u.id = s.created_by
+     ${where}
+     ORDER BY s.type ASC, s.domain ASC, s.created_date DESC`,
     params,
   );
-  return rows.map(rowToSchedule);
+  const schedules = rows.map(rowToSchedule);
+  for (const schedule of schedules) {
+    schedule.recipient_emails = await resolveRecipientEmails(
+      schedule.recipients,
+    );
+  }
+  return schedules;
 }
 
 export async function getReportSchedule(id) {
@@ -191,8 +210,17 @@ export async function createReportSchedule(input, { createdBy } = {}) {
   const days = normalizeDays(input?.days);
   const recipients = normalizeRecipients(input?.recipients);
   const domain = normalizeDomain(input?.domain);
-  if (type === 'domain_export' && !domain) {
-    const err = new Error('domain is required for Domain Export schedules');
+  if (
+    (type === 'domain_export' ||
+      type === 'sip_alg_same_ip' ||
+      type === 'vulnerability_dial_policy') &&
+    !domain
+  ) {
+    const err = new Error(
+      type === 'domain_export'
+        ? 'domain is required for Domain Export schedules'
+        : `domain is required for ${type} schedules`,
+    );
     err.status = 400;
     throw err;
   }
@@ -243,8 +271,17 @@ export async function updateReportSchedule(id, input = {}) {
     input.domain !== undefined
       ? normalizeDomain(input.domain)
       : existing.domain;
-  if (type === 'domain_export' && !domain) {
-    const err = new Error('domain is required for Domain Export schedules');
+  if (
+    (type === 'domain_export' ||
+      type === 'sip_alg_same_ip' ||
+      type === 'vulnerability_dial_policy') &&
+    !domain
+  ) {
+    const err = new Error(
+      type === 'domain_export'
+        ? 'domain is required for Domain Export schedules'
+        : `domain is required for ${type} schedules`,
+    );
     err.status = 400;
     throw err;
   }

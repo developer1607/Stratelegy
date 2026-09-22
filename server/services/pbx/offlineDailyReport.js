@@ -72,20 +72,29 @@ function domainName(row) {
 
 /**
  * Aggregate offline extensions across reseller domains (concurrency-limited).
+ * Pass `domains` to limit to specific domain names.
  */
 export async function collectOfflineEndpointsAcrossDomains({
   minDowntime = 'any',
   concurrency = DEFAULT_CONCURRENCY,
+  domains: domainFilter = null,
 } = {}) {
-  const domains = await listDomains();
-  const names = [
-    ...new Set(
-      (Array.isArray(domains) ? domains : [])
-        .map(domainName)
-        .filter(Boolean)
-        .map((d) => String(d)),
-    ),
-  ];
+  let names;
+  if (Array.isArray(domainFilter) && domainFilter.length) {
+    names = [...new Set(domainFilter.map((d) => String(d).trim()).filter(Boolean))];
+  } else if (typeof domainFilter === 'string' && domainFilter.trim()) {
+    names = [domainFilter.trim()];
+  } else {
+    const domains = await listDomains();
+    names = [
+      ...new Set(
+        (Array.isArray(domains) ? domains : [])
+          .map(domainName)
+          .filter(Boolean)
+          .map((d) => String(d)),
+      ),
+    ];
+  }
 
   const minSeconds = minDowntimeSeconds({ min_downtime: minDowntime });
   const started = Date.now();
@@ -202,10 +211,12 @@ export async function runOfflineEndpointDailyReport(schedule, ctx = {}) {
     options.send_if_empty ?? options.sendIfEmpty ?? false,
   );
   const concurrency = Number(options.concurrency) || DEFAULT_CONCURRENCY;
+  const domain = schedule?.domain || null;
 
   const collection = await collectOfflineEndpointsAcrossDomains({
     minDowntime,
     concurrency,
+    domains: domain || null,
   });
 
   if (!collection.row_count && !sendIfEmpty) {
@@ -259,6 +270,26 @@ export async function runOfflineEndpointDailyReport(schedule, ctx = {}) {
     collection,
     force: Boolean(ctx.force),
   };
+}
+
+/** Immediate one-shot offline report (optionally for one domain). */
+export async function runOfflineEndpointImmediate({
+  domain = null,
+  recipients,
+  minDowntime = 'any',
+  sendIfEmpty = false,
+} = {}) {
+  return runOfflineEndpointDailyReport(
+    {
+      domain: domain || null,
+      recipients,
+      options: {
+        min_downtime: minDowntime,
+        send_if_empty: sendIfEmpty,
+      },
+    },
+    { force: true },
+  );
 }
 
 registerReportGenerator('offline_endpoint', runOfflineEndpointDailyReport);

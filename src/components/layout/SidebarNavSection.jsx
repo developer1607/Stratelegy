@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -9,15 +9,12 @@ import { cn } from "@/lib/utils";
 
 export default function SidebarNavSection({
   label,
-  isActive = false,
+  isActive: _isActive = false,
   children,
   className,
 }) {
-  const [open, setOpen] = useState(isActive);
-
-  useEffect(() => {
-    if (isActive) setOpen(true);
-  }, [isActive, label]);
+  // James: on login, left menu sections stay collapsed until the user opens them.
+  const [open, setOpen] = useState(false);
 
   return (
     <Collapsible

@@ -1,0 +1,58 @@
+{
+  "to": "developer1607@gmail.com",
+  "domain": "Alexandria.20989.service",
+  "results": [
+    {
+      "type": "offline_endpoint",
+      "ok": false,
+      "error": "Invalid login: 525 5.7.1 Unauthorized IP address"
+    },
+    {
+      "type": "e911_empty_cid",
+      "ok": false,
+      "error": "Invalid login: 525 5.7.1 Unauthorized IP address"
+    },
+    {
+      "type": "sip_alg_same_ip",
+      "ok": false,
+      "error": "Invalid login: 525 5.7.1 Unauthorized IP address"
+    },
+    {
+      "type": "vulnerability_dial_policy",
+      "ok": false,
+      "error": "Invalid login: 525 5.7.1 Unauthorized IP address"
+    },
+    {
+      "type": "domain_export",
+      "ok": false,
+      "error": "Invalid login: 525 5.7.1 Unauthorized IP address"
+    }
+  ],
+  "schedules": [
+    {
+      "type": "offline_endpoint",
+      "id": "83212471-656b-43d4-93ae-4c39484ca3b0",
+      "enabled": false
+    },
+    {
+      "type": "e911_empty_cid",
+      "id": "a179d1b8-95e9-406d-91b7-484aa446b396",
+      "enabled": false
+    },
+    {
+      "type": "sip_alg_same_ip",
+      "id": "3cbd4b76-e110-4812-8aaf-62e72c1853a7",
+      "enabled": false
+    },
+    {
+      "type": "vulnerability_dial_policy",
+      "id": "66a5e9b1-1aa4-4b32-896b-d855e50d8f9e",
+      "enabled": false
+    },
+    {
+      "type": "domain_export",
+      "id": "3620642b-7f85-44b3-b160-6470caec6e2b",
+      "enabled": false
+    }
+  ]
+}

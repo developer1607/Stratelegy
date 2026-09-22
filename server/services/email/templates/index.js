@@ -224,7 +224,7 @@ export const EMAIL_TEMPLATES = {
       text:
         textBody ||
         [
-          `Offline Endpoint daily report — ${config.appName}`,
+          `Offline Endpoint report — ${config.appName}`,
           `Generated: ${generatedAt}`,
           `Domains scanned: ${domainsScanned}`,
           `Matching offline: ${rowCount}`,
@@ -234,17 +234,25 @@ export const EMAIL_TEMPLATES = {
         title: 'Offline Endpoint report',
         preheader: `${rowCount ?? 0} offline endpoints`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">Daily Offline Endpoint scan for all domains.</p>
-          ${infoRow('Generated', generatedAt)}
-          ${infoRow('Domains scanned', domainsScanned)}
-          ${infoRow('Domain scan errors', domainsFailed ?? 0)}
-          ${infoRow('Matching offline', rowCount)}
-          ${infoRow('Min downtime', minDowntime || 'any')}
-          ${infoRow('Scan time', elapsedMs != null ? `${Math.round(Number(elapsedMs) / 1000)}s` : '—')}
-          <div style="margin-top:20px;overflow-x:auto;">${tableHtml || ''}</div>
+          <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+            Scheduled Offline Endpoint scan across reseller domains.
+          </p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
+            <tr><td style="padding:14px;">
+              ${infoRow('Generated', generatedAt)}
+              ${infoRow('Domains scanned', domainsScanned)}
+              ${infoRow('Domain scan errors', domainsFailed ?? 0)}
+              ${infoRow('Matching offline', rowCount)}
+              ${infoRow('Min downtime', minDowntime || 'any')}
+              ${infoRow('Scan time', elapsedMs != null ? `${Math.round(Number(elapsedMs) / 1000)}s` : '—')}
+            </td></tr>
+          </table>
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
+          <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">${tableHtml || '<p style="padding:12px;color:#64748b;margin:0;">No offline endpoints matched.</p>'}</div>
         `,
         ctaUrl: reportUrl,
-        ctaLabel: 'Open Offline Endpoint report',
+        ctaLabel: 'Open in Insight',
       }),
     }),
   },
@@ -266,28 +274,93 @@ export const EMAIL_TEMPLATES = {
         `Type: ${reportType}`,
         `Status: ${status}`,
         `Generated: ${generatedAt}`,
-        scheduled ? 'Source: daily schedule' : 'Source: immediate request',
+        scheduled ? 'Source: scheduled Domain Export' : 'Source: immediate Domain Export',
         downloadUrl || `Open portal: ${reportsUrl}`,
       ]
         .filter(Boolean)
         .join('\n'),
       html: renderLayout({
-        title: 'Domain Export',
+        title: 'Domain Export ready',
         preheader: `Domain Export — ${domain}`,
         bodyHtml: `
-          <p style="margin:0 0 16px;">${scheduled ? 'Scheduled' : 'Requested'} Domain Export is ready to review.</p>
-          ${infoRow('Domain', domain)}
-          ${infoRow('Report type', reportType)}
-          ${infoRow('Status', status)}
-          ${infoRow('Generated', generatedAt)}
+          <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+            ${scheduled ? 'Your scheduled' : 'Your requested'} Domain Export file is ready.
+          </p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 12px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Report result</td></tr>
+            <tr><td style="padding:14px;">
+              ${infoRow('Domain', domain)}
+              ${infoRow('Export type', reportType)}
+              ${infoRow('Status', status)}
+              ${infoRow('Generated', generatedAt)}
+              ${infoRow('Source', scheduled ? 'Daily schedule' : 'Immediate request')}
+            </td></tr>
+          </table>
           ${
             downloadUrl
               ? ''
-              : '<p style="margin:16px 0 0;color:#64748b;font-size:14px;">Download link not available yet — open Reports → Domain Export → Completed exports.</p>'
+              : '<p style="margin:12px 0 0;color:#64748b;font-size:14px;">Download link was not returned by SkySwitch yet — open Reports → Domain Export → Completed exports in Insight.</p>'
           }
         `,
         ctaUrl: downloadUrl || reportsUrl,
-        ctaLabel: downloadUrl ? 'Download export' : 'Open Domain Export',
+        ctaLabel: downloadUrl ? 'Download export file' : 'Open Domain Export',
+      }),
+    }),
+  },
+
+  pbx_tabular_report: {
+    subject: ({ title, rowCount }) =>
+      `${title || 'PBX report'} — ${rowCount ?? 0} row(s)`,
+    render: ({
+      title,
+      intro,
+      generatedAt,
+      domain,
+      domainsScanned,
+      rowCount,
+      tableHtml,
+      textBody,
+      reportUrl,
+      ctaLabel,
+      extraRows,
+    }) => ({
+      subject: `${title || 'PBX report'} — ${rowCount ?? 0} row(s)`,
+      text:
+        textBody ||
+        [
+          title || 'PBX report',
+          `Generated: ${generatedAt}`,
+          domain ? `Domain: ${domain}` : null,
+          domainsScanned != null ? `Domains scanned: ${domainsScanned}` : null,
+          `Rows: ${rowCount}`,
+          reportUrl,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      html: renderLayout({
+        title: title || 'PBX report',
+        preheader: `${rowCount ?? 0} row(s)`,
+        bodyHtml: `
+          <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+            ${escapeHtml(intro || 'Scheduled PBX report from Stratelegy Insight.')}
+          </p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
+            <tr><td style="padding:14px;">
+              ${infoRow('Generated', generatedAt)}
+              ${infoRow('Domain', domain)}
+              ${infoRow('Domains scanned', domainsScanned)}
+              ${infoRow('Matching rows', rowCount)}
+              ${(Array.isArray(extraRows) ? extraRows : [])
+                .map(([label, value]) => infoRow(label, value))
+                .join('')}
+            </td></tr>
+          </table>
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
+          <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">${tableHtml || ''}</div>
+        `,
+        ctaUrl: reportUrl,
+        ctaLabel: ctaLabel || 'Open in Insight',
       }),
     }),
   },

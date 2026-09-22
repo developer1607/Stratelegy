@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { matchSearch } from '@/lib/listFilters';
 import OfflineEndpointSchedulePanel from '@/components/pbx/reports/OfflineEndpointSchedulePanel';
+import DomainScopedReportPanel from '@/components/pbx/reports/DomainScopedReportPanel';
 
 export default function OfflineEndpoints() {
   return (
@@ -89,6 +90,15 @@ export function OfflineEndpointsContent({ domain }) {
   if (error && domain) {
     return (
       <div className="space-y-6">
+        <DomainScopedReportPanel
+          scheduleType="offline_endpoint"
+          title="Offline Endpoints"
+          description="Email unregistered / offline endpoints for a selected domain to a portal user or external address."
+          resultNote="Recipients receive an Insight email listing offline extensions (ext, name, MAC, downtime) for the selected domain."
+          requireDomain
+          queryKeySuffix="per-domain"
+          immediateApi={(body) => pbxApi.immediateOfflineEndpoints(body)}
+        />
         <OfflineEndpointSchedulePanel />
         <PbxError error={error} />
       </div>
@@ -97,6 +107,15 @@ export function OfflineEndpointsContent({ domain }) {
 
   return (
     <div className="space-y-6">
+      <DomainScopedReportPanel
+        scheduleType="offline_endpoint"
+        title="Offline Endpoints"
+        description="Email unregistered / offline endpoints for a selected domain to a portal user or external address."
+        resultNote="Recipients receive an Insight email listing offline extensions (ext, name, MAC, downtime) for the selected domain."
+        requireDomain
+        queryKeySuffix="per-domain"
+        immediateApi={(body) => pbxApi.immediateOfflineEndpoints(body)}
+      />
       <OfflineEndpointSchedulePanel />
 
       {!domain ? (

@@ -273,4 +273,12 @@ export const pbxApi = {
     pbxRequest("POST", `/report-schedules/${encodeURIComponent(id)}/run`),
   immediateDomainExport: (body) =>
     pbxRequest("POST", "/domain-export/immediate", body),
+  immediateOfflineEndpoints: (body) =>
+    pbxRequest("POST", "/offline-endpoints/immediate", body),
+  immediateE911EmptyCid: (body) =>
+    pbxRequest("POST", "/e911-empty-cid/immediate", body),
+  immediateSipAlgSameIp: (body) =>
+    pbxRequest("POST", "/sip-alg-same-ip/immediate", body),
+  immediateVulnerabilityDial: (body) =>
+    pbxRequest("POST", "/vulnerability-dial/immediate", body),
 };

@@ -5,6 +5,7 @@ import PbxShell, { PbxDataTable, PbxError, PbxLoading } from '@/components/pbx/P
 import PbxListToolbar from '@/components/pbx/shared/PbxListToolbar';
 import PbxFilterSelect from '@/components/pbx/shared/PbxFilterSelect';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
+import DomainScopedReportPanel from '@/components/pbx/reports/DomainScopedReportPanel';
 
 export default function SIPALG() {
   return (
@@ -15,6 +16,22 @@ export default function SIPALG() {
 }
 
 export function SipAlgContent({ domain }) {
+  return (
+    <div className="space-y-6">
+      <DomainScopedReportPanel
+        scheduleType="sip_alg_same_ip"
+        title="SIP ALG same IP"
+        description="Email extensions where internal (contact) IP matches external (WAN) IP for the selected domain."
+        resultNote="Email lists Ext · Name · Internal IP · External IP · MAC."
+        requireDomain
+        immediateApi={(body) => pbxApi.immediateSipAlgSameIp(body)}
+      />
+      <SipAlgSettingsLive domain={domain} />
+    </div>
+  );
+}
+
+function SipAlgSettingsLive({ domain }) {
   const [search, setSearch] = useState('');
   const [serverFilter, setServerFilter] = useState('all');
 
@@ -38,7 +55,13 @@ export function SipAlgContent({ domain }) {
     });
   }, [settings, search, serverFilter]);
 
-  if (!domain) return <PbxLoading />;
+  if (!domain) {
+    return (
+      <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+        Select a domain to load SIP ALG settings.
+      </p>
+    );
+  }
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;
 

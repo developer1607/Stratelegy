@@ -19,6 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatE911Row, E911_COLUMNS } from '@/lib/pbxTable';
 import { formatCivicAddressLabel } from '@shared/pbxE911Format.js';
 import { matchSearch, matchSelect, uniqueFieldValues } from '@/lib/listFilters';
+import DomainScopedReportPanel from '@/components/pbx/reports/DomainScopedReportPanel';
 
 /** SkySwitch E911 routes expect an 11-digit US number (leading 1). */
 function normalizeE911Phone(value) {
@@ -55,7 +56,7 @@ export default function E911Review() {
     <PbxShell
       title="E911 Review"
       description="Provisioned addresses and domain endpoint review"
-      requiresDomain
+      requiresDomain={false}
     >
       {({ domain }) => <E911Content domain={domain} />}
     </PbxShell>
@@ -63,6 +64,29 @@ export default function E911Review() {
 }
 
 export function E911Content({ domain }) {
+  return (
+    <div className="space-y-6">
+      <DomainScopedReportPanel
+        scheduleType="e911_empty_cid"
+        title="E911 empty / zero CID"
+        description="Report PBX users whose PBX 911 CID is empty, wildcard, or all zeros. Leave domain blank on immediate send to scan all reseller domains."
+        resultNote="Email lists Domain · Ext · Name · PBX 911 CID for matching users."
+        requireDomain={false}
+        allowAllDomainsImmediate
+        immediateApi={(body) => pbxApi.immediateE911EmptyCid(body)}
+      />
+      {domain ? (
+        <E911ReviewLive domain={domain} />
+      ) : (
+        <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          Select a domain in the bar above to load live E911 review data.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function E911ReviewLive({ domain }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [stateFilter, setStateFilter] = useState('all');

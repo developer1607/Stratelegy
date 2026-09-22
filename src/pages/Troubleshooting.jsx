@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { matchSearch } from '@/lib/listFilters';
+import DomainScopedReportPanel from '@/components/pbx/reports/DomainScopedReportPanel';
 
 function RadioGroup({ label, value, onChange, options }) {
   return (
@@ -52,6 +53,28 @@ export default function Troubleshooting() {
 }
 
 export function TroubleshootingContent({ domain }) {
+  return (
+    <div className="space-y-6">
+      <DomainScopedReportPanel
+        scheduleType="vulnerability_dial_policy"
+        title="Dial permissions"
+        description="Email dial permissions for each extension on the selected domain to a portal user or external address."
+        resultNote="Email lists Domain · Ext · Name · Dial permission for every extension."
+        requireDomain
+        immediateApi={(body) => pbxApi.immediateVulnerabilityDial(body)}
+      />
+      {domain ? (
+        <VulnerabilityCheckLive domain={domain} />
+      ) : (
+        <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+          Select a domain to load the live Vulnerability Check table.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function VulnerabilityCheckLive({ domain }) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [draftFilters, setDraftFilters] = useState(DEFAULT_FILTERS);
@@ -80,7 +103,6 @@ export function TroubleshootingContent({ domain }) {
     );
   }, [data?.rows, search]);
 
-  if (!domain) return <PbxLoading />;
   if (isLoading) return <PbxLoading />;
   if (error) return <PbxError error={error} />;
 

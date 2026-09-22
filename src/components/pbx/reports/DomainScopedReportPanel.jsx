@@ -14,7 +14,6 @@ import {
   ReportResultPanel,
   ReportScheduleSection,
 } from "@/components/pbx/reports/ReportScheduleSection";
-import PbxCompletedExports from "@/components/pbx/reports/PbxCompletedExports";
 import { PbxDataTable, PbxError, PbxLoading } from "@/components/pbx/PbxShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,12 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  describeReportFields,
-  flattenReportTypes,
-} from "@/lib/reportTypes";
 import { usePermissions } from "@/hooks/usePermissions";
-import { cn } from "@/lib/utils";
 
 const WEEKDAYS = [
   { value: "everyday", label: "Every day" },
@@ -42,15 +36,6 @@ const WEEKDAYS = [
   { value: "5", label: "Friday" },
   { value: "6", label: "Saturday" },
 ];
-
-function formatWhen(iso) {
-  if (!iso) return "—";
-  try {
-    return new Date(iso).toLocaleString();
-  } catch {
-    return String(iso);
-  }
-}
 
 function formatDateOnly(iso) {
   if (!iso) return "—";
@@ -70,22 +55,22 @@ function formatScheduleDay(days) {
 
 function formatScheduleTime(times) {
   if (!Array.isArray(times) || !times.length) return "—";
-  return times
-    .map((t) => {
-      const [h, m] = String(t).split(":");
-      const hour = Number(h);
-      if (!Number.isFinite(hour)) return t;
-      const ampm = hour >= 12 ? "PM" : "AM";
-      const h12 = hour % 12 || 12;
-      return `${h12}:${m || "00"} ${ampm}`;
-    })
-    .join(", ");
+  return times.join(", ");
 }
 
 /**
- * Domain Export — James fields + Insight layout + selectable report list.
+ * Reusable Insight schedule UI for per-domain (or optional-domain) email reports.
  */
-export default function DomainExportPanel() {
+export default function DomainScopedReportPanel({
+  scheduleType,
+  title,
+  description,
+  resultNote,
+  requireDomain = true,
+  allowAllDomainsImmediate = false,
+  immediateApi,
+  queryKeySuffix,
+}) {
   const queryClient = useQueryClient();
   const { canPbxAction, isAdmin, isLoading: permsLoading } = usePermissions();
   const canManage = isAdmin || canPbxAction("manageReports");
@@ -94,8 +79,6 @@ export default function DomainExportPanel() {
   const [immediateRecipients, setImmediateRecipients] = useState(
     emptyRecipients(),
   );
-  const [selectedReportType, setSelectedReportType] = useState("");
-
   const [dailyDomain, setDailyDomain] = useState("");
   const [dailyDay, setDailyDay] = useState("everyday");
   const [dailyTime, setDailyTime] = useState("08:00");
@@ -106,14 +89,9 @@ export default function DomainExportPanel() {
     queryFn: () => pbxApi.domains(),
   });
 
-  const reportTypesQuery = useQuery({
-    queryKey: ["pbx-report-types"],
-    queryFn: () => pbxApi.reportTypes(),
-  });
-
   const schedulesQuery = useQuery({
-    queryKey: ["pbx-report-schedules", "domain_export"],
-    queryFn: () => pbxApi.listReportSchedules({ type: "domain_export" }),
+    queryKey: ["pbx-report-schedules", scheduleType, queryKeySuffix || ""],
+    queryFn: () => pbxApi.listReportSchedules({ type: scheduleType }),
   });
 
   const domains = useMemo(() => {
@@ -124,73 +102,64 @@ export default function DomainExportPanel() {
       .sort((a, b) => a.localeCompare(b));
   }, [domainsQuery.data]);
 
-  const reportTypeRows = useMemo(() => {
-    return flattenReportTypes(reportTypesQuery.data).map((row) => ({
-      ...row,
-      parameters: describeReportFields(row.fields),
-    }));
-  }, [reportTypesQuery.data]);
-
-  const schedules = schedulesQuery.data?.schedules || [];
+  const schedules = useMemo(() => {
+    const list = schedulesQuery.data?.schedules || [];
+    // When domain is required, only show per-domain rows (keeps all-domains
+    // Offline schedule separate). When optional, show every schedule of this type.
+    if (requireDomain) return list.filter((row) => Boolean(row.domain));
+    return list;
+  }, [schedulesQuery.data, requireDomain]);
 
   const immediateMutation = useMutation({
     mutationFn: async () => {
       const recipientError = validateRecipients(immediateRecipients);
       if (recipientError) throw new Error(recipientError);
-      if (!immediateDomain) throw new Error("Please select a domain first");
-      if (!selectedReportType) {
-        throw new Error("Select which report type to export from the list below");
+      if (requireDomain && !immediateDomain && !allowAllDomainsImmediate) {
+        throw new Error("Please select a domain first");
       }
-      return pbxApi.immediateDomainExport({
-        domain: immediateDomain,
+      return immediateApi({
+        domain: immediateDomain || null,
         recipients: recipientsForApi(immediateRecipients),
-        report_type: selectedReportType,
       });
     },
     onSuccess: (result) => {
-      toast.success(
-        result?.message ||
-          "Domain Export queued — email arrives when the file is ready (~5 min).",
-      );
-      queryClient.invalidateQueries({ queryKey: ["pbx-generated-reports"] });
+      toast.success(result?.message || "Report sent");
+      queryClient.invalidateQueries({
+        queryKey: ["pbx-report-schedules", scheduleType],
+      });
     },
-    onError: (err) => {
-      toast.error(err?.message || "Domain Export failed");
-    },
+    onError: (err) => toast.error(err?.message || "Send failed"),
   });
 
   const saveDailyMutation = useMutation({
     mutationFn: async () => {
       const recipientError = validateRecipients(dailyRecipients);
       if (recipientError) throw new Error(recipientError);
-      if (!dailyDomain) throw new Error("Please select a domain first");
-      if (!selectedReportType) {
-        throw new Error("Select which report type to export from the list below");
+      if (requireDomain && !dailyDomain) {
+        throw new Error("Please select a domain first");
       }
       if (!String(dailyTime || "").trim()) {
         throw new Error("Schedule time is required");
       }
       const days = dailyDay === "everyday" ? null : [Number(dailyDay)];
       return pbxApi.createReportSchedule({
-        type: "domain_export",
-        domain: dailyDomain,
+        type: scheduleType,
+        domain: dailyDomain || null,
         times: [dailyTime],
         days,
         recipients: recipientsForApi(dailyRecipients),
-        options: { report_type: selectedReportType },
+        options: {},
         enabled: true,
       });
     },
     onSuccess: () => {
-      toast.success("Daily Domain Export schedule saved");
+      toast.success("Schedule saved");
       setDailyRecipients(emptyRecipients());
       queryClient.invalidateQueries({
-        queryKey: ["pbx-report-schedules", "domain_export"],
+        queryKey: ["pbx-report-schedules", scheduleType],
       });
     },
-    onError: (err) => {
-      toast.error(err?.message || "Failed to save schedule");
-    },
+    onError: (err) => toast.error(err?.message || "Failed to save schedule"),
   });
 
   const deleteMutation = useMutation({
@@ -198,7 +167,7 @@ export default function DomainExportPanel() {
     onSuccess: () => {
       toast.success("Schedule removed");
       queryClient.invalidateQueries({
-        queryKey: ["pbx-report-schedules", "domain_export"],
+        queryKey: ["pbx-report-schedules", scheduleType],
       });
     },
     onError: (err) => toast.error(err?.message || "Delete failed"),
@@ -206,71 +175,46 @@ export default function DomainExportPanel() {
 
   if (permsLoading) return <PbxLoading />;
 
-  const selectedLabel =
-    reportTypeRows.find((r) => r.value === selectedReportType)?.label ||
-    selectedReportType;
+  const canSendImmediate =
+    !requireDomain || Boolean(immediateDomain) || allowAllDomainsImmediate;
 
   return (
     <div className="space-y-6">
       <ReportScheduleSection
-        title="Immediate Domain Export"
-        description="Sends the selected report type for one domain to the chosen recipients within about five minutes (when SkySwitch finishes the file)."
+        title={`Immediate ${title}`}
+        description={description}
         footer={
           <PermissionGate pbxAction="manageReports" fallback={null}>
-            <div className="flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                disabled={
-                  immediateMutation.isPending ||
-                  !immediateDomain ||
-                  !selectedReportType
-                }
-                onClick={() => immediateMutation.mutate()}
-              >
-                {immediateMutation.isPending
-                  ? "Queuing…"
-                  : "Send Domain Export"}
-              </Button>
-              {selectedReportType ? (
-                <span className="text-xs text-slate-500">
-                  Selected report:{" "}
-                  <span className="font-medium text-slate-800">
-                    {selectedLabel}
-                  </span>
-                </span>
-              ) : (
-                <span className="text-xs text-amber-700">
-                  Select a report from the list below first.
-                </span>
-              )}
-            </div>
+            <Button
+              type="button"
+              disabled={immediateMutation.isPending || !canSendImmediate}
+              onClick={() => immediateMutation.mutate()}
+            >
+              {immediateMutation.isPending ? "Sending…" : `Send ${title}`}
+            </Button>
           </PermissionGate>
         }
       >
-        <ReportField label="Domains" htmlFor="domain-export-immediate-domain">
-          {domainsQuery.isLoading ? (
-            <p className="text-sm text-slate-500">Loading domains…</p>
-          ) : domainsQuery.error ? (
-            <PbxError error={domainsQuery.error} />
-          ) : (
-            <DomainSearchSelect
-              id="domain-export-immediate-domain"
-              domains={domains}
-              value={immediateDomain}
-              disabled={!canManage}
-              onChange={setImmediateDomain}
-            />
-          )}
+        <ReportField label="Domains">
+          <DomainSearchSelect
+            domains={domains}
+            value={immediateDomain}
+            disabled={!canManage}
+            onChange={setImmediateDomain}
+            placeholder={
+              allowAllDomainsImmediate
+                ? "Search for a Domain (optional = all)"
+                : "Search for a Domain"
+            }
+          />
         </ReportField>
-
-        {!immediateDomain ? (
+        {requireDomain && !immediateDomain && !allowAllDomainsImmediate ? (
           <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
             Please select a domain first.
           </p>
         ) : null}
-
         <ReportScheduleRecipients
-          idPrefix="domain-export-immediate"
+          idPrefix={`${scheduleType}-immediate`}
           value={immediateRecipients}
           disabled={!canManage}
           onChange={setImmediateRecipients}
@@ -278,30 +222,26 @@ export default function DomainExportPanel() {
       </ReportScheduleSection>
 
       <ReportScheduleSection
-        title="Daily Domain Export"
-        description="Send the selected report type for a domain at the chosen day and time."
+        title={`Scheduled ${title}`}
+        description="Recurring email at the chosen day and time."
         footer={
           <PermissionGate pbxAction="manageReports" fallback={null}>
             <Button
               type="button"
               disabled={
                 saveDailyMutation.isPending ||
-                !dailyDomain ||
-                !selectedReportType
+                (requireDomain && !dailyDomain)
               }
               onClick={() => saveDailyMutation.mutate()}
             >
-              {saveDailyMutation.isPending
-                ? "Saving…"
-                : "Add Domain Export schedule"}
+              {saveDailyMutation.isPending ? "Saving…" : "Add schedule"}
             </Button>
           </PermissionGate>
         }
       >
         <div className="grid gap-4 sm:grid-cols-3">
-          <ReportField label="Domains" htmlFor="domain-export-daily-domain">
+          <ReportField label="Domains">
             <DomainSearchSelect
-              id="domain-export-daily-domain"
               domains={domains}
               value={dailyDomain}
               disabled={!canManage}
@@ -326,9 +266,8 @@ export default function DomainExportPanel() {
               </SelectContent>
             </Select>
           </ReportField>
-          <ReportField label="Time schedule" htmlFor="domain-export-daily-time">
+          <ReportField label="Time schedule">
             <Input
-              id="domain-export-daily-time"
               type="time"
               value={dailyTime}
               disabled={!canManage}
@@ -337,25 +276,15 @@ export default function DomainExportPanel() {
             />
           </ReportField>
         </div>
-
-        {!dailyDomain ? (
-          <p className="text-sm text-amber-900 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-            Please select a domain first.
-          </p>
-        ) : null}
-
         <ReportScheduleRecipients
-          idPrefix="domain-export-daily"
+          idPrefix={`${scheduleType}-daily`}
           value={dailyRecipients}
           disabled={!canManage}
           onChange={setDailyRecipients}
         />
       </ReportScheduleSection>
 
-      <ReportScheduleSection
-        title="Existing Domain Export schedules"
-        description="List of domains that have an existing Domain Export report schedule."
-      >
+      <ReportScheduleSection title="Existing schedules">
         {schedulesQuery.isLoading ? (
           <PbxLoading />
         ) : schedulesQuery.error ? (
@@ -363,23 +292,16 @@ export default function DomainExportPanel() {
         ) : (
           <PbxDataTable
             columns={[
-              { key: "domain", label: "Domain" },
               {
-                key: "report_type",
-                label: "Report",
-                render: (row) =>
-                  row.options?.report_type ||
-                  row.options?.reportType ||
-                  "—",
+                key: "domain",
+                label: "Domain",
+                render: (row) => row.domain || "All domains",
               },
               {
                 key: "recipient_emails",
                 label: "Email report recipient",
-                render: (row) => {
-                  const emails = row.recipient_emails || [];
-                  if (emails.length) return emails.join(", ");
-                  return "—";
-                },
+                render: (row) =>
+                  (row.recipient_emails || []).join(", ") || "—",
               },
               {
                 key: "days",
@@ -421,69 +343,14 @@ export default function DomainExportPanel() {
               },
             ]}
             rows={schedules}
-            emptyMessage="No existing Domain Export report schedule."
-          />
-        )}
-      </ReportScheduleSection>
-
-      <ReportScheduleSection
-        title="Select which report"
-        description="Choose the SkySwitch report type used for Immediate and Daily Domain Export above."
-      >
-        {reportTypesQuery.isLoading ? (
-          <PbxLoading />
-        ) : reportTypesQuery.error ? (
-          <PbxError error={reportTypesQuery.error} />
-        ) : (
-          <PbxDataTable
-            columns={[
-              { key: "category", label: "Category" },
-              { key: "label", label: "Report" },
-              { key: "value", label: "Type key" },
-              { key: "parameters", label: "Parameters" },
-              {
-                key: "actions",
-                label: "",
-                render: (row) => {
-                  const selected = row.value === selectedReportType;
-                  return (
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={selected ? "default" : "outline"}
-                      disabled={!canManage}
-                      className={cn(selected && "bg-blue-600")}
-                      onClick={() => setSelectedReportType(row.value)}
-                    >
-                      {selected ? "Selected" : "Select"}
-                    </Button>
-                  );
-                },
-              },
-            ]}
-            rows={reportTypeRows}
-            emptyMessage="No report types returned for this account."
+            emptyMessage="No schedules yet."
           />
         )}
       </ReportScheduleSection>
 
       <ReportResultPanel title="Report result">
-        <p>
-          When a Domain Export finishes, recipients get an Insight email with
-          the domain name, generation time, and a download link for the
-          SkySwitch export file. Open Completed exports below to re-download.
-        </p>
-        {schedules[0]?.last_run_status ? (
-          <p className="text-xs text-slate-500">
-            Last schedule run: {schedules[0].last_run_status}
-            {schedules[0].last_sent_at
-              ? ` · ${formatWhen(schedules[0].last_sent_at)}`
-              : ""}
-          </p>
-        ) : null}
+        <p>{resultNote}</p>
       </ReportResultPanel>
-
-      <PbxCompletedExports title="Completed exports" />
     </div>
   );
 }

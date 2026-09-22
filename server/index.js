@@ -40,9 +40,12 @@ import {
   startReportScheduleRunner,
   stopReportScheduleRunner,
 } from "./services/pbx/reportSchedules.js";
-// Registers offline_endpoint / domain_export generators with the runner.
+// Registers report generators with the schedule runner.
 import "./services/pbx/offlineDailyReport.js";
 import "./services/pbx/domainExportReport.js";
+import "./services/pbx/e911EmptyCidReport.js";
+import "./services/pbx/sipAlgSameIpReport.js";
+import "./services/pbx/vulnerabilityDialReport.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

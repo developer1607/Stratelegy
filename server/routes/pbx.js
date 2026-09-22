@@ -34,6 +34,10 @@ import {
   REPORT_SCHEDULE_TYPES,
 } from '../services/pbx/reportSchedules.js';
 import { runDomainExportJob } from '../services/pbx/domainExportReport.js';
+import { runOfflineEndpointImmediate } from '../services/pbx/offlineDailyReport.js';
+import { runE911EmptyCidImmediate } from '../services/pbx/e911EmptyCidReport.js';
+import { runSipAlgSameIpImmediate } from '../services/pbx/sipAlgSameIpReport.js';
+import { runVulnerabilityDialImmediate } from '../services/pbx/vulnerabilityDialReport.js';
 
 const router = Router();
 
@@ -1363,6 +1367,94 @@ router.post(
         waitForCompletion: false,
       });
       res.status(202).json(result);
+    } catch (err) {
+      return scopeErr(err, 'report', res, next);
+    }
+  }
+);
+
+router.post(
+  '/offline-endpoints/immediate',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const body = req.body || {};
+      const domain = String(body.domain || '').trim() || null;
+      if (domain) assertDomainAllowed(req.permissions || {}, domain);
+      const result = await runOfflineEndpointImmediate({
+        domain,
+        recipients: body.recipients,
+        minDowntime: body.min_downtime || body.minDowntime || 'any',
+        sendIfEmpty: Boolean(body.send_if_empty ?? body.sendIfEmpty),
+      });
+      res.json(result);
+    } catch (err) {
+      return scopeErr(err, 'report', res, next);
+    }
+  }
+);
+
+router.post(
+  '/e911-empty-cid/immediate',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const body = req.body || {};
+      const domain = String(body.domain || '').trim() || null;
+      if (domain) assertDomainAllowed(req.permissions || {}, domain);
+      const result = await runE911EmptyCidImmediate({
+        domain,
+        recipients: body.recipients,
+      });
+      res.json(result);
+    } catch (err) {
+      return scopeErr(err, 'e911', res, next);
+    }
+  }
+);
+
+router.post(
+  '/sip-alg-same-ip/immediate',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const body = req.body || {};
+      const domain = String(body.domain || '').trim();
+      if (!domain) {
+        return res.status(400).json({ message: 'domain is required' });
+      }
+      assertDomainAllowed(req.permissions || {}, domain);
+      const result = await runSipAlgSameIpImmediate({
+        domain,
+        recipients: body.recipients,
+      });
+      res.json(result);
+    } catch (err) {
+      return scopeErr(err, 'report', res, next);
+    }
+  }
+);
+
+router.post(
+  '/vulnerability-dial/immediate',
+  requirePbxPermission('can_manage_pbx_reports'),
+  async (req, res, next) => {
+    try {
+      if (denyDomainScopedAccountWide(req, res)) return;
+      const body = req.body || {};
+      const domain = String(body.domain || '').trim();
+      if (!domain) {
+        return res.status(400).json({ message: 'domain is required' });
+      }
+      assertDomainAllowed(req.permissions || {}, domain);
+      const result = await runVulnerabilityDialImmediate({
+        domain,
+        recipients: body.recipients,
+      });
+      res.json(result);
     } catch (err) {
       return scopeErr(err, 'report', res, next);
     }

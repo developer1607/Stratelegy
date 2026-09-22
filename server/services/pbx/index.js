@@ -1125,6 +1125,7 @@ function buildSubscriberDeviceLines(pbxSubscribers, phones, devices) {
             transport: phone?.transport || null,
             overrides: phone?.overrides || null,
             wan_ip: device?.received_from || null,
+            contact: device?.contact || phone?.contact || null,
             registration_time:
               device?.registration_time || phone?.registration_time || null,
             registration_expires_time:

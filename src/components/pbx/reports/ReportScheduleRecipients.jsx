@@ -3,13 +3,13 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "@/api/client";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { ReportField } from "@/components/pbx/reports/ReportScheduleSection";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/i;
 const MAX_EXTRA_EMAILS = 3;
 
 export function emptyRecipients() {
-  return { user_ids: [], extra_emails: ["", "", ""] };
+  return { user_ids: [], extra_emails: [] };
 }
 
 export function normalizeRecipientsValue(value) {
@@ -25,8 +25,8 @@ export function normalizeRecipientsValue(value) {
     Array.isArray(src.extra_emails) ? src.extra_emails : src.extraEmails || []
   )
     .map((email) => String(email || "").trim())
+    .filter(Boolean)
     .slice(0, MAX_EXTRA_EMAILS);
-  while (extras.length < MAX_EXTRA_EMAILS) extras.push("");
   return { user_ids: userIds, extra_emails: extras };
 }
 
@@ -50,15 +50,30 @@ export function validateRecipients(value) {
       return `Invalid email: ${trimmed}`;
     }
   }
+  if (extras.length > MAX_EXTRA_EMAILS) {
+    return `At most ${MAX_EXTRA_EMAILS} extra emails`;
+  }
   if (!api.user_ids.length && !api.extra_emails.length) {
     return "Select at least one portal user or enter an email";
   }
   return null;
 }
 
+function extrasToInput(extras) {
+  return (extras || []).join(", ");
+}
+
+function inputToExtras(text) {
+  return String(text || "")
+    .split(/[,;\s]+/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .slice(0, MAX_EXTRA_EMAILS);
+}
+
 /**
- * Shared recipient picker for scheduled PBX reports:
- * portal users (checkboxes) + up to 3 extra emails.
+ * Shared recipient picker for scheduled PBX reports.
+ * Doc fields: portal user checkboxes + max 3 extra emails (comma-separated).
  */
 export default function ReportScheduleRecipients({
   value,
@@ -88,27 +103,18 @@ export default function ReportScheduleRecipients({
     emit({ ...recipients, user_ids: [...set] });
   };
 
-  const setExtraEmail = (index, email) => {
-    const extras = [...recipients.extra_emails];
-    extras[index] = email;
-    emit({ ...recipients, extra_emails: extras });
-  };
-
   return (
     <div className="space-y-4">
-      <div>
-        <Label className="text-sm font-medium text-gray-900">
-          Portal users
-        </Label>
-        <p className="text-xs text-gray-500 mt-0.5 mb-2">
-          Selected users receive the report at their account email.
-        </p>
+      <ReportField
+        label="Select recipients"
+        hint="Selected portal users receive the report at their account email."
+      >
         {isLoading ? (
-          <p className="text-sm text-gray-500">Loading users…</p>
+          <p className="text-sm text-slate-500">Loading users…</p>
         ) : directory.length === 0 ? (
-          <p className="text-sm text-gray-500">No active portal users found.</p>
+          <p className="text-sm text-slate-500">No active portal users found.</p>
         ) : (
-          <div className="max-h-48 overflow-y-auto rounded-md border border-gray-200 bg-white divide-y divide-gray-100">
+          <div className="max-h-44 overflow-y-auto rounded-lg border border-slate-200 bg-white divide-y divide-slate-100">
             {directory.map((user) => {
               const checked = recipients.user_ids.includes(user.id);
               const label = user.full_name?.trim() || user.email;
@@ -117,7 +123,7 @@ export default function ReportScheduleRecipients({
                 <label
                   key={user.id}
                   htmlFor={fieldId}
-                  className="flex items-start gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50"
+                  className="flex items-start gap-3 px-3 py-2.5 cursor-pointer hover:bg-slate-50"
                 >
                   <Checkbox
                     id={fieldId}
@@ -128,12 +134,12 @@ export default function ReportScheduleRecipients({
                     }
                     className="mt-0.5"
                   />
-                  <span className="min-w-0">
-                    <span className="block text-sm text-gray-900 truncate">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm text-slate-900 truncate">
                       {label}
                     </span>
                     {user.full_name?.trim() ? (
-                      <span className="block text-xs text-gray-500 truncate">
+                      <span className="block text-xs text-slate-500 truncate">
                         {user.email}
                       </span>
                     ) : null}
@@ -143,30 +149,28 @@ export default function ReportScheduleRecipients({
             })}
           </div>
         )}
-      </div>
+      </ReportField>
 
-      <div>
-        <Label className="text-sm font-medium text-gray-900">
-          Extra emails (max {MAX_EXTRA_EMAILS})
-        </Label>
-        <p className="text-xs text-gray-500 mt-0.5 mb-2">
-          Optional addresses outside the portal user list.
-        </p>
-        <div className="space-y-2">
-          {recipients.extra_emails.map((email, index) => (
-            <Input
-              key={`${idPrefix}-extra-${index}`}
-              id={`${idPrefix}-extra-${index}`}
-              type="email"
-              value={email}
-              disabled={disabled}
-              placeholder={`email${index + 1}@example.com`}
-              onChange={(e) => setExtraEmail(index, e.target.value)}
-              className="bg-white"
-            />
-          ))}
-        </div>
-      </div>
+      <ReportField
+        label="Additional recipients"
+        hint={`Maximum ${MAX_EXTRA_EMAILS} emails, separated by commas`}
+        htmlFor={`${idPrefix}-extras`}
+      >
+        <Input
+          id={`${idPrefix}-extras`}
+          type="text"
+          value={extrasToInput(recipients.extra_emails)}
+          disabled={disabled}
+          placeholder="name@example.com, other@example.com"
+          onChange={(e) =>
+            emit({
+              ...recipients,
+              extra_emails: inputToExtras(e.target.value),
+            })
+          }
+          className="bg-white"
+        />
+      </ReportField>
     </div>
   );
 }
