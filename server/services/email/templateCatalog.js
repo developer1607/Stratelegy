@@ -109,16 +109,25 @@ export const EMAIL_TEMPLATE_CATALOG = [
     triggers: ['Reports → Domain Export (immediate or scheduled)'],
   },
   {
-    id: 'pbx_tabular_report',
-    name: 'PBX tabular report',
+    id: 'pbx_e911_empty_cid',
+    name: 'E911 empty / zero CID report',
     category: 'PBX Reports',
-    description:
-      'Shared shell for E911, SIP ALG, and Vulnerability scheduled report emails.',
-    triggers: [
-      'Reports → E911 Review',
-      'Reports → SIP ALG',
-      'Reports → Vulnerability Check',
-    ],
+    description: 'Users whose emergency caller ID is empty, wildcard, or all zeros.',
+    triggers: ['Reports → E911 Review schedule', 'Immediate E911 empty CID'],
+  },
+  {
+    id: 'pbx_sip_alg_same_ip',
+    name: 'SIP ALG same-IP report',
+    category: 'PBX Reports',
+    description: 'Extensions where internal and external registration IPs match.',
+    triggers: ['Reports → SIP ALG schedule', 'Immediate SIP ALG'],
+  },
+  {
+    id: 'pbx_vulnerability_dial',
+    name: 'Vulnerability dial-permissions report',
+    category: 'PBX Reports',
+    description: 'Dial permission values for each extension on a domain.',
+    triggers: ['Reports → Vulnerability Check schedule', 'Immediate Vulnerability'],
   },
 ];
 
@@ -204,7 +213,7 @@ function sampleDataForTemplate(templateId) {
         ctaUrl: `${baseUrl}/PBXReports?tab=domain-export`,
         ctaLabel: 'Download export file',
       };
-    case 'pbx_tabular_report':
+    case 'pbx_e911_empty_cid':
       return {
         title: 'E911 empty / zero CID',
         intro: 'Scheduled E911 empty / zero CID Report',
@@ -218,6 +227,36 @@ function sampleDataForTemplate(templateId) {
         tableHtml: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
 <tr style="background:#f8fafc;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Domain</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Ext</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Name</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">PBX 911 CID</th></tr>
 <tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">EXAMPLE.DOMAIN</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">101</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Sample User</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">(empty)</td></tr>
+</table>`,
+      };
+    case 'pbx_sip_alg_same_ip':
+      return {
+        title: 'SIP ALG — same internal/external IP',
+        intro: 'Scheduled SIP ALG Report',
+        generatedAt: '2026-09-24 10:00:00 +0000',
+        domain: 'EXAMPLE.DOMAIN',
+        rowCount: 1,
+        ctaLabel: 'Open SIP ALG',
+        reportUrl: `${baseUrl}/PBXReports?tab=sip-alg`,
+        extraSummaryHtml: '',
+        tableHtml: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+<tr style="background:#f8fafc;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Domain</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Ext</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Internal IP</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">External IP</th></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">EXAMPLE.DOMAIN</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">102</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">10.0.0.5</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">10.0.0.5</td></tr>
+</table>`,
+      };
+    case 'pbx_vulnerability_dial':
+      return {
+        title: 'Vulnerability — dial permissions',
+        intro: 'Scheduled Vulnerability Report',
+        generatedAt: '2026-09-24 10:00:00 +0000',
+        domain: 'EXAMPLE.DOMAIN',
+        rowCount: 3,
+        ctaLabel: 'Open Vulnerability Check',
+        reportUrl: `${baseUrl}/PBXReports?tab=vulnerability-check`,
+        extraSummaryHtml: '',
+        tableHtml: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+<tr style="background:#f8fafc;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Domain</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Ext</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Dial permission</th></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">EXAMPLE.DOMAIN</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">103</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">National</td></tr>
 </table>`,
       };
     default:

@@ -14,6 +14,61 @@ function loginUrl() {
   return `${config.appBaseUrl}/login`;
 }
 
+function renderPbxTabularReport({
+  title,
+  intro,
+  generatedAt,
+  domain,
+  domainsScanned,
+  rowCount,
+  tableHtml,
+  textBody,
+  reportUrl,
+  ctaLabel,
+  extraRows,
+}) {
+  return {
+    subject: title || 'PBX report',
+    text:
+      textBody ||
+      [
+        title || 'PBX report',
+        `Generated: ${generatedAt}`,
+        domain ? `Domain: ${domain}` : null,
+        domainsScanned != null ? `Domains scanned: ${domainsScanned}` : null,
+        `Rows: ${rowCount}`,
+        reportUrl,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    html: renderLayout({
+      title: title || 'PBX report',
+      preheader: `${rowCount ?? 0} row(s)`,
+      bodyHtml: `
+          <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+            ${escapeHtml(intro || 'Scheduled PBX Report')}
+          </p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+            <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
+            <tr><td style="padding:14px;">
+              ${infoRow('Generated', generatedAt)}
+              ${infoRow('Domain', domain)}
+              ${infoRow('Domains scanned', domainsScanned)}
+              ${infoRow('Matching rows', rowCount)}
+              ${(Array.isArray(extraRows) ? extraRows : [])
+                .map(([label, value]) => infoRow(label, value))
+                .join('')}
+            </td></tr>
+          </table>
+          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
+          <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">${tableHtml || ''}</div>
+        `,
+      ctaUrl: reportUrl,
+      ctaLabel: ctaLabel || 'Open in Insight',
+    }),
+  };
+}
+
 export const EMAIL_TEMPLATES = {
   portal_invite: {
     subject: ({ appName }) => `Invite — ${appName}`,
@@ -307,60 +362,19 @@ export const EMAIL_TEMPLATES = {
     }),
   },
 
-  pbx_tabular_report: {
-    subject: ({ title }) => title || 'PBX report',
-    render: ({
-      title,
-      intro,
-      generatedAt,
-      domain,
-      domainsScanned,
-      rowCount,
-      tableHtml,
-      textBody,
-      reportUrl,
-      ctaLabel,
-      extraRows,
-    }) => ({
-      subject: title || 'PBX report',
-      text:
-        textBody ||
-        [
-          title || 'PBX report',
-          `Generated: ${generatedAt}`,
-          domain ? `Domain: ${domain}` : null,
-          domainsScanned != null ? `Domains scanned: ${domainsScanned}` : null,
-          `Rows: ${rowCount}`,
-          reportUrl,
-        ]
-          .filter(Boolean)
-          .join('\n'),
-      html: renderLayout({
-        title: title || 'PBX report',
-        preheader: `${rowCount ?? 0} row(s)`,
-        bodyHtml: `
-          <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
-            ${escapeHtml(intro || 'Scheduled PBX Report')}
-          </p>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-            <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
-            <tr><td style="padding:14px;">
-              ${infoRow('Generated', generatedAt)}
-              ${infoRow('Domain', domain)}
-              ${infoRow('Domains scanned', domainsScanned)}
-              ${infoRow('Matching rows', rowCount)}
-              ${(Array.isArray(extraRows) ? extraRows : [])
-                .map(([label, value]) => infoRow(label, value))
-                .join('')}
-            </td></tr>
-          </table>
-          <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
-          <div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">${tableHtml || ''}</div>
-        `,
-        ctaUrl: reportUrl,
-        ctaLabel: ctaLabel || 'Open in Insight',
-      }),
-    }),
+  pbx_e911_empty_cid: {
+    subject: () => 'E911 empty / zero CID',
+    render: renderPbxTabularReport,
+  },
+
+  pbx_sip_alg_same_ip: {
+    subject: () => 'SIP ALG — same internal/external IP',
+    render: renderPbxTabularReport,
+  },
+
+  pbx_vulnerability_dial: {
+    subject: () => 'Vulnerability — dial permissions',
+    render: renderPbxTabularReport,
   },
 };
 

@@ -135,7 +135,7 @@ export async function runSipAlgSameIpReport(schedule, ctx = {}) {
     ],
   );
 
-  const { subject, text, html } = await renderEmailTemplate('pbx_tabular_report', {
+  const { subject, text, html } = await renderEmailTemplate('pbx_sip_alg_same_ip', {
     title: 'SIP ALG — same internal/external IP',
     intro: 'Scheduled SIP ALG Report',
     generatedAt,

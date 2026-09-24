@@ -86,19 +86,54 @@ export const EMAIL_TEMPLATE_VARIABLES = {
     { key: 'ctaUrl', label: 'CTA URL (download or portal)' },
     { key: 'ctaLabel', label: 'CTA button label' },
   ],
-  pbx_tabular_report: [
-    { key: 'appName', label: 'Application name' },
-    { key: 'title', label: 'Report title' },
-    { key: 'intro', label: 'Intro line (Scheduled … Report)' },
-    { key: 'generatedAt', label: 'Generated timestamp' },
-    { key: 'domain', label: 'Domain (optional)' },
-    { key: 'domainsScanned', label: 'Domains scanned (optional)' },
-    { key: 'rowCount', label: 'Matching row count' },
-    { key: 'extraSummaryHtml', label: 'Extra summary rows HTML (use {{{extraSummaryHtml}}})' },
-    { key: 'tableHtml', label: 'Result table HTML (use {{{tableHtml}}})' },
-    { key: 'reportUrl', label: 'Open-in-Insight URL' },
-    { key: 'ctaLabel', label: 'CTA button label' },
-  ],
+};
+
+const PBX_TABULAR_VARIABLES = [
+  { key: 'appName', label: 'Application name' },
+  { key: 'title', label: 'Report title' },
+  { key: 'intro', label: 'Intro line (Scheduled … Report)' },
+  { key: 'generatedAt', label: 'Generated timestamp' },
+  { key: 'domain', label: 'Domain (optional)' },
+  { key: 'domainsScanned', label: 'Domains scanned (optional)' },
+  { key: 'rowCount', label: 'Matching row count' },
+  { key: 'extraSummaryHtml', label: 'Extra summary rows HTML (use {{{extraSummaryHtml}}})' },
+  { key: 'tableHtml', label: 'Result table HTML (use {{{tableHtml}}})' },
+  { key: 'reportUrl', label: 'Open-in-Insight URL' },
+  { key: 'ctaLabel', label: 'CTA button label' },
+];
+
+Object.assign(EMAIL_TEMPLATE_VARIABLES, {
+  pbx_e911_empty_cid: PBX_TABULAR_VARIABLES,
+  pbx_sip_alg_same_ip: PBX_TABULAR_VARIABLES,
+  pbx_vulnerability_dial: PBX_TABULAR_VARIABLES,
+});
+
+const PBX_TABULAR_EDITABLE_DEFAULT = {
+  use_layout: true,
+  layout_title: '{{title}}',
+  layout_preheader: '{{rowCount}} row(s)',
+  layout_cta_url: '{{reportUrl}}',
+  layout_cta_label: '{{ctaLabel}}',
+  html_body: `<p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+  {{intro}}
+</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+  <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
+  <tr><td style="padding:14px;">
+    <p style="margin:0 0 8px;"><strong>Generated:</strong> {{generatedAt}}</p>
+    <p style="margin:0 0 8px;"><strong>Domain:</strong> {{domain}}</p>
+    <p style="margin:0 0 8px;"><strong>Domains scanned:</strong> {{domainsScanned}}</p>
+    <p style="margin:0 0 8px;"><strong>Matching rows:</strong> {{rowCount}}</p>
+    {{{extraSummaryHtml}}}
+  </td></tr>
+</table>
+<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
+<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">{{{tableHtml}}}</div>`,
+  text: `{{title}}
+Generated: {{generatedAt}}
+Domain: {{domain}}
+Rows: {{rowCount}}
+{{reportUrl}}`,
 };
 
 export const EMAIL_EDITABLE_DEFAULTS = {
@@ -287,33 +322,19 @@ Source: {{sourceLabel}}
 {{ctaUrl}}`,
   },
 
-  pbx_tabular_report: {
-    subject: '{{title}}',
-    use_layout: true,
-    layout_title: '{{title}}',
-    layout_preheader: '{{rowCount}} row(s)',
-    layout_cta_url: '{{reportUrl}}',
-    layout_cta_label: '{{ctaLabel}}',
-    html_body: `<p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
-  {{intro}}
-</p>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
-  <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
-  <tr><td style="padding:14px;">
-    <p style="margin:0 0 8px;"><strong>Generated:</strong> {{generatedAt}}</p>
-    <p style="margin:0 0 8px;"><strong>Domain:</strong> {{domain}}</p>
-    <p style="margin:0 0 8px;"><strong>Domains scanned:</strong> {{domainsScanned}}</p>
-    <p style="margin:0 0 8px;"><strong>Matching rows:</strong> {{rowCount}}</p>
-    {{{extraSummaryHtml}}}
-  </td></tr>
-</table>
-<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
-<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">{{{tableHtml}}}</div>`,
-    text: `{{title}}
-Generated: {{generatedAt}}
-Domain: {{domain}}
-Rows: {{rowCount}}
-{{reportUrl}}`,
+  pbx_e911_empty_cid: {
+    ...PBX_TABULAR_EDITABLE_DEFAULT,
+    subject: 'E911 empty / zero CID',
+  },
+
+  pbx_sip_alg_same_ip: {
+    ...PBX_TABULAR_EDITABLE_DEFAULT,
+    subject: 'SIP ALG — same internal/external IP',
+  },
+
+  pbx_vulnerability_dial: {
+    ...PBX_TABULAR_EDITABLE_DEFAULT,
+    subject: 'Vulnerability — dial permissions',
   },
 };
 

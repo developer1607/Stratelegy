@@ -110,7 +110,7 @@ export async function runE911EmptyCidReport(schedule, ctx = {}) {
     ],
   );
 
-  const { subject, text, html } = await renderEmailTemplate('pbx_tabular_report', {
+  const { subject, text, html } = await renderEmailTemplate('pbx_e911_empty_cid', {
     title: 'E911 empty / zero CID',
     intro: 'Scheduled E911 empty / zero CID Report',
     generatedAt,
