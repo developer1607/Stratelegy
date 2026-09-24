@@ -207,8 +207,7 @@ export const EMAIL_TEMPLATES = {
   },
 
   pbx_offline_daily: {
-    subject: ({ rowCount, minDowntime }) =>
-      `Offline Endpoints — ${rowCount ?? 0} matching (min ${minDowntime || 'any'})`,
+    subject: () => 'Offline Endpoints',
     render: ({
       generatedAt,
       domainsScanned,
@@ -220,7 +219,7 @@ export const EMAIL_TEMPLATES = {
       textBody,
       reportUrl,
     }) => ({
-      subject: `Offline Endpoints — ${rowCount ?? 0} matching (min ${minDowntime || 'any'})`,
+      subject: 'Offline Endpoints',
       text:
         textBody ||
         [
@@ -235,7 +234,7 @@ export const EMAIL_TEMPLATES = {
         preheader: `${rowCount ?? 0} offline endpoints`,
         bodyHtml: `
           <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
-            Scheduled Offline Endpoint scan across reseller domains.
+            Scheduled Offline Endpoint Report
           </p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
             <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
@@ -284,7 +283,7 @@ export const EMAIL_TEMPLATES = {
         preheader: `Domain Export — ${domain}`,
         bodyHtml: `
           <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
-            ${scheduled ? 'Your scheduled' : 'Your requested'} Domain Export file is ready.
+            ${scheduled ? 'Scheduled Domain Export Report' : 'Immediate Domain Export Report'}
           </p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 12px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
             <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Report result</td></tr>
@@ -309,8 +308,7 @@ export const EMAIL_TEMPLATES = {
   },
 
   pbx_tabular_report: {
-    subject: ({ title, rowCount }) =>
-      `${title || 'PBX report'} — ${rowCount ?? 0} row(s)`,
+    subject: ({ title }) => title || 'PBX report',
     render: ({
       title,
       intro,
@@ -324,7 +322,7 @@ export const EMAIL_TEMPLATES = {
       ctaLabel,
       extraRows,
     }) => ({
-      subject: `${title || 'PBX report'} — ${rowCount ?? 0} row(s)`,
+      subject: title || 'PBX report',
       text:
         textBody ||
         [
@@ -342,7 +340,7 @@ export const EMAIL_TEMPLATES = {
         preheader: `${rowCount ?? 0} row(s)`,
         bodyHtml: `
           <p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
-            ${escapeHtml(intro || 'Scheduled PBX report from Stratelegy Insight.')}
+            ${escapeHtml(intro || 'Scheduled PBX Report')}
           </p>
           <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
             <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
@@ -366,6 +364,47 @@ export const EMAIL_TEMPLATES = {
   },
 };
 
+function enrichTemplateData(data = {}) {
+  const enriched = { ...data };
+  if (data.elapsedMs != null && enriched.scanTime == null) {
+    enriched.scanTime = `${Math.round(Number(data.elapsedMs) / 1000)}s`;
+  }
+  if (Array.isArray(data.extraRows) && enriched.extraSummaryHtml == null) {
+    enriched.extraSummaryHtml = data.extraRows
+      .map(([label, value]) => infoRow(label, value))
+      .join('');
+  }
+  if (!enriched.tableHtml) {
+    enriched.tableHtml =
+      '<p style="padding:12px;color:#64748b;margin:0;">No matching rows.</p>';
+  }
+  if (enriched.introLine == null && data.scheduled != null) {
+    enriched.introLine = data.scheduled
+      ? 'Scheduled Domain Export Report'
+      : 'Immediate Domain Export Report';
+  }
+  if (enriched.sourceLabel == null && data.scheduled != null) {
+    enriched.sourceLabel = data.scheduled ? 'Daily schedule' : 'Immediate request';
+  }
+  if (data.downloadUrl != null || data.reportsUrl != null || data.scheduled != null) {
+    if (enriched.ctaUrl == null) {
+      enriched.ctaUrl = data.downloadUrl || data.reportsUrl || '';
+    }
+    if (!enriched.ctaLabel) {
+      enriched.ctaLabel = data.downloadUrl
+        ? 'Download export file'
+        : 'Open Domain Export';
+    }
+  }
+  if (!enriched.ctaLabel && data.ctaLabel) {
+    enriched.ctaLabel = data.ctaLabel;
+  }
+  if (!enriched.ctaLabel) {
+    enriched.ctaLabel = 'Open in Insight';
+  }
+  return enriched;
+}
+
 export async function renderEmailTemplate(templateId, data) {
   const template = EMAIL_TEMPLATES[templateId];
   if (!template) throw new Error(`Unknown email template: ${templateId}`);
@@ -373,7 +412,9 @@ export async function renderEmailTemplate(templateId, data) {
   const row = await getTemplateOverrideRow(templateId);
   if (row) {
     const content = mergeTemplateContent(templateId, row);
-    return renderTemplateContent(content, data);
+    if (content) {
+      return renderTemplateContent(content, enrichTemplateData(data));
+    }
   }
 
   return template.render(data);

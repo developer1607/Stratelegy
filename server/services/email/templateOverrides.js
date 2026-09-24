@@ -39,7 +39,14 @@ function flattenTemplateData(data = {}) {
 
 function interpolate(template, flat, { html = false } = {}) {
   if (template == null) return '';
-  return String(template).replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
+  let result = String(template);
+  // {{{var}}} inserts raw HTML (e.g. report result tables).
+  result = result.replace(/\{\{\{\s*([\w.]+)\s*\}\}\}/g, (_, key) => {
+    const value = flat[key];
+    if (value == null || value === '') return '';
+    return String(value);
+  });
+  return result.replace(/\{\{\s*([\w.]+)\s*\}\}/g, (_, key) => {
     const value = flat[key];
     if (value == null || value === '') return '';
     const text = String(value);

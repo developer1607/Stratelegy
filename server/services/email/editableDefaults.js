@@ -62,6 +62,43 @@ export const EMAIL_TEMPLATE_VARIABLES = {
     { key: 'comment.message', label: 'Comment body' },
     { key: 'ticketUrl', label: 'Ticket detail URL' },
   ],
+  pbx_offline_daily: [
+    { key: 'appName', label: 'Application name' },
+    { key: 'generatedAt', label: 'Generated timestamp' },
+    { key: 'domainsScanned', label: 'Domains scanned' },
+    { key: 'domainsFailed', label: 'Domain scan errors' },
+    { key: 'rowCount', label: 'Matching offline count' },
+    { key: 'minDowntime', label: 'Min downtime filter' },
+    { key: 'scanTime', label: 'Scan duration (e.g. 1s)' },
+    { key: 'tableHtml', label: 'Result table HTML (use {{{tableHtml}}})' },
+    { key: 'reportUrl', label: 'Open-in-Insight URL' },
+  ],
+  pbx_domain_export: [
+    { key: 'appName', label: 'Application name' },
+    { key: 'domain', label: 'Domain name' },
+    { key: 'reportType', label: 'Export report type' },
+    { key: 'status', label: 'Export status' },
+    { key: 'generatedAt', label: 'Generated timestamp' },
+    { key: 'sourceLabel', label: 'Source label (Daily schedule / Immediate)' },
+    { key: 'introLine', label: 'Intro line (Scheduled/Immediate Report)' },
+    { key: 'downloadUrl', label: 'Download URL (optional)' },
+    { key: 'reportsUrl', label: 'Portal Domain Export URL' },
+    { key: 'ctaUrl', label: 'CTA URL (download or portal)' },
+    { key: 'ctaLabel', label: 'CTA button label' },
+  ],
+  pbx_tabular_report: [
+    { key: 'appName', label: 'Application name' },
+    { key: 'title', label: 'Report title' },
+    { key: 'intro', label: 'Intro line (Scheduled … Report)' },
+    { key: 'generatedAt', label: 'Generated timestamp' },
+    { key: 'domain', label: 'Domain (optional)' },
+    { key: 'domainsScanned', label: 'Domains scanned (optional)' },
+    { key: 'rowCount', label: 'Matching row count' },
+    { key: 'extraSummaryHtml', label: 'Extra summary rows HTML (use {{{extraSummaryHtml}}})' },
+    { key: 'tableHtml', label: 'Result table HTML (use {{{tableHtml}}})' },
+    { key: 'reportUrl', label: 'Open-in-Insight URL' },
+    { key: 'ctaLabel', label: 'CTA button label' },
+  ],
 };
 
 export const EMAIL_EDITABLE_DEFAULTS = {
@@ -190,6 +227,93 @@ New reply.
 {{comment.author}}:
 {{comment.message}}
 {{ticketUrl}}`,
+  },
+
+  pbx_offline_daily: {
+    subject: 'Offline Endpoints',
+    use_layout: true,
+    layout_title: 'Offline Endpoint report',
+    layout_preheader: '{{rowCount}} offline endpoints',
+    layout_cta_url: '{{reportUrl}}',
+    layout_cta_label: 'Open in Insight',
+    html_body: `<p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+  Scheduled Offline Endpoint Report
+</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+  <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
+  <tr><td style="padding:14px;">
+    <p style="margin:0 0 8px;"><strong>Generated:</strong> {{generatedAt}}</p>
+    <p style="margin:0 0 8px;"><strong>Domains scanned:</strong> {{domainsScanned}}</p>
+    <p style="margin:0 0 8px;"><strong>Domain scan errors:</strong> {{domainsFailed}}</p>
+    <p style="margin:0 0 8px;"><strong>Matching offline:</strong> {{rowCount}}</p>
+    <p style="margin:0 0 8px;"><strong>Min downtime:</strong> {{minDowntime}}</p>
+    <p style="margin:0 0 8px;"><strong>Scan time:</strong> {{scanTime}}</p>
+  </td></tr>
+</table>
+<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
+<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">{{{tableHtml}}}</div>`,
+    text: `Offline Endpoint report — {{appName}}
+Generated: {{generatedAt}}
+Domains scanned: {{domainsScanned}}
+Matching offline: {{rowCount}}
+{{reportUrl}}`,
+  },
+
+  pbx_domain_export: {
+    subject: 'Domain Export — {{domain}}',
+    use_layout: true,
+    layout_title: 'Domain Export ready',
+    layout_preheader: 'Domain Export — {{domain}}',
+    layout_cta_url: '{{ctaUrl}}',
+    layout_cta_label: '{{ctaLabel}}',
+    html_body: `<p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+  {{introLine}}
+</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 12px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+  <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Report result</td></tr>
+  <tr><td style="padding:14px;">
+    <p style="margin:0 0 8px;"><strong>Domain:</strong> {{domain}}</p>
+    <p style="margin:0 0 8px;"><strong>Export type:</strong> {{reportType}}</p>
+    <p style="margin:0 0 8px;"><strong>Status:</strong> {{status}}</p>
+    <p style="margin:0 0 8px;"><strong>Generated:</strong> {{generatedAt}}</p>
+    <p style="margin:0 0 8px;"><strong>Source:</strong> {{sourceLabel}}</p>
+  </td></tr>
+</table>`,
+    text: `Domain Export for {{domain}}
+Type: {{reportType}}
+Status: {{status}}
+Generated: {{generatedAt}}
+Source: {{sourceLabel}}
+{{ctaUrl}}`,
+  },
+
+  pbx_tabular_report: {
+    subject: '{{title}}',
+    use_layout: true,
+    layout_title: '{{title}}',
+    layout_preheader: '{{rowCount}} row(s)',
+    layout_cta_url: '{{reportUrl}}',
+    layout_cta_label: '{{ctaLabel}}',
+    html_body: `<p style="margin:0 0 16px;color:#475569;font-size:14px;line-height:1.5;">
+  {{intro}}
+</p>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;">
+  <tr><td style="padding:10px 14px;background:#f8fafc;font-size:12px;color:#64748b;text-transform:uppercase;letter-spacing:.04em;">Summary</td></tr>
+  <tr><td style="padding:14px;">
+    <p style="margin:0 0 8px;"><strong>Generated:</strong> {{generatedAt}}</p>
+    <p style="margin:0 0 8px;"><strong>Domain:</strong> {{domain}}</p>
+    <p style="margin:0 0 8px;"><strong>Domains scanned:</strong> {{domainsScanned}}</p>
+    <p style="margin:0 0 8px;"><strong>Matching rows:</strong> {{rowCount}}</p>
+    {{{extraSummaryHtml}}}
+  </td></tr>
+</table>
+<p style="margin:0 0 8px;font-size:13px;font-weight:600;color:#0f172a;">Report result</p>
+<div style="overflow-x:auto;border:1px solid #e2e8f0;border-radius:8px;">{{{tableHtml}}}</div>`,
+    text: `{{title}}
+Generated: {{generatedAt}}
+Domain: {{domain}}
+Rows: {{rowCount}}
+{{reportUrl}}`,
   },
 };
 

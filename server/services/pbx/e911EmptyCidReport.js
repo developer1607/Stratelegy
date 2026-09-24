@@ -112,8 +112,7 @@ export async function runE911EmptyCidReport(schedule, ctx = {}) {
 
   const { subject, text, html } = await renderEmailTemplate('pbx_tabular_report', {
     title: 'E911 empty / zero CID',
-    intro:
-      'PBX users whose emergency caller ID (callid_emgr) is empty, wildcard, or all zeros.',
+    intro: 'Scheduled E911 empty / zero CID Report',
     generatedAt,
     domain: domain || undefined,
     domainsScanned: collection.domains_scanned,

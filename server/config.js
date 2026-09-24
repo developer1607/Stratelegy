@@ -75,7 +75,10 @@ function isLocalhostUrl(url) {
 
 /** Public site origin for email CTAs (no trailing slash). Uses APP_BASE_URL. */
 export function publicAppBaseUrl() {
-  return String(config.appBaseUrl || "http://localhost:3000").replace(/\/+$/, "");
+  return String(config.appBaseUrl || "http://localhost:3000").replace(
+    /\/+$/,
+    "",
+  );
 }
 
 /** Fail fast when production is misconfigured. */

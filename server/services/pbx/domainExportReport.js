@@ -1,24 +1,24 @@
-import { config, publicAppBaseUrl } from '../../config.js';
+import { config, publicAppBaseUrl } from "../../config.js";
 import {
   listReportTypes,
   createReport,
   listReports,
   getReportFileDownload,
-} from '../skyswitch/pbx.js';
+} from "../skyswitch/pbx.js";
 import {
   resolveRecipientEmails,
   registerReportGenerator,
-} from './reportSchedules.js';
-import { renderEmailTemplate } from '../email/templates/index.js';
-import { sendRenderedEmail } from '../email/mailer.js';
+} from "./reportSchedules.js";
+import { renderEmailTemplate } from "../email/templates/index.js";
+import { sendRenderedEmail } from "../email/mailer.js";
 
 const POLL_INTERVAL_MS = 15_000;
 const POLL_TIMEOUT_MS = 5 * 60_000;
 const DEFAULT_REPORT_TYPE =
-  process.env.SKYSWITCH_DOMAIN_EXPORT_REPORT_TYPE || '';
+  process.env.SKYSWITCH_DOMAIN_EXPORT_REPORT_TYPE || "";
 
 function flattenReportTypes(grouped) {
-  if (!grouped || typeof grouped !== 'object') return [];
+  if (!grouped || typeof grouped !== "object") return [];
   const rows = [];
   for (const [category, items] of Object.entries(grouped)) {
     if (!Array.isArray(items)) continue;
@@ -38,18 +38,16 @@ function flattenReportTypes(grouped) {
 function fieldKeys(fields) {
   if (!fields) return [];
   if (Array.isArray(fields)) return fields.map(String);
-  if (typeof fields === 'object') return Object.keys(fields);
+  if (typeof fields === "object") return Object.keys(fields);
   return [];
 }
 
 /** Pick SkySwitch async report type used for Domain Export. */
 export async function resolveDomainExportReportType(preferred) {
-  const wanted = String(
-    preferred || DEFAULT_REPORT_TYPE || '',
-  ).trim();
+  const wanted = String(preferred || DEFAULT_REPORT_TYPE || "").trim();
   const catalog = flattenReportTypes(await listReportTypes());
   if (!catalog.length) {
-    const err = new Error('No SkySwitch report types available');
+    const err = new Error("No SkySwitch report types available");
     err.status = 502;
     throw err;
   }
@@ -65,10 +63,10 @@ export async function resolveDomainExportReportType(preferred) {
       const keys = fieldKeys(row.fields).map((k) => k.toLowerCase());
       let score = 0;
       if (/domain.?export/.test(label)) score += 50;
-      if (row.value === 'domain_export' || row.value === 'domain-export')
+      if (row.value === "domain_export" || row.value === "domain-export")
         score += 40;
-      if (/\bdomain\b/.test(label) && keys.includes('domain')) score += 20;
-      if (keys.includes('domain')) score += 5;
+      if (/\bdomain\b/.test(label) && keys.includes("domain")) score += 20;
+      if (keys.includes("domain")) score += 5;
       if (/subscriber|user_device|extension/.test(label)) score += 2;
       return { row, score };
     })
@@ -78,12 +76,12 @@ export async function resolveDomainExportReportType(preferred) {
   if (ranked[0]) return ranked[0].row;
 
   const withDomain = catalog.find((row) =>
-    fieldKeys(row.fields).some((k) => k.toLowerCase() === 'domain'),
+    fieldKeys(row.fields).some((k) => k.toLowerCase() === "domain"),
   );
   if (withDomain) return withDomain;
 
   const err = new Error(
-    'Could not resolve a Domain Export report type. Set SKYSWITCH_DOMAIN_EXPORT_REPORT_TYPE in .env to a SkySwitch report_type key.',
+    "Could not resolve a Domain Export report type. Set SKYSWITCH_DOMAIN_EXPORT_REPORT_TYPE in .env to a SkySwitch report_type key.",
   );
   err.status = 400;
   err.expose = true;
@@ -119,21 +117,21 @@ async function findReportJob(created) {
 /**
  * Poll SkySwitch until the async report completes or times out (~5 min).
  */
-export async function waitForReportCompletion(created, {
-  timeoutMs = POLL_TIMEOUT_MS,
-  intervalMs = POLL_INTERVAL_MS,
-} = {}) {
+export async function waitForReportCompletion(
+  created,
+  { timeoutMs = POLL_TIMEOUT_MS, intervalMs = POLL_INTERVAL_MS } = {},
+) {
   const deadline = Date.now() + timeoutMs;
   let latest = created;
 
   while (Date.now() < deadline) {
     const job = (await findReportJob(created)) || latest;
     latest = { ...created, ...job };
-    const status = String(latest.status || '').toLowerCase();
-    if (status === 'completed' || status === 'complete' || status === 'done') {
+    const status = String(latest.status || "").toLowerCase();
+    if (status === "completed" || status === "complete" || status === "done") {
       return latest;
     }
-    if (status === 'failed' || status === 'error' || status === 'cancelled') {
+    if (status === "failed" || status === "error" || status === "cancelled") {
       const err = new Error(
         latest.error || `Domain Export failed (status: ${latest.status})`,
       );
@@ -145,7 +143,7 @@ export async function waitForReportCompletion(created, {
   }
 
   const err = new Error(
-    'Domain Export is still processing after 5 minutes. Check Completed exports and retry download there.',
+    "Domain Export is still processing after 5 minutes. Check Completed exports and retry download there.",
   );
   err.status = 504;
   err.expose = true;
@@ -169,13 +167,13 @@ async function emailDomainExportLink({
   scheduled,
 }) {
   const { subject, text, html } = await renderEmailTemplate(
-    'pbx_domain_export',
+    "pbx_domain_export",
     {
       appName: config.appName,
       domain,
       reportType,
       downloadUrl,
-      status: job?.status || 'completed',
+      status: job?.status || "completed",
       generatedAt: new Date().toISOString(),
       scheduled: Boolean(scheduled),
       reportsUrl: `${publicAppBaseUrl()}/PBXReports?tab=domain-export`,
@@ -183,11 +181,11 @@ async function emailDomainExportLink({
   );
 
   await sendRenderedEmail({
-    to: emails.join(', '),
+    to: emails.join(", "),
     subject,
     text,
     html,
-    logLabel: 'pbx_domain_export',
+    logLabel: "pbx_domain_export",
   });
 }
 
@@ -202,14 +200,14 @@ export async function runDomainExportJob({
   waitForCompletion = true,
 } = {}) {
   if (!domain) {
-    const err = new Error('domain is required for Domain Export');
+    const err = new Error("domain is required for Domain Export");
     err.status = 400;
     throw err;
   }
 
   const emails = await resolveRecipientEmails(recipients);
   if (!emails.length) {
-    const err = new Error('Select at least one recipient');
+    const err = new Error("Select at least one recipient");
     err.status = 400;
     throw err;
   }
@@ -241,7 +239,7 @@ export async function runDomainExportJob({
     }, 0);
 
     return {
-      status: 'queued',
+      status: "queued",
       message: `Queued Domain Export for ${domain}. Recipients will be emailed when the file is ready (typically within ~5 minutes).`,
       report: created,
       report_type: reportTypeRow.value,
@@ -280,7 +278,7 @@ async function finalizeDomainExportEmail({
         scheduled,
       });
       return {
-        status: 'queued',
+        status: "queued",
         message: err.message,
         report: err.report || created,
         report_type: reportType,
@@ -302,7 +300,7 @@ async function finalizeDomainExportEmail({
   });
 
   return {
-    status: 'sent',
+    status: "sent",
     message: downloadUrl
       ? `Emailed Domain Export download link for ${domain}`
       : `Domain Export completed for ${domain}; open Reports to download`,
@@ -318,8 +316,8 @@ export async function runDomainExportDailyReport(schedule, ctx = {}) {
   const domain = schedule?.domain;
   if (!domain) {
     return {
-      status: 'error',
-      message: 'domain_export schedules require a domain',
+      status: "error",
+      message: "domain_export schedules require a domain",
     };
   }
   const options = schedule.options || {};
@@ -336,4 +334,4 @@ export async function runDomainExportDailyReport(schedule, ctx = {}) {
   };
 }
 
-registerReportGenerator('domain_export', runDomainExportDailyReport);
+registerReportGenerator("domain_export", runDomainExportDailyReport);

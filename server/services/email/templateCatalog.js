@@ -8,6 +8,40 @@ import {
   resetTemplateOverride,
 } from './templateOverrides.js';
 import { getTemplateOverrideRow } from './templateOverrides.js';
+import { escapeHtml } from './templates/base.js';
+
+/** Enrich sample/live data the same way customized report templates expect. */
+function enrichPreviewData(data = {}) {
+  const enriched = { ...data };
+  if (data.elapsedMs != null && enriched.scanTime == null) {
+    enriched.scanTime = `${Math.round(Number(data.elapsedMs) / 1000)}s`;
+  }
+  if (Array.isArray(data.extraRows) && enriched.extraSummaryHtml == null) {
+    enriched.extraSummaryHtml = data.extraRows
+      .map(([label, value]) => {
+        if (value == null || value === '') return '';
+        return `<p style="margin:0 0 8px;"><strong>${escapeHtml(label)}:</strong> ${escapeHtml(String(value))}</p>`;
+      })
+      .join('');
+  }
+  if (enriched.introLine == null && data.scheduled != null) {
+    enriched.introLine = data.scheduled
+      ? 'Scheduled Domain Export Report'
+      : 'Immediate Domain Export Report';
+  }
+  if (enriched.sourceLabel == null && data.scheduled != null) {
+    enriched.sourceLabel = data.scheduled ? 'Daily schedule' : 'Immediate request';
+  }
+  if (enriched.ctaUrl == null) {
+    enriched.ctaUrl = data.downloadUrl || data.reportsUrl || '';
+  }
+  if (!enriched.ctaLabel) {
+    enriched.ctaLabel = data.downloadUrl
+      ? 'Download export file'
+      : data.ctaLabel || 'Open in Insight';
+  }
+  return enriched;
+}
 
 /** Metadata for admin Settings — previews use sample data below. */
 export const EMAIL_TEMPLATE_CATALOG = [
@@ -59,6 +93,32 @@ export const EMAIL_TEMPLATE_CATALOG = [
     category: 'Support',
     description: 'New public reply or internal note on a ticket.',
     triggers: ['Ticket comment added'],
+  },
+  {
+    id: 'pbx_offline_daily',
+    name: 'Offline Endpoints report',
+    category: 'PBX Reports',
+    description: 'Daily Offline Endpoint scan email with matching extensions table.',
+    triggers: ['Reports → Offline Endpoint schedule', 'Immediate Offline Endpoint'],
+  },
+  {
+    id: 'pbx_domain_export',
+    name: 'Domain Export ready',
+    category: 'PBX Reports',
+    description: 'Download link when a Domain Export file is ready.',
+    triggers: ['Reports → Domain Export (immediate or scheduled)'],
+  },
+  {
+    id: 'pbx_tabular_report',
+    name: 'PBX tabular report',
+    category: 'PBX Reports',
+    description:
+      'Shared shell for E911, SIP ALG, and Vulnerability scheduled report emails.',
+    triggers: [
+      'Reports → E911 Review',
+      'Reports → SIP ALG',
+      'Reports → Vulnerability Check',
+    ],
   },
 ];
 
@@ -115,6 +175,51 @@ function sampleDataForTemplate(templateId) {
         recipientName: 'Jane Smith',
         isInternalNote: false,
       };
+    case 'pbx_offline_daily':
+      return {
+        generatedAt: '2026-09-24 10:00:00 +0000',
+        domainsScanned: 12,
+        domainsFailed: 0,
+        rowCount: 1,
+        minDowntime: 'any',
+        scanTime: '1s',
+        elapsedMs: 1000,
+        reportUrl: `${baseUrl}/PBXReports?tab=offline-endpoint`,
+        tableHtml: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+<tr style="background:#f8fafc;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Domain</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Ext</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Name</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Downtime</th></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">EXAMPLE.DOMAIN</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">100</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Sample User</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">2h</td></tr>
+</table>`,
+      };
+    case 'pbx_domain_export':
+      return {
+        domain: 'EXAMPLE.DOMAIN',
+        reportType: 'user_device',
+        status: 'completed',
+        generatedAt: '2026-09-24 10:00:00 +0000',
+        scheduled: true,
+        introLine: 'Scheduled Domain Export Report',
+        sourceLabel: 'Daily schedule',
+        downloadUrl: `${baseUrl}/PBXReports?tab=domain-export`,
+        reportsUrl: `${baseUrl}/PBXReports?tab=domain-export`,
+        ctaUrl: `${baseUrl}/PBXReports?tab=domain-export`,
+        ctaLabel: 'Download export file',
+      };
+    case 'pbx_tabular_report':
+      return {
+        title: 'E911 empty / zero CID',
+        intro: 'Scheduled E911 empty / zero CID Report',
+        generatedAt: '2026-09-24 10:00:00 +0000',
+        domain: 'EXAMPLE.DOMAIN',
+        domainsScanned: 1,
+        rowCount: 2,
+        ctaLabel: 'Open E911 Review',
+        reportUrl: `${baseUrl}/PBXReports?tab=e911-review`,
+        extraSummaryHtml: '',
+        tableHtml: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:collapse;">
+<tr style="background:#f8fafc;"><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Domain</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Ext</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">Name</th><th style="text-align:left;padding:8px;border-bottom:1px solid #e2e8f0;">PBX 911 CID</th></tr>
+<tr><td style="padding:8px;border-bottom:1px solid #e2e8f0;">EXAMPLE.DOMAIN</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">101</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">Sample User</td><td style="padding:8px;border-bottom:1px solid #e2e8f0;">(empty)</td></tr>
+</table>`,
+      };
     default:
       return {};
   }
@@ -139,7 +244,7 @@ export async function getEmailTemplateForEdit(templateId) {
   return {
     id: templateId,
     content,
-    sample_data: sampleDataForTemplate(templateId),
+    sample_data: enrichPreviewData(sampleDataForTemplate(templateId)),
   };
 }
 
@@ -149,7 +254,7 @@ export async function previewEmailTemplate(templateId, contentOverride = null) {
     err.status = 404;
     throw err;
   }
-  const sample = sampleDataForTemplate(templateId);
+  const sample = enrichPreviewData(sampleDataForTemplate(templateId));
   let content;
   if (contentOverride) {
     const defaults = await getTemplateContent(templateId);
@@ -193,7 +298,7 @@ export async function sendTestTemplateEmail(templateId, { to, content } = {}) {
     throw err;
   }
 
-  const sample = sampleDataForTemplate(templateId);
+  const sample = enrichPreviewData(sampleDataForTemplate(templateId));
   let mergedContent;
   if (content) {
     const base = await getTemplateContent(templateId);

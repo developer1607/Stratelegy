@@ -73,12 +73,14 @@ router.post("/login", async (req, res, next) => {
 
     const { user, tokenVersion } = authResult;
 
-    const userRow = await queryOne("SELECT * FROM users WHERE id = ?", [user.id]);
+    const userRow = await queryOne("SELECT * FROM users WHERE id = ?", [
+      user.id,
+    ]);
     if (userRequiresMfaEmail(userRow)) {
       if (!(await isEmailOperational())) {
         return res.status(503).json({
           message:
-            'Email MFA is enabled for your account but outbound mail is not working. Contact an administrator to fix SMTP settings.',
+            "Email MFA is enabled for your account but outbound mail is not working. Contact an administrator to fix SMTP settings.",
         });
       }
       const challenge = await createMfaEmailChallenge(user.id, "login");
@@ -160,10 +162,14 @@ router.post("/mfa/resend", mfaRateLimiter, async (req, res, next) => {
       [challengeToken],
     );
     if (!challenge || challenge.purpose !== "login") {
-      return res.status(400).json({ message: "Invalid or expired verification session" });
+      return res
+        .status(400)
+        .json({ message: "Invalid or expired verification session" });
     }
 
-    const result = await createMfaEmailChallenge(challenge.user_id, "login", { resend: true });
+    const result = await createMfaEmailChallenge(challenge.user_id, "login", {
+      resend: true,
+    });
     res.json({
       mfa_required: true,
       mfa_token: result.challengeToken,
@@ -175,66 +181,86 @@ router.post("/mfa/resend", mfaRateLimiter, async (req, res, next) => {
   }
 });
 
-router.post("/mfa/enable/start", requireAuth, mfaRateLimiter, async (req, res, next) => {
-  try {
-    if (!(await isEmailOperational())) {
-      return res.status(503).json({
-        message: "Email is not configured. Contact an administrator to enable email MFA.",
+router.post(
+  "/mfa/enable/start",
+  requireAuth,
+  mfaRateLimiter,
+  async (req, res, next) => {
+    try {
+      if (!(await isEmailOperational())) {
+        return res.status(503).json({
+          message:
+            "Email is not configured. Contact an administrator to enable email MFA.",
+        });
+      }
+
+      const challenge = await createMfaEmailChallenge(req.user.id, "enable");
+      res.json({
+        mfa_token: challenge.challengeToken,
+        email_hint: challenge.emailHint,
+        expires_in: challenge.expiresInSeconds,
       });
+    } catch (e) {
+      next(e);
     }
+  },
+);
 
-    const challenge = await createMfaEmailChallenge(req.user.id, "enable");
-    res.json({
-      mfa_token: challenge.challengeToken,
-      email_hint: challenge.emailHint,
-      expires_in: challenge.expiresInSeconds,
-    });
-  } catch (e) {
-    next(e);
-  }
-});
+router.post(
+  "/mfa/enable/confirm",
+  requireAuth,
+  mfaRateLimiter,
+  async (req, res, next) => {
+    try {
+      const { mfa_token, code, mfaToken } = req.body || {};
+      const challengeToken = mfa_token ?? mfaToken;
+      const verificationCode = code ?? req.body?.verification_code;
 
-router.post("/mfa/enable/confirm", requireAuth, mfaRateLimiter, async (req, res, next) => {
-  try {
-    const { mfa_token, code, mfaToken } = req.body || {};
-    const challengeToken = mfa_token ?? mfaToken;
-    const verificationCode = code ?? req.body?.verification_code;
+      if (!challengeToken || !verificationCode) {
+        return res
+          .status(400)
+          .json({ message: "Verification code is required" });
+      }
 
-    if (!challengeToken || !verificationCode) {
-      return res.status(400).json({ message: "Verification code is required" });
+      const { user, purpose } = await verifyMfaEmailChallenge(
+        challengeToken,
+        verificationCode,
+        { purpose: "enable" },
+      );
+
+      if (user.id !== req.user.id || purpose !== "enable") {
+        return res
+          .status(400)
+          .json({ message: "Invalid verification session" });
+      }
+
+      const updated = await enableMfaEmailForUser(req.user.id);
+      await auditLog(req, "mfa_email_enabled", {
+        resourceType: "user",
+        resourceId: req.user.id,
+      });
+      res.json({ user: updated, message: "Email MFA enabled" });
+    } catch (e) {
+      next(e);
     }
-
-    const { user, purpose } = await verifyMfaEmailChallenge(
-      challengeToken,
-      verificationCode,
-      { purpose: "enable" },
-    );
-
-    if (user.id !== req.user.id || purpose !== "enable") {
-      return res.status(400).json({ message: "Invalid verification session" });
-    }
-
-    const updated = await enableMfaEmailForUser(req.user.id);
-    await auditLog(req, "mfa_email_enabled", {
-      resourceType: "user",
-      resourceId: req.user.id,
-    });
-    res.json({ user: updated, message: "Email MFA enabled" });
-  } catch (e) {
-    next(e);
-  }
-});
+  },
+);
 
 router.post("/mfa/disable", requireAuth, async (req, res, next) => {
   try {
-    const row = await queryOne("SELECT mfa_email_forced FROM users WHERE id = ?", [req.user.id]);
+    const row = await queryOne(
+      "SELECT mfa_email_forced FROM users WHERE id = ?",
+      [req.user.id],
+    );
     if (row?.mfa_email_forced) {
       return res.status(400).json({
-        message: "Email MFA is required by an administrator and cannot be disabled",
+        message:
+          "Email MFA is required by an administrator and cannot be disabled",
       });
     }
 
-    const currentPassword = req.body?.current_password ?? req.body?.currentPassword;
+    const currentPassword =
+      req.body?.current_password ?? req.body?.currentPassword;
     if (!currentPassword) {
       return res.status(400).json({ message: "Current password is required" });
     }

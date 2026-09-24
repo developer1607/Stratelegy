@@ -73,13 +73,8 @@ router.get("/:entityName", async (req, res, next) => {
     }
     const { sort, limit, offset } = req.query;
     if (offset !== undefined) {
-      const result = await listEntitiesPage(
-        entityName,
-        sort,
-        limit,
-        offset,
-      );
-      if (entityName === 'TicketComment') {
+      const result = await listEntitiesPage(entityName, sort, limit, offset);
+      if (entityName === "TicketComment") {
         result.items = filterCommentsForViewer(
           result.items,
           req.user,

@@ -214,7 +214,7 @@ export default function DomainExportPanel() {
     <div className="space-y-6">
       <ReportScheduleSection
         title="Immediate Domain Export"
-        description="Sends the selected report type for one domain to the chosen recipients within about five minutes (when SkySwitch finishes the file)."
+        description="Sends the selected report type for one domain to the chosen recipients within about five minutes."
         footer={
           <PermissionGate pbxAction="manageReports" fallback={null}>
             <div className="flex flex-wrap items-center gap-3">

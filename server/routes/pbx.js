@@ -1,29 +1,31 @@
-import { Router } from 'express';
-import { requireAuth } from '../middleware/auth.js';
-import { attachPermissions } from '../middleware/permissions.js';
-import { requireAnyPbxPermission, requirePbxPermission, blockPbxDomainScopedWrite } from '../middleware/pbxAccess.js';
-import * as pbx from '../services/skyswitch/pbx.js';
+import { Router } from "express";
+import { requireAuth } from "../middleware/auth.js";
+import { attachPermissions } from "../middleware/permissions.js";
+import {
+  requireAnyPbxPermission,
+  requirePbxPermission,
+  blockPbxDomainScopedWrite,
+} from "../middleware/pbxAccess.js";
+import * as pbx from "../services/skyswitch/pbx.js";
 import {
   SKYSWITCH_API_REGISTRY,
   SKYSWITCH_OUT_OF_SCOPE,
-} from '../services/skyswitch/apiRegistry.js';
+} from "../services/skyswitch/apiRegistry.js";
 import {
   getSkySwitchScopeStatus,
   scopeErrBody,
-} from '../services/skyswitch/scopes.js';
-import {
-  domainListFallbackAllowed,
-} from '../../shared/pbxDataAccess.js';
+} from "../services/skyswitch/scopes.js";
+import { domainListFallbackAllowed } from "../../shared/pbxDataAccess.js";
 import {
   assertDomainAllowed,
   filterDomainsForUser,
   resolveAllowedPbxDomain,
   isPbxDomainRestricted,
   getAssignedPbxDomains,
-} from '../../shared/pbxDomainAccess.js';
-import { config } from '../config.js';
-import { requireAdmin } from '../middleware/auth.js';
-import * as hybridPbx from '../services/pbx/index.js';
+} from "../../shared/pbxDomainAccess.js";
+import { config } from "../config.js";
+import { requireAdmin } from "../middleware/auth.js";
+import * as hybridPbx from "../services/pbx/index.js";
 import {
   listReportSchedules,
   getReportSchedule,
@@ -32,19 +34,20 @@ import {
   deleteReportSchedule,
   runReportSchedule,
   REPORT_SCHEDULE_TYPES,
-} from '../services/pbx/reportSchedules.js';
-import { runDomainExportJob } from '../services/pbx/domainExportReport.js';
-import { runOfflineEndpointImmediate } from '../services/pbx/offlineDailyReport.js';
-import { runE911EmptyCidImmediate } from '../services/pbx/e911EmptyCidReport.js';
-import { runSipAlgSameIpImmediate } from '../services/pbx/sipAlgSameIpReport.js';
-import { runVulnerabilityDialImmediate } from '../services/pbx/vulnerabilityDialReport.js';
+} from "../services/pbx/reportSchedules.js";
+import { runDomainExportJob } from "../services/pbx/domainExportReport.js";
+import { runOfflineEndpointImmediate } from "../services/pbx/offlineDailyReport.js";
+import { runE911EmptyCidImmediate } from "../services/pbx/e911EmptyCidReport.js";
+import { runSipAlgSameIpImmediate } from "../services/pbx/sipAlgSameIpReport.js";
+import { runVulnerabilityDialImmediate } from "../services/pbx/vulnerabilityDialReport.js";
 
 const router = Router();
 
 function pbxDomainOpts(req) {
-  if (req.user?.role === 'admin') return { allowDomainListFallback: true };
+  if (req.user?.role === "admin") return { allowDomainListFallback: true };
   const perms = req.permissions || {};
-  if (perms.isAdmin || perms.can_access_pbx) return { allowDomainListFallback: true };
+  if (perms.isAdmin || perms.can_access_pbx)
+    return { allowDomainListFallback: true };
   if (isPbxDomainRestricted(perms) && getAssignedPbxDomains(perms).length) {
     return { allowDomainListFallback: true };
   }
@@ -64,7 +67,7 @@ async function domainFromRequest(req) {
 async function requireDomainFromRequest(req) {
   const domain = await domainFromRequest(req);
   if (!domain && isPbxDomainRestricted(req.permissions)) {
-    const err = new Error('Select an assigned PBX domain to view this data');
+    const err = new Error("Select an assigned PBX domain to view this data");
     err.status = 403;
     throw err;
   }
@@ -72,9 +75,9 @@ async function requireDomainFromRequest(req) {
 }
 
 function normalizeJournalIdentifier(value) {
-  if (value == null || value === '') return undefined;
+  if (value == null || value === "") return undefined;
   const text = String(value).trim();
-  const territory = text.split('.').find((part) => /^\d{4,}$/.test(part));
+  const territory = text.split(".").find((part) => /^\d{4,}$/.test(part));
   return territory || text;
 }
 
@@ -82,7 +85,8 @@ async function journalIdentifierFromRequest(req) {
   if (isPbxDomainRestricted(req.permissions)) {
     return normalizeJournalIdentifier(await requireDomainFromRequest(req));
   }
-  const raw = req.query.identifier || req.query.domain || (await domainFromRequest(req));
+  const raw =
+    req.query.identifier || req.query.domain || (await domainFromRequest(req));
   return normalizeJournalIdentifier(raw);
 }
 
@@ -90,13 +94,15 @@ async function assertPhoneInAssignedDomain(req, phoneNumber) {
   if (!isPbxDomainRestricted(req.permissions)) return;
   const domain = await requireDomainFromRequest(req);
   const numbers = await pbx.listPbxPhoneNumbers(domain);
-  const target = String(phoneNumber).replace(/\D/g, '');
+  const target = String(phoneNumber).replace(/\D/g, "");
   const allowed = (Array.isArray(numbers) ? numbers : []).some((item) => {
-    const value = String(item.phone_number || item.number || item.did || '').replace(/\D/g, '');
+    const value = String(
+      item.phone_number || item.number || item.did || "",
+    ).replace(/\D/g, "");
     return value === target || value.endsWith(target.slice(-10));
   });
   if (!allowed) {
-    const err = new Error('Phone number is not in your assigned domain');
+    const err = new Error("Phone number is not in your assigned domain");
     err.status = 403;
     throw err;
   }
@@ -105,15 +111,16 @@ async function assertPhoneInAssignedDomain(req, phoneNumber) {
 function denyDomainScopedAccountWide(req, res) {
   if (!isPbxDomainRestricted(req.permissions)) return false;
   res.status(403).json({
-    error: 'Account-wide PBX logs and reports are not available for domain-scoped users',
-    code: 'pbx_domain_scope_required',
+    error:
+      "Account-wide PBX logs and reports are not available for domain-scoped users",
+    code: "pbx_domain_scope_required",
   });
   return true;
 }
 
 const requireViewReports = requireAnyPbxPermission(
-  'can_view_pbx_reports_page',
-  'can_view_e911_reports'
+  "can_view_pbx_reports_page",
+  "can_view_e911_reports",
 );
 
 function scopeErr(err, feature, res, next) {
@@ -126,68 +133,79 @@ router.use(
   requireAuth,
   attachPermissions,
   requireAnyPbxPermission(
-    'can_view_pbx_dashboard',
-    'can_view_endpoint_control',
-    'can_view_offline_endpoints',
-    'can_view_sip_alg',
-    'can_view_troubleshooting',
-    'can_view_e911_review',
-    'can_view_e911_reports',
-    'can_view_pbx_reports_page',
-    'can_view_mos_scores_page',
-    'can_view_sip_trunks',
-    'can_view_extensions_page',
-    'can_view_call_logs_page',
-    'can_view_call_routing_page',
-    'can_view_phone_numbers_page',
-    'can_view_voicemail_page',
-    'can_view_route_by_ani_page',
-    'can_view_pbx_domains_page',
-    'can_manage_pbx_reports',
-    'can_access_pbx',
-    'can_manage_pbx_routing',
-    'can_manage_route_by_ani',
-    'can_manage_e911',
-    'can_manage_pbx_endpoints',
-    'can_access_pbx_domain_scoped'
-  )
+    "can_view_pbx_dashboard",
+    "can_view_endpoint_control",
+    "can_view_offline_endpoints",
+    "can_view_sip_alg",
+    "can_view_troubleshooting",
+    "can_view_e911_review",
+    "can_view_e911_reports",
+    "can_view_pbx_reports_page",
+    "can_view_mos_scores_page",
+    "can_view_sip_trunks",
+    "can_view_extensions_page",
+    "can_view_call_logs_page",
+    "can_view_call_routing_page",
+    "can_view_phone_numbers_page",
+    "can_view_voicemail_page",
+    "can_view_route_by_ani_page",
+    "can_view_pbx_domains_page",
+    "can_manage_pbx_reports",
+    "can_access_pbx",
+    "can_manage_pbx_routing",
+    "can_manage_route_by_ani",
+    "can_manage_e911",
+    "can_manage_pbx_endpoints",
+    "can_access_pbx_domain_scoped",
+  ),
 );
 
 router.use(async (req, res, next) => {
-  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
+  if (!["POST", "PUT", "PATCH", "DELETE"].includes(req.method)) return next();
   return blockPbxDomainScopedWrite(req, res, next);
 });
 
-router.get('/status', requirePbxPermission('can_view_pbx_dashboard'), async (_req, res, next) => {
-  try {
-    res.json(await pbx.getPbxStatus());
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  "/status",
+  requirePbxPermission("can_view_pbx_dashboard"),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.getPbxStatus());
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get(
-  '/hybrid/status',
-  requirePbxPermission('can_view_pbx_dashboard'),
+  "/hybrid/status",
+  requirePbxPermission("can_view_pbx_dashboard"),
   async (_req, res, next) => {
     try {
       res.json(await hybridPbx.getPbxApiStatus());
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/cdrs',
-  requirePbxPermission('can_view_call_logs_page'),
+  "/cdrs",
+  requirePbxPermission("can_view_call_logs_page"),
   async (req, res, next) => {
     try {
       const domain = isPbxDomainRestricted(req.permissions)
         ? await requireDomainFromRequest(req)
         : await domainFromRequest(req);
-      const start = req.query.start_date || new Date(Date.now() - 86400000).toISOString().slice(0, 19).replace('T', ' ');
-      const end = req.query.end_date || new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const start =
+        req.query.start_date ||
+        new Date(Date.now() - 86400000)
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ");
+      const end =
+        req.query.end_date ||
+        new Date().toISOString().slice(0, 19).replace("T", " ");
       const data = await hybridPbx.listCdrs({
         startDate: start,
         endDate: end,
@@ -203,19 +221,26 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/cdrs/export',
-  requirePbxPermission('can_view_call_logs_page'),
+  "/cdrs/export",
+  requirePbxPermission("can_view_call_logs_page"),
   async (req, res, next) => {
     try {
       const domain = isPbxDomainRestricted(req.permissions)
         ? await requireDomainFromRequest(req)
         : await domainFromRequest(req);
-      const start = req.query.start_date || new Date(Date.now() - 86400000).toISOString().slice(0, 19).replace('T', ' ');
-      const end = req.query.end_date || new Date().toISOString().slice(0, 19).replace('T', ' ');
+      const start =
+        req.query.start_date ||
+        new Date(Date.now() - 86400000)
+          .toISOString()
+          .slice(0, 19)
+          .replace("T", " ");
+      const end =
+        req.query.end_date ||
+        new Date().toISOString().slice(0, 19).replace("T", " ");
       const data = await hybridPbx.listCdrs({
         startDate: start,
         endDate: end,
@@ -227,21 +252,21 @@ router.get(
         page: Number(req.query.page) || 1,
         perPage: Math.min(Number(req.query.per_page) || 250, 1000),
       });
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader(
-        'Content-Disposition',
-        `attachment; filename="pbx-cdrs-${new Date().toISOString().slice(0, 10)}.csv"`
+        "Content-Disposition",
+        `attachment; filename="pbx-cdrs-${new Date().toISOString().slice(0, 10)}.csv"`,
       );
       res.send(hybridPbx.cdrRowsToCsv(data.rows));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/phones',
-  requireAnyPbxPermission('can_view_endpoint_control', 'can_access_pbx'),
+  "/phones",
+  requireAnyPbxPermission("can_view_endpoint_control", "can_access_pbx"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -250,12 +275,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/phones',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/phones",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
@@ -264,12 +289,12 @@ router.post(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/phones/:macAddress',
-  requireAnyPbxPermission('can_view_endpoint_control', 'can_access_pbx'),
+  "/phones/:macAddress",
+  requireAnyPbxPermission("can_view_endpoint_control", "can_access_pbx"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -278,24 +303,24 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/phones/:macAddress/resync',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/phones/:macAddress/resync",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
       if (!domain) {
-        const err = new Error('domain is required');
+        const err = new Error("domain is required");
         err.status = 400;
         err.expose = true;
         throw err;
       }
       const phone = await hybridPbx.getPhone(domain, req.params.macAddress);
       if (!phone?.primary_device) {
-        const err = new Error('No primary PBX device found for this phone');
+        const err = new Error("No primary PBX device found for this phone");
         err.status = 404;
         err.expose = true;
         throw err;
@@ -305,47 +330,54 @@ router.post(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.patch(
-  '/phones/:macAddress/overrides',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/phones/:macAddress/overrides",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
       const { overrides } = req.body || {};
       if (overrides == null) {
-        const err = new Error('overrides is required');
+        const err = new Error("overrides is required");
         err.status = 400;
         err.expose = true;
         throw err;
       }
-      const phone = await hybridPbx.updatePhone(domain, req.params.macAddress, { overrides });
+      const phone = await hybridPbx.updatePhone(domain, req.params.macAddress, {
+        overrides,
+      });
       res.json(phone);
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/phones/:macAddress',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/phones/:macAddress",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      res.json(await hybridPbx.deletePhoneRecord(domain, req.params.macAddress));
+      res.json(
+        await hybridPbx.deletePhoneRecord(domain, req.params.macAddress),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/domains',
-  requireAnyPbxPermission('can_view_pbx_domains_page', 'can_access_pbx_domain_scoped'),
+  "/domains",
+  requireAnyPbxPermission(
+    "can_view_pbx_domains_page",
+    "can_access_pbx_domain_scoped",
+  ),
   async (req, res, next) => {
     try {
       const all = await pbx.listDomains();
@@ -353,40 +385,53 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/resellers',
-  requirePbxPermission('can_view_pbx_domains_page'),
+  "/resellers",
+  requirePbxPermission("can_view_pbx_domains_page"),
   async (_req, res, next) => {
     try {
       res.json(await pbx.listResellers());
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/api-catalog',
-  requireAnyPbxPermission('can_view_pbx_dashboard', 'can_access_pbx'),
+  "/api-catalog",
+  requireAnyPbxPermission("can_view_pbx_dashboard", "can_access_pbx"),
   (_req, res) => {
-    res.json({ implemented: SKYSWITCH_API_REGISTRY, outOfScope: SKYSWITCH_OUT_OF_SCOPE });
-  }
+    res.json({
+      implemented: SKYSWITCH_API_REGISTRY,
+      outOfScope: SKYSWITCH_OUT_OF_SCOPE,
+    });
+  },
 );
 
-router.get('/dashboard', requirePbxPermission('can_view_pbx_dashboard'), async (req, res, next) => {
-  try {
-    res.json(await pbx.getDashboardSummary(null, req.permissions, pbxDomainOpts(req)));
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  "/dashboard",
+  requirePbxPermission("can_view_pbx_dashboard"),
+  async (req, res, next) => {
+    try {
+      res.json(
+        await pbx.getDashboardSummary(
+          null,
+          req.permissions,
+          pbxDomainOpts(req),
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get(
-  '/endpoint-control/overview',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/endpoint-control/overview",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -394,28 +439,28 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/endpoint-control/devices/resync',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/endpoint-control/devices/resync",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      res.status(202).json(
-        await hybridPbx.resyncEndpointDevice(domain, req.body?.device)
-      );
+      res
+        .status(202)
+        .json(await hybridPbx.resyncEndpointDevice(domain, req.body?.device));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/endpoint-control/devices',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/endpoint-control/devices",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
@@ -424,47 +469,56 @@ router.delete(
         await hybridPbx.deleteEndpointDevice(
           domain,
           req.body?.device,
-          req.body?.owner
-        )
+          req.body?.owner,
+        ),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/endpoint-control/subscribers',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/endpoint-control/subscribers",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      res.status(201).json(await hybridPbx.createEndpoint(domain, req.body || {}));
+      res
+        .status(201)
+        .json(await hybridPbx.createEndpoint(domain, req.body || {}));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/endpoint-control/subscribers/:user',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/endpoint-control/subscribers/:user",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      const deletePhone = req.query.delete_phone !== 'false';
-      res.json(await hybridPbx.deleteEndpoint(domain, req.params.user, { deletePhone }));
+      const deletePhone = req.query.delete_phone !== "false";
+      res.json(
+        await hybridPbx.deleteEndpoint(domain, req.params.user, {
+          deletePhone,
+        }),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/endpoint-control/subscribers/:user/detail',
-  requireAnyPbxPermission('can_view_endpoint_control', 'can_view_extensions_page'),
+  "/endpoint-control/subscribers/:user/detail",
+  requireAnyPbxPermission(
+    "can_view_endpoint_control",
+    "can_view_extensions_page",
+  ),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -472,16 +526,26 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.patch(
-  '/endpoint-control/subscribers/:user',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/endpoint-control/subscribers/:user",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      const { email, department, notes, dial_policy, dial_plan, time_zone, site, vm_pin, e911_caller_id } = req.body || {};
+      const {
+        email,
+        department,
+        notes,
+        dial_policy,
+        dial_plan,
+        time_zone,
+        site,
+        vm_pin,
+        e911_caller_id,
+      } = req.body || {};
       res.json(
         await hybridPbx.updateSubscriber(domain, req.params.user, {
           email,
@@ -493,33 +557,37 @@ router.patch(
           site,
           vm_pin,
           e911_caller_id,
-        })
+        }),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.patch(
-  '/endpoint-control/subscribers/:user/e911-caller-id',
-  requirePbxPermission('can_manage_e911'),
+  "/endpoint-control/subscribers/:user/e911-caller-id",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
       const { e911_caller_id } = req.body || {};
       res.json(
-        await hybridPbx.updateSubscriberE911CallerId(domain, req.params.user, e911_caller_id)
+        await hybridPbx.updateSubscriberE911CallerId(
+          domain,
+          req.params.user,
+          e911_caller_id,
+        ),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/endpoint-control/sites',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/endpoint-control/sites",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -527,12 +595,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/endpoint-control/subscribers/:user/voicemails',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/endpoint-control/subscribers/:user/voicemails",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -540,40 +608,46 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/endpoint-control/subscribers/:user/monitoring',
-  requirePbxPermission('can_view_endpoint_control'),
-  async (req, res, next) => {
-    try {
-      const domain = await requireDomainFromRequest(req);
-      res.json(await hybridPbx.getSubscriberMonitoring(domain, req.params.user));
-    } catch (err) {
-      next(err);
-    }
-  }
-);
-
-router.patch(
-  '/endpoint-control/subscribers/:user/monitoring',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/endpoint-control/subscribers/:user/monitoring",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
       res.json(
-        await hybridPbx.setSubscriberMonitoring(domain, req.params.user, Boolean(req.body?.enabled))
+        await hybridPbx.getSubscriberMonitoring(domain, req.params.user),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
+);
+
+router.patch(
+  "/endpoint-control/subscribers/:user/monitoring",
+  requirePbxPermission("can_manage_pbx_endpoints"),
+  async (req, res, next) => {
+    try {
+      const domain = await requireDomainFromRequest(req);
+      res.json(
+        await hybridPbx.setSubscriberMonitoring(
+          domain,
+          req.params.user,
+          Boolean(req.body?.enabled),
+        ),
+      );
+    } catch (err) {
+      next(err);
+    }
+  },
 );
 
 router.get(
-  '/endpoint-control/subscribers/:user/groups',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/endpoint-control/subscribers/:user/groups",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -581,27 +655,29 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/e911/review-overview',
-  requirePbxPermission('can_view_e911_review'),
+  "/e911/review-overview",
+  requirePbxPermission("can_view_e911_review"),
   async (req, res, next) => {
     try {
       const domain = isPbxDomainRestricted(req.permissions)
         ? await requireDomainFromRequest(req)
         : await domainFromRequest(req);
-      res.json(await hybridPbx.getE911ReviewOverview(domain, pbxDomainOpts(req)));
+      res.json(
+        await hybridPbx.getE911ReviewOverview(domain, pbxDomainOpts(req)),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/e911/domain-defaults',
-  requirePbxPermission('can_view_e911_review'),
+  "/e911/domain-defaults",
+  requirePbxPermission("can_view_e911_review"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -609,12 +685,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.patch(
-  '/e911/domain-defaults',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/domain-defaults",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
@@ -624,97 +700,108 @@ router.patch(
           e911_caller_id,
           caller_id,
           caller_id_name,
-        })
+        }),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/e911/emergency-pool',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/emergency-pool",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
       const { callid, tag } = req.body || {};
-      const pool = await hybridPbx.createEmergencyPoolNumber(domain, callid, tag);
+      const pool = await hybridPbx.createEmergencyPoolNumber(
+        domain,
+        callid,
+        tag,
+      );
       res.status(201).json({ pool });
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.patch(
-  '/e911/emergency-pool/:callid',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/emergency-pool/:callid",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
       const pool = await hybridPbx.updateEmergencyPoolNumber(
         domain,
         req.params.callid,
-        req.body?.tag
+        req.body?.tag,
       );
       res.json({ pool });
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/e911/emergency-pool/:callid',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/emergency-pool/:callid",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      const pool = await hybridPbx.deleteEmergencyPoolNumber(domain, req.params.callid);
+      const pool = await hybridPbx.deleteEmergencyPoolNumber(
+        domain,
+        req.params.callid,
+      );
       res.json({ pool });
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/e911/subscribers/:user/profile',
-  requirePbxPermission('can_view_e911_review'),
+  "/e911/subscribers/:user/profile",
+  requirePbxPermission("can_view_e911_review"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      res.json(await hybridPbx.getSubscriberE911Profile(domain, req.params.user));
+      res.json(
+        await hybridPbx.getSubscriberE911Profile(domain, req.params.user),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/offline-endpoints/overview',
-  requirePbxPermission('can_view_offline_endpoints'),
+  "/offline-endpoints/overview",
+  requirePbxPermission("can_view_offline_endpoints"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
-      res.json(await hybridPbx.getOfflineExtensionOverview(domain, pbxDomainOpts(req)));
+      res.json(
+        await hybridPbx.getOfflineExtensionOverview(domain, pbxDomainOpts(req)),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/mos-scores',
-  requirePbxPermission('can_view_mos_scores_page'),
+  "/mos-scores",
+  requirePbxPermission("can_view_mos_scores_page"),
   async (req, res, next) => {
     try {
       const domain = isPbxDomainRestricted(req.permissions)
         ? await requireDomainFromRequest(req)
         : await domainFromRequest(req);
       if (!domain) {
-        const err = new Error('Select a domain to load MOS scores');
+        const err = new Error("Select a domain to load MOS scores");
         err.status = 400;
         throw err;
       }
@@ -725,44 +812,51 @@ router.get(
           domain,
           page: Number(req.query.page) || 1,
           perPage: Number(req.query.per_page) || 100,
-        })
+        }),
       );
     } catch (err) {
-      return scopeErr(err, 'log', res, next);
+      return scopeErr(err, "log", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/subscribers',
-  requireAnyPbxPermission('can_view_endpoint_control', 'can_access_pbx'),
+  "/subscribers",
+  requireAnyPbxPermission("can_view_endpoint_control", "can_access_pbx"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
-      res.json(await pbx.listSubscribers(domain, req.query.filter || 'subscriber'));
+      res.json(
+        await pbx.listSubscribers(domain, req.query.filter || "subscriber"),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/extensions',
-  requirePbxPermission('can_view_extensions_page'),
+  "/extensions",
+  requirePbxPermission("can_view_extensions_page"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
       if (!domain) return res.json([]);
-      const telcoSubs = await pbx.listSubscribers(domain, 'subscriber');
-      const inventory = await hybridPbx.getEndpointInventory(domain).catch(() => ({ subscribers: [] }));
+      const telcoSubs = await pbx.listSubscribers(domain, "subscriber");
+      const inventory = await hybridPbx
+        .getEndpointInventory(domain)
+        .catch(() => ({ subscribers: [] }));
       const byUser = new Map(
-        (inventory.subscribers || []).map((row) => [String(row.user || '').toLowerCase(), row])
+        (inventory.subscribers || []).map((row) => [
+          String(row.user || "").toLowerCase(),
+          row,
+        ]),
       );
       res.json(
         telcoSubs.map((row) => {
-          const enriched = byUser.get(String(row.user || '').toLowerCase());
+          const enriched = byUser.get(String(row.user || "").toLowerCase());
           if (!enriched) {
-            return { ...row, online_status: 'no_device' };
+            return { ...row, online_status: "no_device" };
           }
           return {
             ...row,
@@ -775,17 +869,17 @@ router.get(
             notes: enriched.notes || row.notes,
             wan_ip: enriched.wan_ip || row.wan_ip,
           };
-        })
+        }),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/messaging-users',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/messaging-users",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -793,46 +887,50 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/messaging/aliases/pbxuser',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/messaging/aliases/pbxuser",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const { user, service, uri } = req.query;
       if (!user) {
-        return res.status(400).json({ error: 'user query parameter is required' });
+        return res
+          .status(400)
+          .json({ error: "user query parameter is required" });
       }
       const domain = await domainFromRequest(req);
-      res.json(await pbx.getPbxUserPhoneNumbers(domain, user, { service, uri }));
+      res.json(
+        await pbx.getPbxUserPhoneNumbers(domain, user, { service, uri }),
+      );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/endpoints',
-  requirePbxPermission('can_view_endpoint_control'),
+  "/endpoints",
+  requirePbxPermission("can_view_endpoint_control"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
       const [subscribers, messagingUsers] = await Promise.all([
-        pbx.listSubscribers(domain, req.query.filter || 'subscriber'),
+        pbx.listSubscribers(domain, req.query.filter || "subscriber"),
         pbx.listMessagingUsers(domain),
       ]);
       res.json({ subscribers, messagingUsers });
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/offline-endpoints',
-  requirePbxPermission('can_view_offline_endpoints'),
+  "/offline-endpoints",
+  requirePbxPermission("can_view_offline_endpoints"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -840,17 +938,20 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/e911',
-  requirePbxPermission('can_view_e911_review'),
+  "/e911",
+  requirePbxPermission("can_view_e911_review"),
   async (req, res, next) => {
     try {
       if (isPbxDomainRestricted(req.permissions)) {
         const domain = await requireDomainFromRequest(req);
-        const overview = await hybridPbx.getE911ReviewOverview(domain, pbxDomainOpts(req));
+        const overview = await hybridPbx.getE911ReviewOverview(
+          domain,
+          pbxDomainOpts(req),
+        );
         res.json(overview.provisioned);
         return;
       }
@@ -858,40 +959,48 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
-router.get('/e911/countries', requirePbxPermission('can_manage_e911'), async (_req, res, next) => {
-  try {
-    res.json(await pbx.listE911Countries());
-  } catch (err) {
-    next(err);
-  }
-});
-
-router.get('/e911/states', requirePbxPermission('can_manage_e911'), async (_req, res, next) => {
-  try {
-    res.json(await pbx.listE911States());
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  "/e911/countries",
+  requirePbxPermission("can_manage_e911"),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.listE911Countries());
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get(
-  '/e911/validate/address',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/states",
+  requirePbxPermission("can_manage_e911"),
+  async (_req, res, next) => {
+    try {
+      res.json(await pbx.listE911States());
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+router.get(
+  "/e911/validate/address",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       res.json(await pbx.validateE911Address(req.query));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/e911/:phoneNumber(\\d{11})',
-  requirePbxPermission('can_view_e911_review'),
+  "/e911/:phoneNumber(\\d{11})",
+  requirePbxPermission("can_view_e911_review"),
   async (req, res, next) => {
     try {
       await assertPhoneInAssignedDomain(req, req.params.phoneNumber);
@@ -899,12 +1008,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/trunk-groups',
-  requirePbxPermission('can_view_sip_trunks'),
+  "/trunk-groups",
+  requirePbxPermission("can_view_sip_trunks"),
   async (req, res, next) => {
     try {
       const domain = isPbxDomainRestricted(req.permissions)
@@ -916,49 +1025,58 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
-router.get('/sip-alg', requirePbxPermission('can_view_sip_alg'), async (req, res, next) => {
-  try {
-    const domain = await domainFromRequest(req);
-    res.json(await pbx.getSipAlgSettings(domain));
-  } catch (err) {
-    next(err);
-  }
-});
+router.get(
+  "/sip-alg",
+  requirePbxPermission("can_view_sip_alg"),
+  async (req, res, next) => {
+    try {
+      const domain = await domainFromRequest(req);
+      res.json(await pbx.getSipAlgSettings(domain));
+    } catch (err) {
+      next(err);
+    }
+  },
+);
 
 router.get(
-  '/troubleshooting/vulnerability',
-  requirePbxPermission('can_view_troubleshooting'),
+  "/troubleshooting/vulnerability",
+  requirePbxPermission("can_view_troubleshooting"),
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
-      const { dial_policy, highlighted, show_voicemail_pin, voicemail_enabled } = req.query;
+      const {
+        dial_policy,
+        highlighted,
+        show_voicemail_pin,
+        voicemail_enabled,
+      } = req.query;
       res.json(
         await hybridPbx.getVulnerabilityCheck(domain, {
           dial_policy,
           highlighted,
           show_voicemail_pin,
           voicemail_enabled,
-        })
+        }),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.patch(
-  '/troubleshooting/vulnerability/call-limit',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/troubleshooting/vulnerability/call-limit",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   blockPbxDomainScopedWrite,
   async (req, res, next) => {
     try {
       const domain = await requireDomainFromRequest(req);
       const callLimit = req.body?.call_limit;
-      if (callLimit == null || callLimit === '') {
-        const err = new Error('call_limit is required');
+      if (callLimit == null || callLimit === "") {
+        const err = new Error("call_limit is required");
         err.status = 400;
         err.expose = true;
         throw err;
@@ -967,12 +1085,12 @@ router.patch(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/call-routing',
-  requirePbxPermission('can_view_call_routing_page'),
+  "/call-routing",
+  requirePbxPermission("can_view_call_routing_page"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -980,12 +1098,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/routes/:phoneNumber',
-  requirePbxPermission('can_view_call_routing_page'),
+  "/routes/:phoneNumber",
+  requirePbxPermission("can_view_call_routing_page"),
   async (req, res, next) => {
     try {
       await assertPhoneInAssignedDomain(req, req.params.phoneNumber);
@@ -993,12 +1111,15 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/route-by-ani',
-  requireAnyPbxPermission('can_view_route_by_ani_page', 'can_manage_route_by_ani'),
+  "/route-by-ani",
+  requireAnyPbxPermission(
+    "can_view_route_by_ani_page",
+    "can_manage_route_by_ani",
+  ),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -1006,17 +1127,17 @@ router.get(
         await pbx.listRoutesByAni(domain, {
           ani: req.query.ani,
           dnis: req.query.dnis,
-        })
+        }),
       );
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/voicemail',
-  requirePbxPermission('can_view_voicemail_page'),
+  "/voicemail",
+  requirePbxPermission("can_view_voicemail_page"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -1024,12 +1145,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/auto-attendants',
-  requirePbxPermission('can_view_voicemail_page'),
+  "/auto-attendants",
+  requirePbxPermission("can_view_voicemail_page"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -1037,12 +1158,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/call-queues',
-  requirePbxPermission('can_view_voicemail_page'),
+  "/call-queues",
+  requirePbxPermission("can_view_voicemail_page"),
   async (req, res, next) => {
     try {
       const domain = await domainFromRequest(req);
@@ -1050,23 +1171,24 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/phone-numbers',
+  "/phone-numbers",
   requireAnyPbxPermission(
-    'can_view_phone_numbers_page',
-    'can_view_call_routing_page',
-    'can_manage_pbx_routing'
+    "can_view_phone_numbers_page",
+    "can_view_call_routing_page",
+    "can_manage_pbx_routing",
   ),
   async (req, res, next) => {
     try {
-      if (req.query.scope === 'inventory') {
+      if (req.query.scope === "inventory") {
         if (isPbxDomainRestricted(req.permissions)) {
           return res.status(403).json({
-            error: 'Account-wide phone inventory is not available for domain-scoped users',
-            code: 'pbx_domain_scope_required',
+            error:
+              "Account-wide phone inventory is not available for domain-scoped users",
+            code: "pbx_domain_scope_required",
           });
         }
         res.json(await pbx.listInventoryPhoneNumbers());
@@ -1077,42 +1199,43 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/audit-logs/resource-actions',
-  requirePbxPermission('can_view_call_logs_page'),
+  "/audit-logs/resource-actions",
+  requirePbxPermission("can_view_call_logs_page"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       res.json(await pbx.listAuditActions());
     } catch (err) {
-      return scopeErr(err, 'log', res, next);
+      return scopeErr(err, "log", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/journals/module-type-actions',
-  requirePbxPermission('can_view_call_logs_page'),
+  "/journals/module-type-actions",
+  requirePbxPermission("can_view_call_logs_page"),
   async (_req, res, next) => {
     try {
       res.json(await pbx.listJournalTypes());
     } catch (err) {
-      return scopeErr(err, 'log', res, next);
+      return scopeErr(err, "log", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/journals',
-  requirePbxPermission('can_view_call_logs_page'),
+  "/journals",
+  requirePbxPermission("can_view_call_logs_page"),
   async (req, res, next) => {
     try {
       const end = req.query.end_date || new Date().toISOString().slice(0, 10);
       const start =
-        req.query.start_date || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+        req.query.start_date ||
+        new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
       const identifier = await journalIdentifierFromRequest(req);
       res.json(
         await pbx.listJournals({
@@ -1124,66 +1247,63 @@ router.get(
           type: req.query.type,
           action: req.query.action,
           identifier,
-        })
+        }),
       );
     } catch (err) {
-      return scopeErr(err, 'log', res, next);
+      return scopeErr(err, "log", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/audit-logs',
-  requirePbxPermission('can_view_call_logs_page'),
+  "/audit-logs",
+  requirePbxPermission("can_view_call_logs_page"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const end = req.query.end_date || new Date().toISOString().slice(0, 10);
       const start =
-        req.query.start_date || new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+        req.query.start_date ||
+        new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
       res.json(
         await pbx.listAuditLogs({
           startDate: start,
           endDate: end,
           page: Number(req.query.page) || 1,
-        })
+        }),
       );
     } catch (err) {
-      return scopeErr(err, 'log', res, next);
+      return scopeErr(err, "log", res, next);
     }
-  }
+  },
 );
 
-router.get(
-  '/reports/types',
-  requireViewReports,
-  async (req, res, next) => {
-    try {
-      if (denyDomainScopedAccountWide(req, res)) return;
-      res.json(await pbx.listReportTypes());
-    } catch (err) {
-      return scopeErr(err, 'report', res, next);
-    }
+router.get("/reports/types", requireViewReports, async (req, res, next) => {
+  try {
+    if (denyDomainScopedAccountWide(req, res)) return;
+    res.json(await pbx.listReportTypes());
+  } catch (err) {
+    return scopeErr(err, "report", res, next);
   }
-);
+});
 
-router.get('/reports', requireViewReports, async (req, res, next) => {
+router.get("/reports", requireViewReports, async (req, res, next) => {
   try {
     if (denyDomainScopedAccountWide(req, res)) return;
     res.json(
       await pbx.listReports({
         page: Number(req.query.page) || 1,
         perPage: Number(req.query.per_page) || 25,
-      })
+      }),
     );
   } catch (err) {
-    return scopeErr(err, 'report', res, next);
+    return scopeErr(err, "report", res, next);
   }
 });
 
 router.post(
-  '/reports',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/reports",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
@@ -1193,7 +1313,7 @@ router.post(
           ? []
           : Array.isArray(parameters)
             ? parameters
-            : typeof parameters === 'object'
+            : typeof parameters === "object"
               ? parameters
               : [];
       res.status(201).json(
@@ -1201,86 +1321,82 @@ router.post(
           reportType,
           parameters: params,
           notes,
-        })
+        }),
       );
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
-router.get('/scope-status', requireAdmin, (_req, res) => {
+router.get("/scope-status", requireAdmin, (_req, res) => {
   res.json(getSkySwitchScopeStatus(config.skyswitch.scope));
 });
 
 router.get(
-  '/reports/files/:fileId/download',
+  "/reports/files/:fileId/download",
   requireViewReports,
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       res.json(await pbx.getReportFileDownload(req.params.fileId));
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
 router.delete(
-  '/reports/:reportId',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/reports/:reportId",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       await pbx.cancelReport(req.params.reportId);
       res.status(204).send();
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
-router.get(
-  '/report-schedules',
-  requireViewReports,
-  async (req, res, next) => {
-    try {
-      if (denyDomainScopedAccountWide(req, res)) return;
-      const enabledParam = req.query.enabled;
-      let enabled;
-      if (enabledParam === 'true' || enabledParam === '1') enabled = true;
-      else if (enabledParam === 'false' || enabledParam === '0') enabled = false;
-      const rows = await listReportSchedules({
-        type: req.query.type || undefined,
-        domain: req.query.domain || undefined,
-        enabled,
-      });
-      res.json({ schedules: rows, types: REPORT_SCHEDULE_TYPES });
-    } catch (err) {
-      next(err);
-    }
+router.get("/report-schedules", requireViewReports, async (req, res, next) => {
+  try {
+    if (denyDomainScopedAccountWide(req, res)) return;
+    const enabledParam = req.query.enabled;
+    let enabled;
+    if (enabledParam === "true" || enabledParam === "1") enabled = true;
+    else if (enabledParam === "false" || enabledParam === "0") enabled = false;
+    const rows = await listReportSchedules({
+      type: req.query.type || undefined,
+      domain: req.query.domain || undefined,
+      enabled,
+    });
+    res.json({ schedules: rows, types: REPORT_SCHEDULE_TYPES });
+  } catch (err) {
+    next(err);
   }
-);
+});
 
 router.get(
-  '/report-schedules/:id',
+  "/report-schedules/:id",
   requireViewReports,
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const schedule = await getReportSchedule(req.params.id);
       if (!schedule) {
-        return res.status(404).json({ message: 'Schedule not found' });
+        return res.status(404).json({ message: "Schedule not found" });
       }
       res.json(schedule);
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/report-schedules',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/report-schedules",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
@@ -1291,49 +1407,52 @@ router.post(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.put(
-  '/report-schedules/:id',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/report-schedules/:id",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
-      const schedule = await updateReportSchedule(req.params.id, req.body || {});
+      const schedule = await updateReportSchedule(
+        req.params.id,
+        req.body || {},
+      );
       res.json(schedule);
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/report-schedules/:id',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/report-schedules/:id",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const result = await deleteReportSchedule(req.params.id);
       if (!result.deleted) {
-        return res.status(404).json({ message: 'Schedule not found' });
+        return res.status(404).json({ message: "Schedule not found" });
       }
       res.json(result);
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/report-schedules/:id/run',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/report-schedules/:id/run",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const schedule = await getReportSchedule(req.params.id);
       if (!schedule) {
-        return res.status(404).json({ message: 'Schedule not found' });
+        return res.status(404).json({ message: "Schedule not found" });
       }
       const result = await runReportSchedule(schedule, { force: true });
       res.json({
@@ -1343,19 +1462,19 @@ router.post(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/domain-export/immediate',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/domain-export/immediate",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const body = req.body || {};
-      const domain = String(body.domain || '').trim();
+      const domain = String(body.domain || "").trim();
       if (!domain) {
-        return res.status(400).json({ message: 'domain is required' });
+        return res.status(400).json({ message: "domain is required" });
       }
       assertDomainAllowed(req.permissions || {}, domain);
       const result = await runDomainExportJob({
@@ -1368,41 +1487,41 @@ router.post(
       });
       res.status(202).json(result);
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
 router.post(
-  '/offline-endpoints/immediate',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/offline-endpoints/immediate",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const body = req.body || {};
-      const domain = String(body.domain || '').trim() || null;
+      const domain = String(body.domain || "").trim() || null;
       if (domain) assertDomainAllowed(req.permissions || {}, domain);
       const result = await runOfflineEndpointImmediate({
         domain,
         recipients: body.recipients,
-        minDowntime: body.min_downtime || body.minDowntime || 'any',
+        minDowntime: body.min_downtime || body.minDowntime || "any",
         sendIfEmpty: Boolean(body.send_if_empty ?? body.sendIfEmpty),
       });
       res.json(result);
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
 router.post(
-  '/e911-empty-cid/immediate',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/e911-empty-cid/immediate",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const body = req.body || {};
-      const domain = String(body.domain || '').trim() || null;
+      const domain = String(body.domain || "").trim() || null;
       if (domain) assertDomainAllowed(req.permissions || {}, domain);
       const result = await runE911EmptyCidImmediate({
         domain,
@@ -1410,21 +1529,21 @@ router.post(
       });
       res.json(result);
     } catch (err) {
-      return scopeErr(err, 'e911', res, next);
+      return scopeErr(err, "e911", res, next);
     }
-  }
+  },
 );
 
 router.post(
-  '/sip-alg-same-ip/immediate',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/sip-alg-same-ip/immediate",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const body = req.body || {};
-      const domain = String(body.domain || '').trim();
+      const domain = String(body.domain || "").trim();
       if (!domain) {
-        return res.status(400).json({ message: 'domain is required' });
+        return res.status(400).json({ message: "domain is required" });
       }
       assertDomainAllowed(req.permissions || {}, domain);
       const result = await runSipAlgSameIpImmediate({
@@ -1433,21 +1552,21 @@ router.post(
       });
       res.json(result);
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
 router.post(
-  '/vulnerability-dial/immediate',
-  requirePbxPermission('can_manage_pbx_reports'),
+  "/vulnerability-dial/immediate",
+  requirePbxPermission("can_manage_pbx_reports"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
       const body = req.body || {};
-      const domain = String(body.domain || '').trim();
+      const domain = String(body.domain || "").trim();
       if (!domain) {
-        return res.status(400).json({ message: 'domain is required' });
+        return res.status(400).json({ message: "domain is required" });
       }
       assertDomainAllowed(req.permissions || {}, domain);
       const result = await runVulnerabilityDialImmediate({
@@ -1456,127 +1575,128 @@ router.post(
       });
       res.json(result);
     } catch (err) {
-      return scopeErr(err, 'report', res, next);
+      return scopeErr(err, "report", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/ui-config',
-  requirePbxPermission('can_view_sip_alg'),
+  "/ui-config",
+  requirePbxPermission("can_view_sip_alg"),
   async (req, res, next) => {
     try {
       const { config_name: configName } = req.query;
-      if (!configName) return res.status(400).json({ message: 'config_name is required' });
+      if (!configName)
+        return res.status(400).json({ message: "config_name is required" });
       const domain = await domainFromRequest(req);
       res.json(await pbx.getUiConfig(domain, configName));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 // ── Write routes ──
 
 router.put(
-  '/routes/:phoneNumber',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/routes/:phoneNumber",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.setPhoneRoute(req.params.phoneNumber, req.body));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/routes/:phoneNumber',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/routes/:phoneNumber",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.deletePhoneRoute(req.params.phoneNumber));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.put(
-  '/e911/:phoneNumber(\\d{11})',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/:phoneNumber(\\d{11})",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       res.json(await pbx.provisionE911(req.params.phoneNumber, req.body));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/e911/:phoneNumber(\\d{11})',
-  requirePbxPermission('can_manage_e911'),
+  "/e911/:phoneNumber(\\d{11})",
+  requirePbxPermission("can_manage_e911"),
   async (req, res, next) => {
     try {
       res.json(await pbx.unprovisionE911(req.params.phoneNumber));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.put(
-  '/route-by-ani',
-  requirePbxPermission('can_manage_route_by_ani'),
+  "/route-by-ani",
+  requirePbxPermission("can_manage_route_by_ani"),
   async (req, res, next) => {
     try {
       res.json(await pbx.provisionRouteByAni(req.query));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/route-by-ani',
-  requirePbxPermission('can_manage_route_by_ani'),
+  "/route-by-ani",
+  requirePbxPermission("can_manage_route_by_ani"),
   async (req, res, next) => {
     try {
       res.json(await pbx.deleteRouteByAni(req.query));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.put(
-  '/messaging/hubusers',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/messaging/hubusers",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   async (req, res, next) => {
     try {
       res.json(await pbx.provisionHubUser(req.body));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/messaging/hubusers/:userId',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/messaging/hubusers/:userId",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   async (req, res, next) => {
     try {
       res.json(await pbx.unprovisionHubUser(req.params.userId));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/fax-atas',
-  requirePbxPermission('can_view_offline_endpoints'),
+  "/fax-atas",
+  requirePbxPermission("can_view_offline_endpoints"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
@@ -1584,12 +1704,12 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/fax-atas/:macAddress/status',
-  requirePbxPermission('can_view_offline_endpoints'),
+  "/fax-atas/:macAddress/status",
+  requirePbxPermission("can_view_offline_endpoints"),
   async (req, res, next) => {
     try {
       if (denyDomainScopedAccountWide(req, res)) return;
@@ -1597,161 +1717,184 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.post(
-  '/fax-atas/:macAddress/reboot',
-  requirePbxPermission('can_manage_pbx_endpoints'),
+  "/fax-atas/:macAddress/reboot",
+  requirePbxPermission("can_manage_pbx_endpoints"),
   async (req, res, next) => {
     try {
       res.json(await pbx.rebootFaxAta(req.params.macAddress));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.get(
-  '/uc/settings',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/uc/settings",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (req, res, next) => {
     try {
       res.json(await pbx.listUcSettings(req.query));
     } catch (err) {
-      return scopeErr(err, 'uc_config', res, next);
+      return scopeErr(err, "uc_config", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/uc/config',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/uc/config",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (req, res, next) => {
     try {
       const { subscriber, ...rest } = req.query;
       if (!subscriber) {
-        return res.status(400).json({ message: 'subscriber query parameter is required' });
+        return res
+          .status(400)
+          .json({ message: "subscriber query parameter is required" });
       }
       const domain = await domainFromRequest(req);
       res.json(await pbx.listUcConfig(domain, subscriber, rest));
     } catch (err) {
-      return scopeErr(err, 'uc_config', res, next);
+      return scopeErr(err, "uc_config", res, next);
     }
-  }
+  },
 );
 
 router.post(
-  '/uc/config-rules',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/uc/config-rules",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.storeUcConfigRule(req.body));
     } catch (err) {
-      return scopeErr(err, 'uc_config', res, next);
+      return scopeErr(err, "uc_config", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/uc/config-rules/:ruleId',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/uc/config-rules/:ruleId",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (req, res, next) => {
     try {
       res.json(await pbx.getUcConfigRule(req.params.ruleId));
     } catch (err) {
-      return scopeErr(err, 'uc_config', res, next);
+      return scopeErr(err, "uc_config", res, next);
     }
-  }
+  },
 );
 
 router.delete(
-  '/uc/config-rules/:ruleId',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/uc/config-rules/:ruleId",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.deleteUcConfigRule(req.params.ruleId));
     } catch (err) {
-      return scopeErr(err, 'uc_config', res, next);
+      return scopeErr(err, "uc_config", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/entitlements/offerings',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/entitlements/offerings",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (_req, res, next) => {
     try {
       res.json(await pbx.listEntitlementOfferings());
     } catch (err) {
-      return scopeErr(err, 'entitlement', res, next);
+      return scopeErr(err, "entitlement", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/entitlements/offeroptions',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/entitlements/offeroptions",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (req, res, next) => {
     try {
       res.json(await pbx.listEntitlementOfferOptions(req.query));
     } catch (err) {
-      return scopeErr(err, 'entitlement', res, next);
+      return scopeErr(err, "entitlement", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/entitlements/offervalue',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/entitlements/offervalue",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (req, res, next) => {
     try {
       res.json(await pbx.getEntitlementOfferValue(req.query));
     } catch (err) {
-      return scopeErr(err, 'entitlement', res, next);
+      return scopeErr(err, "entitlement", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/entitlements',
-  requireAnyPbxPermission('can_view_extensions_page', 'can_view_endpoint_control'),
+  "/entitlements",
+  requireAnyPbxPermission(
+    "can_view_extensions_page",
+    "can_view_endpoint_control",
+  ),
   async (req, res, next) => {
     try {
       res.json(await pbx.listEntitlements(req.query));
     } catch (err) {
-      return scopeErr(err, 'entitlement', res, next);
+      return scopeErr(err, "entitlement", res, next);
     }
-  }
+  },
 );
 
 router.put(
-  '/entitlements',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/entitlements",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.storeEntitlement(req.body));
     } catch (err) {
-      return scopeErr(err, 'entitlement', res, next);
+      return scopeErr(err, "entitlement", res, next);
     }
-  }
+  },
 );
 
 router.delete(
-  '/entitlements/:entitlementId',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/entitlements/:entitlementId",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.deleteEntitlement(req.params.entitlementId));
     } catch (err) {
-      return scopeErr(err, 'entitlement', res, next);
+      return scopeErr(err, "entitlement", res, next);
     }
-  }
+  },
 );
 
 router.get(
-  '/cnam-outbound/:phoneNumber(\\d{11})',
-  requirePbxPermission('can_view_phone_numbers_page'),
+  "/cnam-outbound/:phoneNumber(\\d{11})",
+  requirePbxPermission("can_view_phone_numbers_page"),
   async (req, res, next) => {
     try {
       await assertPhoneInAssignedDomain(req, req.params.phoneNumber);
@@ -1759,31 +1902,31 @@ router.get(
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.put(
-  '/cnam-outbound/:phoneNumber(\\d{11})',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/cnam-outbound/:phoneNumber(\\d{11})",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.setOutboundCnam(req.params.phoneNumber, req.body));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 router.delete(
-  '/cnam-outbound/:phoneNumber(\\d{11})',
-  requirePbxPermission('can_manage_pbx_routing'),
+  "/cnam-outbound/:phoneNumber(\\d{11})",
+  requirePbxPermission("can_manage_pbx_routing"),
   async (req, res, next) => {
     try {
       res.json(await pbx.removeOutboundCnam(req.params.phoneNumber));
     } catch (err) {
       next(err);
     }
-  }
+  },
 );
 
 export default router;
