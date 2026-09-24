@@ -120,7 +120,7 @@ function ReportTabBody({ tabId, needsDomain, domain, domainLoading }) {
     case "device-monitoring":
       return <EndpointControlContent domain={domain} />;
     case "domain-export":
-      return <DomainExportPanel />;
+      return <DomainExportPanel domain={domain} />;
     case "e911-review":
       return <E911Content domain={domain} />;
     case "sip-alg":

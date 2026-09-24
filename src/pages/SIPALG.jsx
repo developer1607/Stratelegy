@@ -24,6 +24,7 @@ export function SipAlgContent({ domain }) {
         description="Email extensions where internal (contact) IP matches external (WAN) IP for the selected domain."
         resultNote="Email lists Ext · Name · Internal IP · External IP · MAC."
         requireDomain
+        domain={domain}
         immediateApi={(body) => pbxApi.immediateSipAlgSameIp(body)}
       />
       <SipAlgSettingsLive domain={domain} />

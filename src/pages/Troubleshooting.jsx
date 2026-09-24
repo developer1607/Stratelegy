@@ -61,6 +61,7 @@ export function TroubleshootingContent({ domain }) {
         description="Email dial permissions for each extension on the selected domain to a portal user or external address."
         resultNote="Email lists Domain · Ext · Name · Dial permission for every extension."
         requireDomain
+        domain={domain}
         immediateApi={(body) => pbxApi.immediateVulnerabilityDial(body)}
       />
       {domain ? (

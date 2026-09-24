@@ -1,8 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { pbxApi } from "@/api/pbx";
 import PermissionGate from "@/components/PermissionGate";
+import { usePbxDomain } from "@/components/pbx/domain/PbxDomainContext";
 import DomainSearchSelect from "@/components/pbx/reports/DomainSearchSelect";
 import ReportScheduleRecipients, {
   emptyRecipients,
@@ -84,22 +85,32 @@ function formatScheduleTime(times) {
 
 /**
  * Domain Export — James fields + Insight layout + selectable report list.
+ * Prefills Domains from the page domain / top domain bar when present.
  */
-export default function DomainExportPanel() {
+export default function DomainExportPanel({ domain: domainProp }) {
   const queryClient = useQueryClient();
+  const { domain: contextDomain } = usePbxDomain();
+  const barDomain = domainProp || contextDomain || "";
   const { canPbxAction, isAdmin, isLoading: permsLoading } = usePermissions();
   const canManage = isAdmin || canPbxAction("manageReports");
 
-  const [immediateDomain, setImmediateDomain] = useState("");
+  const [immediateDomain, setImmediateDomain] = useState(barDomain);
   const [immediateRecipients, setImmediateRecipients] = useState(
     emptyRecipients(),
   );
   const [selectedReportType, setSelectedReportType] = useState("");
 
-  const [dailyDomain, setDailyDomain] = useState("");
+  const [dailyDomain, setDailyDomain] = useState(barDomain);
   const [dailyDay, setDailyDay] = useState("everyday");
   const [dailyTime, setDailyTime] = useState("08:00");
   const [dailyRecipients, setDailyRecipients] = useState(emptyRecipients());
+
+  // Keep schedule domain pickers aligned with the domain-based page / top bar.
+  useEffect(() => {
+    if (!barDomain) return;
+    setImmediateDomain(barDomain);
+    setDailyDomain(barDomain);
+  }, [barDomain]);
 
   const domainsQuery = useQuery({
     queryKey: ["pbx-domains"],

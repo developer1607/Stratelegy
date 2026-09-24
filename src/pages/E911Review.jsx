@@ -73,6 +73,7 @@ export function E911Content({ domain }) {
         resultNote="Email lists Domain · Ext · Name · PBX 911 CID for matching users."
         requireDomain={false}
         allowAllDomainsImmediate
+        domain={domain}
         immediateApi={(body) => pbxApi.immediateE911EmptyCid(body)}
       />
       {domain ? (

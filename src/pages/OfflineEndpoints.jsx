@@ -96,6 +96,7 @@ export function OfflineEndpointsContent({ domain }) {
           description="Email unregistered / offline endpoints for a selected domain to a portal user or external address."
           resultNote="Recipients receive an Insight email listing offline extensions (ext, name, MAC, downtime) for the selected domain."
           requireDomain
+          domain={domain}
           queryKeySuffix="per-domain"
           immediateApi={(body) => pbxApi.immediateOfflineEndpoints(body)}
         />
@@ -113,6 +114,7 @@ export function OfflineEndpointsContent({ domain }) {
         description="Email unregistered / offline endpoints for a selected domain to a portal user or external address."
         resultNote="Recipients receive an Insight email listing offline extensions (ext, name, MAC, downtime) for the selected domain."
         requireDomain
+        domain={domain}
         queryKeySuffix="per-domain"
         immediateApi={(body) => pbxApi.immediateOfflineEndpoints(body)}
       />
