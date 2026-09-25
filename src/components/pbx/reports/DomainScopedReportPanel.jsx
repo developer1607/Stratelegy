@@ -66,6 +66,10 @@ function formatScheduleTime(times) {
 export default function DomainScopedReportPanel({
   scheduleType,
   title,
+  /** Immediate section header; defaults to `Immediate ${title}`. */
+  immediateTitle,
+  /** Send button label; defaults to `Send ${title}`. */
+  sendButtonLabel,
   description,
   resultNote,
   requireDomain = true,
@@ -194,7 +198,7 @@ export default function DomainScopedReportPanel({
   return (
     <div className="space-y-6">
       <ReportScheduleSection
-        title={`Immediate ${title}`}
+        title={immediateTitle ?? `Immediate ${title}`}
         description={description}
         footer={
           <PermissionGate pbxAction="manageReports" fallback={null}>
@@ -203,7 +207,9 @@ export default function DomainScopedReportPanel({
               disabled={immediateMutation.isPending || !canSendImmediate}
               onClick={() => immediateMutation.mutate()}
             >
-              {immediateMutation.isPending ? "Sending…" : `Send ${title}`}
+              {immediateMutation.isPending
+                ? "Sending…"
+                : sendButtonLabel ?? `Send ${title}`}
             </Button>
           </PermissionGate>
         }

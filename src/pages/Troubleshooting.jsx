@@ -57,7 +57,9 @@ export function TroubleshootingContent({ domain }) {
     <div className="space-y-6">
       <DomainScopedReportPanel
         scheduleType="vulnerability_dial_policy"
-        title="Dial permissions"
+        title="Vulnerability Check"
+        immediateTitle="Vulnerability Check"
+        sendButtonLabel="Send Vulnerability Report"
         description="Email dial permissions for each extension on the selected domain to a portal user or external address."
         resultNote="Email lists Domain · Ext · Name · Dial permission for every extension."
         requireDomain

@@ -68,7 +68,9 @@ export function E911Content({ domain }) {
     <div className="space-y-6">
       <DomainScopedReportPanel
         scheduleType="e911_empty_cid"
-        title="E911 empty / zero CID"
+        title="E-911 Report"
+        immediateTitle="E-911 Report"
+        sendButtonLabel="Send E-911 Report"
         description="Report PBX users whose PBX 911 CID is empty, wildcard, or all zeros. Leave domain blank on immediate send to scan all reseller domains."
         resultNote="Email lists Domain · Ext · Name · PBX 911 CID for matching users."
         requireDomain={false}

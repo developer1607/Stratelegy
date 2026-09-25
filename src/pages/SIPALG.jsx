@@ -20,7 +20,9 @@ export function SipAlgContent({ domain }) {
     <div className="space-y-6">
       <DomainScopedReportPanel
         scheduleType="sip_alg_same_ip"
-        title="SIP ALG same IP"
+        title="SIP ALG Report"
+        immediateTitle="SIP ALG Report"
+        sendButtonLabel="Send SIP ALG report"
         description="Email extensions where internal (contact) IP matches external (WAN) IP for the selected domain."
         resultNote="Email lists Ext · Name · Internal IP · External IP · MAC."
         requireDomain
